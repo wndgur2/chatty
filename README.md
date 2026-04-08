@@ -37,6 +37,8 @@ Use this path when developing frontend/backend directly without Dockerized nginx
    - Run migrations: `npm run prisma:migrate:dev`
    - Start dev server: `npm run dev`
 2. Frontend setup:
+   - Clone frontend repo:
+     - `git clone https://github.com/wndgur2/chatty-frontend frontend`
    - Go to `frontend/`.
    - Install dependencies: `npm install`
    - Start dev server: `npm run dev`
