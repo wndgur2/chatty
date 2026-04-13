@@ -31,3 +31,54 @@ The frontend architecture prioritizes performance optimization, strict TypeScrip
 - **Render Optimization:** Strategic use of state colocation and memoization (`useMemo`, `useCallback`, `React.memo`) to manage massive chat history arrays dynamically.
 - **Clean Abstractions:** Complex business logic and API connections are decoupled into centralized, generic custom hooks (`useChatrooms`, `useMessages`, `useNotifications`, etc.).
 - **Strict Typing:** All REST endpoints and WebSocket channels are guarded by explicit TypeScript interfaces (`src/types/api.ts`).
+
+## Prerequisites
+
+- **Node.js** (v18+ recommended)
+- Running backend API (default local backend URL: `http://localhost:3000`)
+
+## Getting Started
+
+1. **Install Dependencies**
+   ```bash
+   npm install
+   ```
+2. **Environment Configuration**
+   Create `frontend/.env` (optional for local basic usage) and set values as needed:
+   ```env
+   VITE_API_URL=http://localhost:3000
+   VITE_FIREBASE_API_KEY=
+   VITE_FIREBASE_AUTH_DOMAIN=
+   VITE_FIREBASE_PROJECT_ID=
+   VITE_FIREBASE_MESSAGING_SENDER_ID=
+   VITE_FIREBASE_APP_ID=
+   VITE_FCM_VAPID_KEY=
+   ```
+3. **Run Development Server**
+   ```bash
+   npm run dev
+   ```
+4. **Build Production Bundle**
+   ```bash
+   npm run build
+   npm run preview
+   ```
+
+## Available Scripts
+
+```bash
+# Development server
+npm run dev
+
+# Type-check + production build
+npm run build
+
+# Lint source files
+npm run lint
+
+# TypeScript project checks
+npm run typecheck
+
+# Run unit/component tests
+npm run test
+```

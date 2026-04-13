@@ -44,8 +44,8 @@ Then open `PUBLIC_ORIGIN` in your browser (default `http://localhost:8080`).
 
 ## 4) Smoke test checklist
 
-1. **SPA**: app loads and login/register UI renders (optional Firebase warnings are acceptable when Firebase vars are unset).
-2. **REST**: register/login and list/create chatrooms through UI; requests should target `/api/...` on the same host.
+1. **SPA**: app loads and login UI renders (optional Firebase warnings are acceptable when Firebase vars are unset).
+2. **REST**: login and list/create chatrooms through UI; requests should target `/api/...` on the same host.
 3. **WebSocket**: send a message in a chatroom and confirm streaming via Socket.IO (`/socket.io/`).
 4. **Profile image URL**: create/update chatroom with image and verify returned `profileImageUrl` uses your public origin.
 5. **Ollama reachability from backend container**:

@@ -21,7 +21,7 @@ Chatty is a real-time, AI-based chat application backend built with **NestJS**, 
    ```
 
 2. **Environment Configuration**
-   Ensure you have a `.env` file in the root directory containing your Database URL.
+   Ensure you have a `.env` file at `backend/.env` containing your Database URL.
    ```env
    DATABASE_URL="mysql://<user>:<password>@localhost:3306/chatty"
    JWT_SECRET="replace-with-a-strong-secret"
