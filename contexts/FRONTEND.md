@@ -8,7 +8,7 @@ Before writing any code, always read `PROJECT_PROPOSAL.md` and `API_DOCUMENTATIO
 
 ### 1.1 Priority: Code Quality (Readability, Reusability, Centralization)
 
-- **Centralize API & Types:** Keep all REST endpoints, TanStack Query hooks, and global TypeScript interfaces in dedicated central folders (e.g., `src/api/hooks`, `src/types`).
+- **Centralize API & Types:** Use `src/api/client.ts`, `src/api/hooks/*`, and `src/types/api.ts` as the canonical API/type locations.
 - **Custom Hooks:** Abstract complex business logic, WebSocket handling, and FCM interactions into reusable custom hooks (e.g., `useChatWebSocket`, `usePushNotifications`).
 - **Tailwind Readability:** Keep JSX uncluttered. For complex dynamic class names, use utility libraries like `clsx` and `tailwind-merge` to keep logic readable.
 - **Strict TypeScript:** Enable `strict: true`. Avoid `any`. Define robust interfaces matching the backend API exactly.
@@ -43,7 +43,7 @@ You will handle incoming chunks of message data in real-time. Write an optimized
 
 All state originating from the `/api` must be managed by TanStack Query.
 
-- Create query key factories (e.g., `chatKeys.all`, `chatKeys.detail(id)`).
+- Create and use query key factories in dedicated files (for example `src/features/chatrooms/queryKeys.ts` and `src/features/chatroom/queryKeys.ts`).
 - Implement optimistic UI updates when users send messages (HTTP Fallback) or mutate chatroom settings, prior to WebSocket validation.
 
 ### 3.3 FCM Client Service Worker
@@ -53,3 +53,14 @@ Implement a robust Web Push integration:
 - Request notification permissions properly, factoring in UX (do not spam the user on mount; wait for an interaction).
 - Register the FCM token and send it securely via the `POST /api/notifications/register` endpoint.
 - Handle background UI updates cleanly within the `firebase-messaging-sw.js` limits.
+
+---
+
+## 4. Project Conventions Snapshot
+
+- API client import path: `src/api/client.ts`
+- Notification mutation hook path: `src/api/hooks/useNotifications.ts`
+- Shared API contract types: `src/types/api.ts`
+- Message query keys: `src/features/chatroom/queryKeys.ts`
+- Chatroom query keys: `src/features/chatrooms/queryKeys.ts`
+- Quality gate command order: `npm run lint && npm run typecheck && npm run test && npm run build`

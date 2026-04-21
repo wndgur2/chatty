@@ -28,7 +28,7 @@ The system allows AI to send messages to users without waiting for user input, b
 #### 3.1.2 Voluntary AI Messaging
 
 - Trigger AI messages without user input using a slow-start scheduling algorithm:
-  - Resets to a 4-second delay after a user message.
+  - Initializes a 4-second delay after the last message.
   - At the scheduled time, a lightweight "Evaluator" model decides whether to initiate a message.
   - If yes, initiates the voluntary message. If no, the delay time is doubled for the next check.
 - Use chatroom context for message generation.
