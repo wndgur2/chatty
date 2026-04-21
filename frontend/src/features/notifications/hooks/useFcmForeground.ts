@@ -64,6 +64,7 @@ export function useFcmForeground() {
 
       const messaging = getMessagingInstance(app)
       unsubscribe = onForegroundMessage(messaging, (payload) => {
+        console.log('onForegroundMessage', payload)
         if (typeof document !== 'undefined' && document.visibilityState !== 'visible') return
         const parsed = parseForegroundPayload(payload as { data?: Record<string, string> })
         if (!parsed) return

@@ -48,6 +48,8 @@ if (!firebaseConfig) {
   const messaging = firebase.messaging();
 
   messaging.onBackgroundMessage((payload) => {
+    console.log('onBackgroundMessage', payload)
+
     const data = payload && payload.data ? payload.data : {};
     const notificationPart = payload && payload.notification ? payload.notification : {};
 
