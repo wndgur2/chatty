@@ -123,7 +123,7 @@ export default function DefaultLayout() {
 
         {/* Dynamic Outlet */}
         <main
-          className={`flex-1 min-h-0 flex flex-col relative w-full overflow-hidden bg-gray-50 transition-opacity duration-300 opacity-100 z-20 md:z-auto`}
+          className={`flex-1 min-h-0 flex flex-col relative w-full overflow-hidden bg-gray-50 transition-opacity duration-300 opacity-100`}
         >
           <Outlet />
         </main>

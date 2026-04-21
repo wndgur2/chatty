@@ -37,6 +37,7 @@ export default function Modal({ children, isOpen, onClose, title }: ModalProps) 
       className={`fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4 transition-all duration-300 ease-in-out ${
         isOpen ? 'opacity-100 visible' : 'opacity-0 invisible'
       }`}
+      aria-hidden={!isOpen}
       onClick={onClose}
     >
       <div

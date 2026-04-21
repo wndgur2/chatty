@@ -239,7 +239,6 @@ export default function ChatroomScreen({ chatroomId }: ChatroomScreenProps) {
       </div>
 
       <EditChatroomModal
-        key={`${chatroom.id}-${isEditModalOpen ? 'open' : 'closed'}`}
         isOpen={isEditModalOpen}
         onClose={() => setIsEditModalOpen(false)}
         onSubmit={handleEditChatroom}
