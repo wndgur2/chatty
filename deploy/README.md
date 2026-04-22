@@ -81,7 +81,13 @@ docker compose restart backend
 
 Verify these values are aligned: `PUBLIC_ORIGIN`, `CORS_ORIGIN`, `HTTP_PORT`, and browser URL.
 
-## 6) Operational notes
+## 6) CI/CD deployment notes
+
+- GitHub CD workflow uses `deploy/docker-compose.prod.yml` and `deploy/scripts/deploy-prod.sh` for server-side pull-and-restart.
+- Ensure server has a populated `.env` in the deploy directory before first CD run.
+- Images are expected from GHCR with commit-SHA tags.
+
+## 7) Operational notes
 
 - Uploaded files persist in Docker volume `backend_assets` (`ASSETS_DIR=/app/assets`).
 - `extra_hosts: host.docker.internal:host-gateway` is mainly for Linux compatibility; harmless on Docker Desktop for Mac.

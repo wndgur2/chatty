@@ -1,0 +1,24 @@
+#!/usr/bin/env sh
+set -eu
+
+upstream="$(git rev-parse --abbrev-ref --symbolic-full-name @{upstream} 2>/dev/null || true)"
+
+if [ -n "$upstream" ]; then
+  base="$(git merge-base HEAD "$upstream")"
+else
+  base="$(git merge-base HEAD origin/main 2>/dev/null || git rev-list --max-parents=0 HEAD)"
+fi
+
+changed_files="$(git diff --name-only "$base"...HEAD)"
+
+echo "$changed_files" | grep -q '^backend/' && {
+  echo "Running backend checks..."
+  (cd backend && npm run lint && npm run test)
+}
+
+echo "$changed_files" | grep -q '^frontend/' && {
+  echo "Running frontend checks..."
+  (cd frontend && npm run lint && npm run typecheck && npm run test)
+}
+
+echo "Pre-push checks passed."

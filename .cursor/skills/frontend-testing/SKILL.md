@@ -1,3 +1,9 @@
+---
+name: frontend-testing
+description: Frontend Testing Guide
+disable-model-invocation: true
+---
+
 # Frontend Testing Guide
 
 ## 1. Scope

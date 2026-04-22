@@ -9,6 +9,12 @@ Chatty is a real-time, AI-based chat application backend built with **NestJS**, 
 - **Testing**: Jest & Supertest (Unit & E2E)
 - **Static Assets**: `@nestjs/serve-static` & `@nestjs/platform-express` (Multer) for image uploads
 
+## Git Workflow Convention
+
+Use the shared Git convention skill before creating branches, commits, and PRs:
+
+- `.cursor/skills/git/SKILL.md`
+
 ## Prerequisites
 - **Node.js** (v18+ recommended)
 - **MySQL** Server
