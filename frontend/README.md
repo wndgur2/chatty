@@ -81,4 +81,21 @@ npm run typecheck
 
 # Run unit/component tests
 npm run test
+
+# Run unit-only tests
+npm run test:unit
+
+# Run integration flow tests
+npm run test:integration
+
+# Run test suite with coverage report
+npm run test:coverage
 ```
+
+## Testing
+
+- Unit/component/hook tests: colocated as `src/**/<name>.test.ts(x)`.
+- API contract tests: `src/api/*.contract.test.ts`.
+- Integration flow tests: `tests/integration/*.integration.test.tsx`.
+- Shared test utilities and fixtures: `src/test/`.
+- Detailed conventions and checklist: `../contexts/FRONTEND_TESTING.md`.

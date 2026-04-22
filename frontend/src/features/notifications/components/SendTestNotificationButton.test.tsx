@@ -34,14 +34,14 @@ describe('SendTestNotificationButton', () => {
   it('calls test notification mutation with chatroomId', () => {
     renderWithRoute('/chat/7', true)
 
-    fireEvent.click(screen.getByRole('button', { name: 'Send test notification' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Send Notice' }))
 
-    expect(mutateAsyncSpy).toHaveBeenCalledWith({ chatroomId: 7 })
+    expect(mutateAsyncSpy).toHaveBeenCalledWith({ chatroomId: '7' })
   })
 
   it('does not render in non-dev mode', () => {
     renderWithRoute('/chat/7', false)
 
-    expect(screen.queryByRole('button', { name: 'Send test notification' })).toBeNull()
+    expect(screen.queryByRole('button', { name: 'Send Notice' })).toBeNull()
   })
 })

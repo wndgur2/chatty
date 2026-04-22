@@ -73,6 +73,7 @@ Important Socket.IO events include:
 - Product proposal: `contexts/PROJECT_PROPOSAL.md`
 - API contract: `contexts/API_DOCUMENTATION.md`
 - Data model: `contexts/SCHEMA.md`
+- Frontend testing guide: `contexts/FRONTEND_TESTING.md`
 - Backend guide: `backend/README.md`
 - Frontend guide: `frontend/README.md`
 - Deployment guide: `deploy/README.md`

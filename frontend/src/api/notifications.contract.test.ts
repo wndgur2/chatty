@@ -9,7 +9,7 @@ vi.mock('./client', () => ({
   },
 }))
 
-describe('notifications api', () => {
+describe('notifications api contract', () => {
   it('sends test notification request with chatroomId payload', async () => {
     postSpy.mockResolvedValueOnce({ status: 'success', message: 'ok' })
 

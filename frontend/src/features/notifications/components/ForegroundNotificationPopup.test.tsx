@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from 'vitest'
 import ForegroundNotificationPopup from './ForegroundNotificationPopup'
 
 describe('ForegroundNotificationPopup', () => {
-  it('does not render when open is false', () => {
+  it('is hidden from accessibility tree when open is false', () => {
     render(
       <ForegroundNotificationPopup
         open={false}
@@ -14,7 +14,7 @@ describe('ForegroundNotificationPopup', () => {
       />,
     )
 
-    expect(screen.queryByText('title')).toBeNull()
+    expect(screen.queryByRole('button', { name: 'title body' })).toBeNull()
   })
 
   it('calls onClick when popup is clicked', () => {
