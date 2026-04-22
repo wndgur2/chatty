@@ -110,8 +110,10 @@ jobs:
             echo "DEPLOY_PATH secret must be set (path to deploy folder on server)."
             exit 1
           fi
-          scp deploy/docker-compose.prod.yml deploy/scripts/deploy-prod.sh "${DEPLOY_USER}@${DEPLOY_HOST}:${DEPLOY_PATH}/"
-          ssh "${DEPLOY_USER}@${DEPLOY_HOST}" \
+          SSH_OPTS="-o BatchMode=yes -o StrictHostKeyChecking=yes"
+          ssh ${SSH_OPTS} "${DEPLOY_USER}@${DEPLOY_HOST}" "mkdir -p '${DEPLOY_PATH}'"
+          scp -O ${SSH_OPTS} deploy/docker-compose.prod.yml deploy/scripts/deploy-prod.sh "${DEPLOY_USER}@${DEPLOY_HOST}:${DEPLOY_PATH}/"
+          ssh ${SSH_OPTS} "${DEPLOY_USER}@${DEPLOY_HOST}" \
             "chmod +x '${DEPLOY_PATH}/deploy-prod.sh' && \
             DEPLOY_PATH='${DEPLOY_PATH}' GHCR_USERNAME='${GHCR_USERNAME}' GHCR_TOKEN='${GHCR_TOKEN}' \
             BACKEND_IMAGE='${BACKEND_IMAGE}' NGINX_IMAGE='${NGINX_IMAGE}' IMAGE_TAG='${IMAGE_TAG}' \
