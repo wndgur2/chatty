@@ -7,10 +7,8 @@ on:
       - develop
   push:
     branches:
+      - main
       - develop
-      - "feature/**"
-      - "release/**"
-      - "hotfix/**"
 
 concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
