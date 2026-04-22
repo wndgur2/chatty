@@ -1,0 +1,115 @@
+name: CI
+
+on:
+  pull_request:
+    branches:
+      - main
+      - develop
+  push:
+    branches:
+      - develop
+      - "feature/**"
+      - "release/**"
+      - "hotfix/**"
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  changes:
+    name: Detect changed paths
+    runs-on: ubuntu-latest
+    outputs:
+      backend: ${{ steps.filter.outputs.backend }}
+      frontend: ${{ steps.filter.outputs.frontend }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Detect backend/frontend changes
+        id: filter
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            backend:
+              - 'backend/**'
+            frontend:
+              - 'frontend/**'
+              - 'deploy/nginx/**'
+
+  backend-checks:
+    name: backend-checks
+    runs-on: ubuntu-latest
+    needs: changes
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        if: needs.changes.outputs.backend == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+
+      - name: Install dependencies
+        if: needs.changes.outputs.backend == 'true'
+        run: npm ci
+
+      - name: Lint
+        if: needs.changes.outputs.backend == 'true'
+        run: npm run lint
+
+      - name: Test
+        if: needs.changes.outputs.backend == 'true'
+        run: npm run test -- --runInBand
+
+      - name: Skip backend checks when unchanged
+        if: needs.changes.outputs.backend != 'true'
+        run: echo "No backend changes detected."
+
+  frontend-checks:
+    name: frontend-checks
+    runs-on: ubuntu-latest
+    needs: changes
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        if: needs.changes.outputs.frontend == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        if: needs.changes.outputs.frontend == 'true'
+        run: npm ci
+
+      - name: Lint
+        if: needs.changes.outputs.frontend == 'true'
+        run: npm run lint
+
+      - name: Typecheck
+        if: needs.changes.outputs.frontend == 'true'
+        run: npm run typecheck
+
+      - name: Test
+        if: needs.changes.outputs.frontend == 'true'
+        run: npm run test
+
+      - name: Skip frontend checks when unchanged
+        if: needs.changes.outputs.frontend != 'true'
+        run: echo "No frontend changes detected."
