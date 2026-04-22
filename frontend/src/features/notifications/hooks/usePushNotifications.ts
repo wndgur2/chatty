@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useRegisterNotification } from './useRegisterNotification'
 import {
   getFirebaseApp,
@@ -52,7 +52,7 @@ export function usePushNotifications() {
   const [state, setState] = useState<PushUiState>(() => getInitialPushUiState())
   const [lastError, setLastError] = useState<string | null>(null)
 
-  const enablePush = useCallback(async () => {
+  const enablePush = async () => {
     setLastError(null)
     if (!(await isBrowserPushMessagingSupported())) {
       setState('unsupported')
@@ -78,10 +78,16 @@ export function usePushNotifications() {
       await registerGrantedPermission(registerDeviceToken)
       setState('enabled')
     } catch (e) {
+      const errorMessage = e instanceof Error ? e.message : 'Failed to enable notifications'
+      if (errorMessage.includes('push service not available')) {
+        setState('unsupported')
+        setLastError('Push notifications are not available in this browser environment.')
+        return
+      }
       setState('error')
-      setLastError(e instanceof Error ? e.message : 'Failed to enable notifications')
+      setLastError(errorMessage)
     }
-  }, [registerDeviceToken])
+  }
 
   useEffect(() => {
     let cancelled = false

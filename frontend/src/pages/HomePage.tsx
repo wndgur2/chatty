@@ -1,4 +1,3 @@
-import { useMemo } from 'react'
 import { Navigate, useLocation } from 'react-router'
 import Button from '../shared/ui/Button'
 import GithubLink from '../shared/ui/GithubLink'
@@ -12,10 +11,7 @@ export default function HomePage() {
   const location = useLocation()
   const fromLogin = (location.state as { fromLogin?: boolean } | null)?.fromLogin === true
   const { data: chatrooms = [], isLoading, isError } = useChatrooms()
-  const sortedChatrooms = useMemo(
-    () => [...chatrooms].sort(sortByChatroomActivityDesc),
-    [chatrooms],
-  )
+  const sortedChatrooms = [...chatrooms].sort(sortByChatroomActivityDesc)
 
   const { isCreateModalOpen, openCreateModal, closeCreateModal, handleCreateChatroom, isCreating } =
     useCreateChatroomFlow()

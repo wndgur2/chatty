@@ -7,7 +7,11 @@ import { firebaseMessagingSwPlugin } from './vite-plugin-firebase-messaging-sw'
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [
-    react(),
+    react({
+      babel: {
+        plugins: ['babel-plugin-react-compiler'],
+      },
+    }),
     tailwindcss(),
     VitePWA({
       registerType: 'autoUpdate',

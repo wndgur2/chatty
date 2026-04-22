@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useState } from 'react'
 import { useNavigate } from 'react-router'
 import { useQueryClient } from '@tanstack/react-query'
 import ChatroomListItem from './ChatroomListItem'
@@ -16,7 +16,7 @@ export default function SideBar() {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
   const { data: chatrooms = [], isLoading, isError } = useChatrooms()
-  const sortedChatrooms = useMemo(() => [...chatrooms].sort(sortByChatroomActivityDesc), [chatrooms])
+  const sortedChatrooms = [...chatrooms].sort(sortByChatroomActivityDesc)
   const { isCreateModalOpen, openCreateModal, closeCreateModal, handleCreateChatroom, isCreating } =
     useCreateChatroomFlow()
   const setSidebarOpen = useUIStore((state) => state.setSidebarOpen)

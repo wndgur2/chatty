@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { useParams } from 'react-router'
 import {
   getFirebaseApp,
@@ -79,14 +79,14 @@ export function useFcmForeground() {
     }
   }, [])
 
-  const clearPopup = useCallback(() => {
+  const clearPopup = () => {
     setPopup(null)
-  }, [])
+  }
 
-  const getPopupChatroomPath = useCallback(() => {
+  const getPopupChatroomPath = () => {
     if (!popup) return null
     return ROUTES.CHATROOM(encodeURIComponent(popup.chatroomId))
-  }, [popup])
+  }
 
   return {
     popup,

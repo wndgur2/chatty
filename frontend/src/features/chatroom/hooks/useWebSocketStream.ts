@@ -1,4 +1,4 @@
-import { useEffect, useRef, useCallback, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { io, Socket } from 'socket.io-client'
 import { getMessagesQueryKey } from '../queryKeys'
@@ -19,8 +19,8 @@ export const useWebSocketStream = (chatroomId: number) => {
     streamingContentRef.current = streamingContent
   }, [streamingContent])
 
-  const connect = useCallback(() => {
-    if (socketRef.current?.connected) return
+  useEffect(() => {
+    if (!chatroomId || socketRef.current?.connected) return
 
     const socket = io(WS_URL, {
       transports: ['websocket'],
@@ -45,53 +45,40 @@ export const useWebSocketStream = (chatroomId: number) => {
       setStreamingContent((old) => old + payload.chunk)
     })
 
-    socket.on(
-      'ai_message_complete',
-      (payload: { chatroomId: number; content: string; messageId: number }) => {
-        if (payload.chatroomId !== chatroomId) return
+    socket.on('ai_message_complete', (payload: { chatroomId: number; content: string; messageId: number }) => {
+      if (payload.chatroomId !== chatroomId) return
 
-        queryClient.setQueryData<Message[]>(getMessagesQueryKey(chatroomId), (oldMessages) => {
-          if (!oldMessages) return []
+      queryClient.setQueryData<Message[]>(getMessagesQueryKey(chatroomId), (oldMessages) => {
+        if (!oldMessages) return []
 
-          const filteredMessages = oldMessages.filter((m) => m.id !== payload.messageId)
+        const filteredMessages = oldMessages.filter((m) => m.id !== payload.messageId)
 
-          const finalMessage: Message = {
-            id: payload.messageId,
-            sender: 'ai',
-            content: payload.content || streamingContentRef.current,
-            createdAt: new Date().toISOString(),
-          }
+        const finalMessage: Message = {
+          id: payload.messageId,
+          sender: 'ai',
+          content: payload.content || streamingContentRef.current,
+          createdAt: new Date().toISOString(),
+        }
 
-          return [...filteredMessages, finalMessage]
-        })
+        return [...filteredMessages, finalMessage]
+      })
 
-        setStreamingContent('')
-        // Stop typing indicator if not explicitly ended by typing state event
-        setIsTyping(false)
-      },
-    )
+      setStreamingContent('')
+      // Stop typing indicator if not explicitly ended by typing state event
+      setIsTyping(false)
+    })
 
     socket.on('disconnect', () => {
       console.log(`Socket.io disconnected for chatroom ${chatroomId}`)
     })
-  }, [chatroomId, queryClient])
 
-  const disconnect = useCallback(() => {
-    if (socketRef.current) {
+    return () => {
+      if (!socketRef.current) return
       socketRef.current.emit('leaveRoom', { chatroomId })
       socketRef.current.disconnect()
       socketRef.current = null
     }
-  }, [chatroomId])
-
-  useEffect(() => {
-    if (chatroomId) {
-      connect()
-    }
-    return () => {
-      disconnect()
-    }
-  }, [chatroomId, connect, disconnect])
+  }, [chatroomId, queryClient])
 
   return {
     getSocket: () => socketRef.current,

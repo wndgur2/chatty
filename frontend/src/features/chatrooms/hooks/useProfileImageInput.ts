@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 
 export const useProfileImageInput = () => {
   const [profileImage, setProfileImage] = useState<File | undefined>(undefined)
@@ -15,12 +15,12 @@ export const useProfileImageInput = () => {
     }
   }, [previewUrl])
 
-  const clearProfileImage = useCallback(() => {
+  const clearProfileImage = () => {
     setProfileImage(undefined)
     if (fileInputRef.current) {
       fileInputRef.current.value = ''
     }
-  }, [])
+  }
 
   return {
     profileImage,
