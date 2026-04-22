@@ -1,0 +1,20 @@
+#!/usr/bin/env sh
+set -eu
+
+commit_msg_file="${1:-}"
+
+if [ -z "$commit_msg_file" ] || [ ! -f "$commit_msg_file" ]; then
+  echo "commit-msg hook: commit message file is missing."
+  exit 1
+fi
+
+first_line="$(sed -n '1p' "$commit_msg_file")"
+
+pattern='^(feat|fix|refactor|test|docs|chore|ci|build|perf|revert)(\([a-z0-9-]+\))?!?: .+'
+
+if ! printf '%s\n' "$first_line" | grep -Eq "$pattern"; then
+  echo "Invalid commit message format."
+  echo "Expected: <type>(<scope>): <subject>"
+  echo "Example: feat(messages): add AI stream completion event"
+  exit 1
+fi

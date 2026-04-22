@@ -1,0 +1,36 @@
+name: Git Convention
+
+on:
+  pull_request:
+    branches:
+      - main
+      - develop
+  push:
+    branches:
+      - main
+      - develop
+      - "feature/**"
+      - "release/**"
+      - "hotfix/**"
+
+jobs:
+  verify-commits:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Validate commit subjects
+        run: |
+          chmod +x scripts/ci/verify-commits.sh
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            scripts/ci/verify-commits.sh "origin/${{ github.base_ref }}" "${{ github.event.pull_request.head.sha }}"
+          else
+            BEFORE_SHA="${{ github.event.before }}"
+            if [ "$BEFORE_SHA" = "0000000000000000000000000000000000000000" ]; then
+              BEFORE_SHA="$(git merge-base "${{ github.sha }}" "origin/main")"
+            fi
+            scripts/ci/verify-commits.sh "$BEFORE_SHA" "${{ github.sha }}"
+          fi
