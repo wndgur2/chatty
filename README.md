@@ -24,7 +24,8 @@ Chatty is an AI-based chat application with real-time streamed responses and sch
 - `frontend/`: React web app.
 - `backend/`: NestJS API + WebSocket gateway + scheduler logic.
 - `deploy/`: Docker/nginx deployment assets and deployment guide.
-- `contexts/`: product proposal, API contract, and schema reference docs.
+- `.cursor/skills/`: reusable agent skills and reference documents.
+- `.cursor/rules/`: lightweight always-on or file-scoped agent rules.
 
 ## Quick Start (Local Development)
 
@@ -61,7 +62,7 @@ Full deployment instructions and troubleshooting are documented in `deploy/READM
 
 REST and event contracts are documented in:
 
-- `contexts/API_DOCUMENTATION.md`
+- `.cursor/skills/api-development/references/API_DOCUMENTATION.md`
 
 Important Socket.IO events include:
 
@@ -70,9 +71,9 @@ Important Socket.IO events include:
 
 ## Documentation Index
 
-- Product proposal: `contexts/PROJECT_PROPOSAL.md`
-- API contract: `contexts/API_DOCUMENTATION.md`
-- Data model: `contexts/SCHEMA.md`
+- Product proposal: `.cursor/skills/nestjs-development/references/PROJECT_PROPOSAL.md`
+- API contract: `.cursor/skills/api-development/references/API_DOCUMENTATION.md`
+- Data model: `.cursor/skills/nestjs-development/references/SCHEMA.md`
 - Frontend testing guide: `contexts/FRONTEND_TESTING.md`
 - Backend guide: `backend/README.md`
 - Frontend guide: `frontend/README.md`
