@@ -26,11 +26,11 @@ jobs:
         run: |
           chmod +x scripts/ci/verify-commits.sh
           if [ "${{ github.event_name }}" = "pull_request" ]; then
-            scripts/ci/verify-commits.sh "origin/${{ github.base_ref }}" "HEAD"
+            scripts/ci/verify-commits.sh "origin/${{ github.base_ref }}" "${{ github.event.pull_request.head.sha }}"
           else
             BEFORE_SHA="${{ github.event.before }}"
             if [ "$BEFORE_SHA" = "0000000000000000000000000000000000000000" ]; then
-              BEFORE_SHA="$(git rev-list --max-parents=0 HEAD | tail -n 1)"
+              BEFORE_SHA="$(git merge-base "${{ github.sha }}" "origin/main")"
             fi
             scripts/ci/verify-commits.sh "$BEFORE_SHA" "${{ github.sha }}"
           fi
