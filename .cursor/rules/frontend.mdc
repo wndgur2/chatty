@@ -3,7 +3,7 @@ description: Frontend rules for React and TypeScript implementation
 globs: frontend/src/**/*.ts, frontend/src/**/*.tsx
 alwaysApply: false
 ---
-# Frontend Simplified Rule
+# Frontend Rule
 
 - Keep API calls and contracts centralized in canonical API/type modules.
 - Extract non-trivial UI logic into focused custom hooks.

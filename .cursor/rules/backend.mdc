@@ -4,7 +4,7 @@ globs: backend/**/*.ts
 alwaysApply: false
 ---
 
-# Backend Simplified Rule
+# Backend Rule
 
 - Keep backend flow modular: Module -> Controller/Gateway -> Service -> Repository.
 - Keep business logic out of controllers and gateways; place it in services.

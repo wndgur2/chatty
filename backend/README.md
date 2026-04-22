@@ -89,3 +89,119 @@ npm run test:cov
 # Run linting
 npm run lint
 ```
+
+## Project Structure
+
+This section summarizes backend relationships, file layout, and the main request flow.
+
+### File Structure
+
+```text
+backend/
+├── prisma/              # Prisma schema, migrations, and DB setup
+├── src/
+│   ├── auth/            # Authentication (login, JWT handling)
+│   ├── chatrooms/       # Chatroom CRUD and configuration logic
+│   ├── messages/        # Message APIs and chat history operations
+│   ├── websocket/       # Socket.IO gateway and streaming events
+│   ├── assets/          # Uploaded/static files (e.g., profile images)
+│   └── ...              # Shared modules, bootstrap, and app wiring
+└── test/                # E2E and integration tests
+```
+
+### Entity Relations
+
+```mermaid
+erDiagram
+  User ||--o{ UserDevice : has
+  User ||--o{ Chatroom : owns
+  Chatroom ||--o{ Message : contains
+
+  User {
+    bigint id PK
+    string username UK
+    datetime createdAt
+    datetime updatedAt
+  }
+
+  UserDevice {
+    bigint id PK
+    bigint userId FK
+    string deviceToken UK
+    datetime registeredAt
+  }
+
+  Chatroom {
+    bigint id PK
+    bigint userId FK
+    string name
+    string basePrompt
+    string profileImageUrl
+    int currentDelaySeconds
+    datetime nextEvaluationTime
+    datetime createdAt
+    datetime updatedAt
+  }
+
+  Message {
+    bigint id PK
+    bigint chatroomId FK
+    enum sender
+    string content
+    datetime createdAt
+  }
+```
+
+### Sequence Diagram
+
+```mermaid
+sequenceDiagram
+  participant Client as FrontendClient
+  participant Auth as AuthController
+  participant Chatrooms as ChatroomsController
+  participant Messages as MessagesController
+  participant Scheduler as CronTasksService
+  participant EvalAI as OllamaEvaluationModel
+  participant Push as FcmPushService
+  participant Gateway as ChatGateway
+  participant AI as AIService
+  participant DB as MySQLPrisma
+
+  Client->>Auth: POST /api/auth/login
+  Auth->>DB: validateOrCreateUser()
+  DB-->>Auth: user + tokenPayload
+  Auth-->>Client: JWT accessToken
+
+  Client->>Chatrooms: POST /api/chatrooms (Bearer JWT)
+  Chatrooms->>DB: create chatroom row
+  DB-->>Chatrooms: chatroom
+  Chatrooms-->>Client: created chatroom
+
+  Client->>Messages: POST /api/messages (chatroomId, content)
+  Messages->>DB: store user message
+  Messages->>AI: request streamed response
+  AI-->>Gateway: chunks + completion events
+  Gateway-->>Client: ai_message_chunk / ai_message_complete
+  Messages->>DB: persist AI message
+
+  opt Voluntary background evaluation flow
+    Scheduler->>DB: find rooms where nextEvaluationTime <= now
+    DB-->>Scheduler: eligible chatrooms
+    Scheduler->>DB: lock room (nextEvaluationTime = null)
+    Scheduler->>DB: load recent messages
+    Scheduler->>EvalAI: evaluateToAnswer(history, context)
+    EvalAI-->>Scheduler: shouldAnswer true/false
+
+    alt shouldAnswer is true
+      Scheduler->>Messages: processBackgroundMessage(chatroomId, voluntary=true)
+      Messages->>AI: generate voluntary response
+      AI-->>Gateway: ai_message_chunk / ai_message_complete
+      Gateway-->>Client: stream voluntary AI response
+      Messages->>DB: persist AI message and reset delay
+      Messages->>Push: notifyVoluntaryAiMessage()
+      Push-->>Client: push notification
+    else shouldAnswer is false
+      Scheduler->>DB: apply evaluation backoff and schedule nextEvaluationTime
+    end
+  end
+```
