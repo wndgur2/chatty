@@ -12,8 +12,8 @@ Apply this skill for any Git operation in this repository, including branch nami
 ## Repository defaults
 
 1. Branch model:
-   - `main`: stable, production-ready code only.
-   - `develop`: integration branch for ongoing work.
+   - `main`: stable, production-ready code only. PR required before merge.
+   - `develop`: integration branch for ongoing work. PR required before merge.
    - `feature/<scope>-<short-description>`: standard feature branch off `develop`.
    - `release/<version>`: release stabilization branch off `develop`.
    - `hotfix/<scope>-<short-description>`: urgent production fix branch off `main`.
