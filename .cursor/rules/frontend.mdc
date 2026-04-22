@@ -1,0 +1,13 @@
+---
+description: Frontend rules for React and TypeScript implementation
+globs: frontend/src/**/*.{ts,tsx}
+alwaysApply: false
+---
+
+# Frontend Simplified Rule
+
+- Keep API calls and contracts centralized in canonical API/type modules.
+- Extract non-trivial UI logic into focused custom hooks.
+- Preserve strict TypeScript and avoid `any`.
+- Optimize rendering for chat-scale streaming updates and long message lists.
+- Run `lint`, `typecheck`, and relevant tests for changed frontend behavior.

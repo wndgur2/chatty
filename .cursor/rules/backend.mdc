@@ -1,0 +1,13 @@
+---
+description: Backend implementation rules for NestJS services and APIs
+globs: backend/**/*.ts
+alwaysApply: false
+---
+
+# Backend Simplified Rule
+
+- Keep backend flow modular: Module -> Controller/Gateway -> Service -> Repository.
+- Keep business logic out of controllers and gateways; place it in services.
+- Use strict TypeScript with explicit DTO validation; avoid `any`.
+- Use semantic exceptions and consistent status codes aligned with API contracts.
+- Add or update tests when behavior changes; prefer test-first changes.
