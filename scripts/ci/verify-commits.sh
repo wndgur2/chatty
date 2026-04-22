@@ -21,7 +21,7 @@ while IFS= read -r subject; do
     echo "Invalid commit subject: $subject"
     failed=1
   fi
-done < <(git log --format=%s "${base_ref}..${head_ref}")
+done < <(git log --no-merges --format=%s "${base_ref}..${head_ref}")
 
 if [[ "$failed" -ne 0 ]]; then
   echo "Commit convention check failed."
