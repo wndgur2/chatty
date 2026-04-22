@@ -43,6 +43,7 @@ export default function ChatroomConfiguration({
         </label>
         <Input
           id={nameFieldId}
+          name="name"
           placeholder="e.g., Frontend Team"
           value={name}
           onChange={onNameChange}
@@ -55,6 +56,7 @@ export default function ChatroomConfiguration({
         </label>
         <textarea
           id={promptFieldId}
+          name="basePrompt"
           placeholder="You are a helpful assistant..."
           value={basePrompt}
           onChange={onBasePromptChange}

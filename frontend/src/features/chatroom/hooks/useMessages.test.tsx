@@ -1,5 +1,5 @@
 import { QueryClientProvider } from '@tanstack/react-query'
-import { renderHook, waitFor } from '@testing-library/react'
+import { act, renderHook, waitFor } from '@testing-library/react'
 import type { ReactNode } from 'react'
 import { describe, expect, it, vi } from 'vitest'
 import { createTestQueryClient } from '../../../test/utils/createTestQueryClient'
@@ -47,5 +47,49 @@ describe('useSendMessage', () => {
       expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: messageKeys.list(12) })
     })
     expect(getMessagesQueryKey(12)[0]).toBe('messages')
+  })
+
+  it('adds optimistic user message and rolls back on failure', async () => {
+    let rejectRequest: ((reason?: unknown) => void) | undefined
+    sendMessageSpy.mockImplementationOnce(
+      () =>
+        new Promise((_resolve, reject) => {
+          rejectRequest = reject
+        }),
+    )
+    const client = createTestQueryClient()
+    const localWrapper = ({ children }: { children: ReactNode }) => (
+      <QueryClientProvider client={client}>{children}</QueryClientProvider>
+    )
+    const queryKey = getMessagesQueryKey(12)
+    client.setQueryData(queryKey, [{ id: 1, sender: 'ai', content: 'ready', createdAt: '2026-01-01' }])
+
+    const { result } = renderHook(() => useSendMessage(), { wrapper: localWrapper })
+
+    act(() => {
+      result.current.mutate({ chatroomId: 12, request: { content: 'hello optimistic' } })
+    })
+
+    await waitFor(() => {
+      const optimisticMessages = client.getQueryData<
+        Array<{ id: number; sender: 'ai' | 'user'; content: string; createdAt: string }>
+      >(queryKey)
+      expect(optimisticMessages?.some((message) => message.content === 'hello optimistic')).toBe(true)
+    })
+
+    act(() => {
+      if (rejectRequest) {
+        rejectRequest(new Error('network error'))
+      }
+    })
+
+    await waitFor(() => {
+      const rolledBackMessages = client.getQueryData<
+        Array<{ id: number; sender: 'ai' | 'user'; content: string; createdAt: string }>
+      >(queryKey)
+      expect(rolledBackMessages).toEqual([
+        { id: 1, sender: 'ai', content: 'ready', createdAt: '2026-01-01' },
+      ])
+    })
   })
 })

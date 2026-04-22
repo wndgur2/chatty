@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useActionState, useState } from 'react'
 import Modal from '../../../shared/ui/Modal'
 import Button from '../../../shared/ui/Button'
 import ModalFooter from '../../../shared/ui/ModalFooter'
@@ -9,7 +9,7 @@ import { useProfileImageInput } from '../../chatrooms/hooks/useProfileImageInput
 export interface EditChatroomModalProps {
   isOpen: boolean
   onClose: () => void
-  onSubmit: (id: number, data: UpdateChatroomRequest) => void
+  onSubmit: (id: number, data: UpdateChatroomRequest) => Promise<void> | void
   onDelete?: (id: number) => void
   chatroom: Chatroom | null
   isLoading?: boolean
@@ -27,6 +27,29 @@ export default function EditChatroomModal({
   const [basePrompt, setBasePrompt] = useState(chatroom?.basePrompt || '')
   const { profileImage, setProfileImage, previewUrl, clearProfileImage, fileInputRef } =
     useProfileImageInput()
+  const [submitState, submitAction, isSubmitting] = useActionState(
+    async (_: { error: string }, formData: FormData) => {
+      if (!chatroom || isLoading) {
+        return { error: 'Chatroom is not available.' }
+      }
+
+      const nextName = String(formData.get('name') ?? '').trim()
+      const nextBasePrompt = String(formData.get('basePrompt') ?? '').trim()
+      if (!nextName || !nextBasePrompt) {
+        return { error: 'Name and base prompt are required.' }
+      }
+
+      await Promise.resolve(
+        onSubmit(chatroom.id, {
+          name: nextName,
+          basePrompt: nextBasePrompt,
+          ...(profileImage && { profileImage }),
+        }),
+      )
+      return { error: '' }
+    },
+    { error: '' },
+  )
 
   const handleClearImage = () => {
     clearProfileImage()
@@ -35,19 +58,10 @@ export default function EditChatroomModal({
   const displayPreviewUrl =
     previewUrl || (chatroom?.profileImageUrl ? chatroom.profileImageUrl : null)
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!chatroom || isLoading) return
-    onSubmit(chatroom.id, {
-      name: name.trim(),
-      basePrompt: basePrompt.trim(),
-      ...(profileImage && { profileImage }),
-    })
-  }
-
   const handleClose = () => {
     onClose()
   }
+  const isBusy = Boolean(isLoading || isSubmitting)
 
   const hasChanges =
     basePrompt.trim() !== chatroom?.basePrompt ||
@@ -56,7 +70,7 @@ export default function EditChatroomModal({
 
   return (
     <Modal isOpen={isOpen} onClose={handleClose} title="Edit Chatroom">
-      <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+      <form action={submitAction} className="flex flex-col gap-4">
         <ChatroomConfiguration
           nameFieldId="edit-chatroom-name"
           name={name}
@@ -71,6 +85,7 @@ export default function EditChatroomModal({
           onProfileImageChange={(e) => setProfileImage(e.target.files?.[0] || undefined)}
           onClearProfileImage={handleClearImage}
         />
+        {submitState.error ? <p className="text-sm text-red-600">{submitState.error}</p> : null}
 
         <ModalFooter
           className="w-full"
@@ -81,18 +96,18 @@ export default function EditChatroomModal({
                 type="button"
                 variant="danger"
                 onClick={() => onDelete(chatroom.id)}
-                disabled={isLoading}
+                disabled={isBusy}
               >
                 Delete
               </Button>
             )
           }
         >
-          <Button type="button" variant="secondary" onClick={handleClose} disabled={isLoading}>
+          <Button type="button" variant="secondary" onClick={handleClose} disabled={isBusy}>
             Cancel
           </Button>
-          <Button type="submit" variant="primary" disabled={isLoading || !hasChanges}>
-            {isLoading ? 'Saving...' : 'Save Changes'}
+          <Button type="submit" variant="primary" disabled={isBusy || !hasChanges}>
+            {isBusy ? 'Saving...' : 'Save Changes'}
           </Button>
         </ModalFooter>
       </form>

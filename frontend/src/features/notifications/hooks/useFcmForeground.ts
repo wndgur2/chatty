@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { useEffect, useEffectEvent, useState } from 'react'
 import { useParams } from 'react-router'
 import {
   getFirebaseApp,
@@ -47,10 +47,13 @@ function isMessageForActiveChatroom(
 export function useFcmForeground() {
   const [popup, setPopup] = useState<ForegroundPopupNotification | null>(null)
   const { id: routeChatroomId } = useParams<{ id?: string }>()
-  const routeChatroomIdRef = useRef<string | undefined>(undefined)
-  useLayoutEffect(() => {
-    routeChatroomIdRef.current = routeChatroomId
-  }, [routeChatroomId])
+  const handleForegroundMessage = useEffectEvent((payload: { data?: Record<string, string> }) => {
+    if (typeof document !== 'undefined' && document.visibilityState !== 'visible') return
+    const parsed = parseForegroundPayload(payload)
+    if (!parsed) return
+    if (isMessageForActiveChatroom(routeChatroomId, parsed.chatroomId)) return
+    setPopup(parsed)
+  })
 
   useEffect(() => {
     let cancelled = false
@@ -65,11 +68,7 @@ export function useFcmForeground() {
       const messaging = getMessagingInstance(app)
       unsubscribe = onForegroundMessage(messaging, (payload) => {
         console.log('onForegroundMessage', payload)
-        if (typeof document !== 'undefined' && document.visibilityState !== 'visible') return
-        const parsed = parseForegroundPayload(payload as { data?: Record<string, string> })
-        if (!parsed) return
-        if (isMessageForActiveChatroom(routeChatroomIdRef.current, parsed.chatroomId)) return
-        setPopup(parsed)
+        handleForegroundMessage(payload as { data?: Record<string, string> })
       })
     })()
 

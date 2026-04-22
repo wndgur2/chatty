@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useActionState, useState, useTransition } from 'react'
 import { Navigate, useNavigate } from 'react-router'
 import { ROUTES } from '../routes/paths'
 import Input from '../shared/ui/Input'
@@ -10,33 +10,31 @@ export default function LoginPage() {
   const navigate = useNavigate()
   const loginMutation = useLogin()
   const [username, setUsername] = useState('')
-  const [error, setError] = useState('')
+  const [isNavigating, startNavigationTransition] = useTransition()
+  const [loginState, submitLogin, isSubmitting] = useActionState(
+    async (_: { error: string }, formData: FormData) => {
+      const trimmed = String(formData.get('username') ?? '').trim()
+      if (!trimmed) {
+        return { error: 'Username is required.' }
+      }
+
+      try {
+        await loginMutation.mutateAsync({ username: trimmed })
+        startNavigationTransition(() => {
+          navigate(ROUTES.HOME, { replace: true, state: { fromLogin: true } })
+        })
+        return { error: '' }
+      } catch {
+        return { error: 'Login failed. Please try again.' }
+      }
+    },
+    { error: '' },
+  )
   const isAuthenticated = useAuthStore((state) => !!state.accessToken)
+  const isBusy = isSubmitting || loginMutation.isPending || isNavigating
 
   if (isAuthenticated) {
     return <Navigate to={ROUTES.HOME} replace />
-  }
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    const trimmed = username.trim()
-    if (!trimmed) {
-      setError('Username is required.')
-      return
-    }
-
-    setError('')
-    loginMutation.mutate(
-      { username: trimmed },
-      {
-        onSuccess: () => {
-          navigate(ROUTES.HOME, { replace: true, state: { fromLogin: true } })
-        },
-        onError: () => {
-          setError('Login failed. Please try again.')
-        },
-      },
-    )
   }
 
   return (
@@ -50,29 +48,30 @@ export default function LoginPage() {
           <p className="text-sm text-gray-500 mt-2">Sign in with your username to continue.</p>
         </div>
 
-        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+        <form action={submitLogin} className="flex flex-col gap-4">
           <div>
             <label htmlFor="username" className="block text-sm font-medium text-gray-700 mb-1">
               Username
             </label>
             <Input
               id="username"
+              name="username"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
               placeholder="my-username"
               autoComplete="username"
               autoFocus
-              error={error}
-              disabled={loginMutation.isPending}
+              error={loginState.error}
+              disabled={isBusy}
             />
           </div>
 
           <Button
             type="submit"
             variant="primary"
-            disabled={!username.trim() || loginMutation.isPending}
+            disabled={!username.trim() || isBusy}
           >
-            {loginMutation.isPending ? 'Signing in...' : 'Sign in'}
+            {isBusy ? 'Signing in...' : 'Sign in'}
           </Button>
         </form>
       </div>

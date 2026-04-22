@@ -28,7 +28,6 @@ Implementation rules:
 
 2. Performance and rendering
 - Minimize unnecessary rerenders, especially in chat message lists.
-- Use `useMemo`, `useCallback`, and `React.memo` where they reduce expensive rerenders.
 - For streamed message updates, patch only the target message state and avoid deep cloning large arrays per token/chunk.
 
 3. Data and async flow

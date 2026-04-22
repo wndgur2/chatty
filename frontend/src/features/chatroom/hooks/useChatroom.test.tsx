@@ -58,4 +58,37 @@ describe('chatroom mutation hooks', () => {
       expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: chatroomKeys.list() })
     })
   })
+
+  it('optimistically removes deleted room and restores on failure', async () => {
+    let rejectDelete: ((reason?: unknown) => void) | undefined
+    deleteSpy.mockImplementationOnce(
+      () =>
+        new Promise((_resolve, reject) => {
+          rejectDelete = reject
+        }),
+    )
+    const client = createTestQueryClient()
+    const wrapper = createWrapper(client)
+    client.setQueryData(chatroomKeys.list(), [
+      { id: 3, name: 'Room', basePrompt: 'prompt', profileImageUrl: null, createdAt: '2026-01-01' },
+    ])
+
+    const { result } = renderHook(() => useDeleteChatroom(), { wrapper })
+    result.current.mutate(3)
+
+    await waitFor(() => {
+      const optimisticList = client.getQueryData<Array<{ id: number }>>(chatroomKeys.list())
+      expect(optimisticList).toEqual([])
+    })
+
+    if (rejectDelete) {
+      rejectDelete(new Error('failed delete'))
+    }
+
+    await waitFor(() => {
+      const restoredList = client.getQueryData<Array<{ id: number; name: string }>>(chatroomKeys.list())
+      expect(restoredList?.[0]?.id).toBe(3)
+      expect(restoredList?.[0]?.name).toBe('Room')
+    })
+  })
 })

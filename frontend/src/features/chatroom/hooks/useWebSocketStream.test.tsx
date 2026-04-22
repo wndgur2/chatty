@@ -12,6 +12,7 @@ interface MockSocket {
   connected: boolean
   handlers: Record<string, SocketEventHandler>
   on: (event: string, handler: SocketEventHandler) => void
+  off: ReturnType<typeof vi.fn>
   emit: ReturnType<typeof vi.fn>
   disconnect: ReturnType<typeof vi.fn>
 }
@@ -22,6 +23,7 @@ const mockSocket: MockSocket = {
   on(event, handler) {
     this.handlers[event] = handler
   },
+  off: vi.fn(),
   emit: vi.fn(),
   disconnect: vi.fn(),
 }
@@ -41,6 +43,7 @@ describe('useWebSocketStream', () => {
     mockSocket.connected = false
     mockSocket.handlers = {}
     mockSocket.emit.mockClear()
+    mockSocket.off.mockClear()
     mockSocket.disconnect.mockClear()
   })
 

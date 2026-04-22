@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useTransition } from 'react'
 import { useNavigate } from 'react-router'
 import { ROUTES } from '../../../routes/paths'
 import type { CreateChatroomRequest } from '../../../types/api'
@@ -6,18 +6,18 @@ import { useCreateChatroom } from './useChatrooms'
 
 export const useCreateChatroomFlow = () => {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
+  const [isNavigating, startNavigationTransition] = useTransition()
   const navigate = useNavigate()
   const createChatroomMutation = useCreateChatroom()
 
   const closeCreateModal = () => setIsCreateModalOpen(false)
   const openCreateModal = () => setIsCreateModalOpen(true)
 
-  const handleCreateChatroom = (data: CreateChatroomRequest) => {
-    createChatroomMutation.mutate(data, {
-      onSuccess: (newChatroom) => {
-        closeCreateModal()
-        navigate(ROUTES.CHATROOM(newChatroom.id.toString()))
-      },
+  const handleCreateChatroom = async (data: CreateChatroomRequest) => {
+    const newChatroom = await createChatroomMutation.mutateAsync(data)
+    startNavigationTransition(() => {
+      closeCreateModal()
+      navigate(ROUTES.CHATROOM(newChatroom.id.toString()))
     })
   }
 
@@ -26,6 +26,6 @@ export const useCreateChatroomFlow = () => {
     openCreateModal,
     closeCreateModal,
     handleCreateChatroom,
-    isCreating: createChatroomMutation.isPending,
+    isCreating: createChatroomMutation.isPending || isNavigating,
   }
 }

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useTransition } from 'react'
 import { useNavigate } from 'react-router'
 import { useQueryClient } from '@tanstack/react-query'
 import ChatroomListItem from './ChatroomListItem'
@@ -21,12 +21,15 @@ export default function SideBar() {
     useCreateChatroomFlow()
   const setSidebarOpen = useUIStore((state) => state.setSidebarOpen)
   const [isLogoutConfirmOpen, setIsLogoutConfirmOpen] = useState(false)
+  const [isLoggingOut, startLogoutTransition] = useTransition()
 
   const handleLogout = () => {
     clearAuth()
     setSidebarOpen(false)
     queryClient.clear()
-    navigate(ROUTES.LOGIN, { replace: true })
+    startLogoutTransition(() => {
+      navigate(ROUTES.LOGIN, { replace: true })
+    })
   }
 
   return (
@@ -94,7 +97,12 @@ export default function SideBar() {
         className="p-4 border-t"
         style={{ borderColor: 'var(--border-color)' }}
       >
-        <Button variant="danger" className="w-full" onClick={() => setIsLogoutConfirmOpen(true)}>
+        <Button
+          variant="danger"
+          className="w-full"
+          onClick={() => setIsLogoutConfirmOpen(true)}
+          disabled={isLoggingOut}
+        >
           Logout
         </Button>
       </div>

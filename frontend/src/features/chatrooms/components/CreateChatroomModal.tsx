@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useActionState, useState } from 'react'
 import Modal from '../../../shared/ui/Modal'
 import Button from '../../../shared/ui/Button'
 import ModalFooter from '../../../shared/ui/ModalFooter'
@@ -9,7 +9,7 @@ import { useProfileImageInput } from '../hooks/useProfileImageInput'
 export interface CreateChatroomModalProps {
   isOpen: boolean
   onClose: () => void
-  onSubmit: (data: CreateChatroomRequest) => void
+  onSubmit: (data: CreateChatroomRequest) => Promise<void> | void
   isLoading?: boolean
 }
 
@@ -23,16 +23,28 @@ export default function CreateChatroomModal({
   const [basePrompt, setBasePrompt] = useState('')
   const { profileImage, setProfileImage, previewUrl, clearProfileImage, fileInputRef } =
     useProfileImageInput()
+  const [submitState, submitAction, isSubmitting] = useActionState(
+    async (_: { error: string }, formData: FormData) => {
+      const nextName = String(formData.get('name') ?? '').trim()
+      const nextBasePrompt = String(formData.get('basePrompt') ?? '').trim()
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!name.trim() || !basePrompt.trim() || isLoading) return
-    onSubmit({
-      name: name.trim(),
-      basePrompt: basePrompt.trim(),
-      ...(profileImage && { profileImage }),
-    })
-  }
+      if (!nextName || !nextBasePrompt || isLoading) {
+        return { error: 'Name and base prompt are required.' }
+      }
+
+      await Promise.resolve(
+        onSubmit({
+          name: nextName,
+          basePrompt: nextBasePrompt,
+          ...(profileImage && { profileImage }),
+        }),
+      )
+
+      return { error: '' }
+    },
+    { error: '' },
+  )
+  const isBusy = Boolean(isLoading || isSubmitting)
 
   const handleClearImage = () => {
     clearProfileImage()
@@ -48,7 +60,7 @@ export default function CreateChatroomModal({
 
   return (
     <Modal isOpen={isOpen} onClose={handleClose} title="Create Chatroom">
-      <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+      <form action={submitAction} className="flex flex-col gap-4">
         <ChatroomConfiguration
           nameFieldId="chatroom-name"
           name={name}
@@ -63,17 +75,18 @@ export default function CreateChatroomModal({
           onProfileImageChange={(e) => setProfileImage(e.target.files?.[0] || undefined)}
           onClearProfileImage={handleClearImage}
         />
+        {submitState.error ? <p className="text-sm text-red-600">{submitState.error}</p> : null}
 
         <ModalFooter>
-          <Button type="button" variant="secondary" onClick={handleClose} disabled={isLoading}>
+          <Button type="button" variant="secondary" onClick={handleClose} disabled={isBusy}>
             Cancel
           </Button>
           <Button
             type="submit"
             variant="primary"
-            disabled={!name.trim() || !basePrompt.trim() || isLoading}
+            disabled={!name.trim() || !basePrompt.trim() || isBusy}
           >
-            {isLoading ? 'Creating...' : 'Create'}
+            {isBusy ? 'Creating...' : 'Create'}
           </Button>
         </ModalFooter>
       </form>

@@ -28,7 +28,6 @@ The frontend architecture prioritizes performance optimization, strict TypeScrip
 
 ### Architectural Priorities
 
-- **Render Optimization:** Strategic use of state colocation and memoization (`useMemo`, `useCallback`, `React.memo`) to manage massive chat history arrays dynamically.
 - **Clean Abstractions:** Complex business logic and API connections are decoupled into centralized, generic custom hooks (`useChatrooms`, `useMessages`, `useNotifications`, etc.).
 - **Strict Typing:** All REST endpoints and WebSocket channels are guarded by explicit TypeScript interfaces (`src/types/api.ts`).
 

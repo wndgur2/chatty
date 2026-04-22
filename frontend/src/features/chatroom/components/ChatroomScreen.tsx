@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useTransition } from 'react'
 import { useNavigate } from 'react-router'
 import { MoreVertical, Copy, Split } from 'lucide-react'
 import { ROUTES } from '../../../routes/paths'
@@ -48,6 +48,7 @@ export default function ChatroomScreen({ chatroomId }: ChatroomScreenProps) {
   const [isBranchConfirmOpen, setIsBranchConfirmOpen] = useState(false)
   const [isCloneConfirmOpen, setIsCloneConfirmOpen] = useState(false)
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false)
+  const [isNavigating, startNavigationTransition] = useTransition()
 
   const isStreaming = !!streamingContent
   const isSendLocked =
@@ -108,22 +109,18 @@ export default function ChatroomScreen({ chatroomId }: ChatroomScreenProps) {
     })
   }
 
-  const handleEditChatroom = (roomId: number, data: UpdateChatroomRequest) => {
-    updateChatroomMutation.mutate(
-      { id: roomId, data },
-      {
-        onSuccess: () => {
-          setIsEditModalOpen(false)
-        },
-      },
-    )
+  const handleEditChatroom = async (roomId: number, data: UpdateChatroomRequest) => {
+    await updateChatroomMutation.mutateAsync({ id: roomId, data })
+    setIsEditModalOpen(false)
   }
 
   const handleBranch = () => {
     branchChatroomMutation.mutate(chatroomId, {
       onSuccess: (newRoom) => {
-        setIsBranchConfirmOpen(false)
-        navigate(ROUTES.CHATROOM(newRoom.id.toString()))
+        startNavigationTransition(() => {
+          setIsBranchConfirmOpen(false)
+          navigate(ROUTES.CHATROOM(newRoom.id.toString()))
+        })
       },
     })
   }
@@ -131,8 +128,10 @@ export default function ChatroomScreen({ chatroomId }: ChatroomScreenProps) {
   const handleClone = () => {
     cloneChatroomMutation.mutate(chatroomId, {
       onSuccess: (newRoom) => {
-        setIsCloneConfirmOpen(false)
-        navigate(ROUTES.CHATROOM(newRoom.id.toString()))
+        startNavigationTransition(() => {
+          setIsCloneConfirmOpen(false)
+          navigate(ROUTES.CHATROOM(newRoom.id.toString()))
+        })
       },
     })
   }
@@ -145,8 +144,10 @@ export default function ChatroomScreen({ chatroomId }: ChatroomScreenProps) {
   const handleConfirmDelete = () => {
     deleteChatroomMutation.mutate(chatroomId, {
       onSuccess: () => {
-        setIsDeleteConfirmOpen(false)
-        navigate(ROUTES.HOME)
+        startNavigationTransition(() => {
+          setIsDeleteConfirmOpen(false)
+          navigate(ROUTES.HOME)
+        })
       },
     })
   }
@@ -239,6 +240,7 @@ export default function ChatroomScreen({ chatroomId }: ChatroomScreenProps) {
       </div>
 
       <EditChatroomModal
+        key={`${chatroom.id}-${isEditModalOpen ? 'open' : 'closed'}`}
         isOpen={isEditModalOpen}
         onClose={() => setIsEditModalOpen(false)}
         onSubmit={handleEditChatroom}
@@ -253,8 +255,8 @@ export default function ChatroomScreen({ chatroomId }: ChatroomScreenProps) {
         onConfirm={handleBranch}
         title="Branch Chatroom"
         message="This will copy both configuration and chat history."
-        confirmText={branchChatroomMutation.isPending ? 'Branching...' : 'Branch'}
-        isLoading={branchChatroomMutation.isPending}
+        confirmText={branchChatroomMutation.isPending || isNavigating ? 'Branching...' : 'Branch'}
+        isLoading={branchChatroomMutation.isPending || isNavigating}
       />
 
       <ConfirmModal
@@ -263,8 +265,8 @@ export default function ChatroomScreen({ chatroomId }: ChatroomScreenProps) {
         onConfirm={handleClone}
         title="Clone Chatroom"
         message="This will clone only the configuration (prompt, profile image)."
-        confirmText={cloneChatroomMutation.isPending ? 'Cloning...' : 'Clone'}
-        isLoading={cloneChatroomMutation.isPending}
+        confirmText={cloneChatroomMutation.isPending || isNavigating ? 'Cloning...' : 'Clone'}
+        isLoading={cloneChatroomMutation.isPending || isNavigating}
       />
 
       <ConfirmModal
@@ -273,9 +275,9 @@ export default function ChatroomScreen({ chatroomId }: ChatroomScreenProps) {
         onConfirm={handleConfirmDelete}
         title="Delete Chatroom"
         message="Are you sure you want to delete this chatroom? This action cannot be undone."
-        confirmText={deleteChatroomMutation.isPending ? 'Deleting...' : 'Delete'}
+        confirmText={deleteChatroomMutation.isPending || isNavigating ? 'Deleting...' : 'Delete'}
         variant="danger"
-        isLoading={deleteChatroomMutation.isPending}
+        isLoading={deleteChatroomMutation.isPending || isNavigating}
       />
     </div>
   )
