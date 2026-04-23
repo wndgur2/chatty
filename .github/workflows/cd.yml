@@ -19,6 +19,13 @@ env:
   IMAGE_OWNER: ${{ github.repository_owner }}
   BACKEND_IMAGE_NAME: chatty-backend
   NGINX_IMAGE_NAME: chatty-nginx
+  VITE_API_URL: ${{ secrets.PUBLIC_ORIGIN }}
+  VITE_FIREBASE_API_KEY: ${{ secrets.VITE_FIREBASE_API_KEY }}
+  VITE_FIREBASE_AUTH_DOMAIN: ${{ secrets.VITE_FIREBASE_AUTH_DOMAIN }}
+  VITE_FIREBASE_PROJECT_ID: ${{ secrets.VITE_FIREBASE_PROJECT_ID }}
+  VITE_FIREBASE_MESSAGING_SENDER_ID: ${{ secrets.VITE_FIREBASE_MESSAGING_SENDER_ID }}
+  VITE_FIREBASE_APP_ID: ${{ secrets.VITE_FIREBASE_APP_ID }}
+  VITE_FCM_VAPID_KEY: ${{ secrets.VITE_FCM_VAPID_KEY }}
 
 jobs:
   build-and-push:
@@ -67,6 +74,13 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
+      - name: Validate frontend build args
+        run: |
+          if [ -z "${VITE_API_URL}" ]; then
+            echo "PUBLIC_ORIGIN secret must be set for VITE_API_URL."
+            exit 1
+          fi
+
       - name: Build and push nginx image
         uses: docker/build-push-action@v6
         with:
@@ -77,6 +91,14 @@ jobs:
           tags: |
             ${{ steps.meta.outputs.nginx_image }}:${{ steps.meta.outputs.image_tag }}
             ${{ steps.meta.outputs.nginx_image }}:latest
+          build-args: |
+            VITE_API_URL=${{ env.VITE_API_URL }}
+            VITE_FIREBASE_API_KEY=${{ env.VITE_FIREBASE_API_KEY }}
+            VITE_FIREBASE_AUTH_DOMAIN=${{ env.VITE_FIREBASE_AUTH_DOMAIN }}
+            VITE_FIREBASE_PROJECT_ID=${{ env.VITE_FIREBASE_PROJECT_ID }}
+            VITE_FIREBASE_MESSAGING_SENDER_ID=${{ env.VITE_FIREBASE_MESSAGING_SENDER_ID }}
+            VITE_FIREBASE_APP_ID=${{ env.VITE_FIREBASE_APP_ID }}
+            VITE_FCM_VAPID_KEY=${{ env.VITE_FCM_VAPID_KEY }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
