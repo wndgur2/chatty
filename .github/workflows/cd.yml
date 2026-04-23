@@ -19,6 +19,7 @@ env:
   IMAGE_OWNER: ${{ github.repository_owner }}
   BACKEND_IMAGE_NAME: chatty-backend
   NGINX_IMAGE_NAME: chatty-nginx
+  VITE_RELEASE_SHA: ${{ github.sha }}
   VITE_API_URL: ${{ secrets.PUBLIC_ORIGIN }}
   VITE_FIREBASE_API_KEY: ${{ secrets.VITE_FIREBASE_API_KEY }}
   VITE_FIREBASE_AUTH_DOMAIN: ${{ secrets.VITE_FIREBASE_AUTH_DOMAIN }}
@@ -46,7 +47,9 @@ jobs:
         run: |
           OWNER_LOWER="$(echo "${IMAGE_OWNER}" | tr '[:upper:]' '[:lower:]')"
           IMAGE_TAG="${GITHUB_SHA}"
+          RELEASE_BUILT_AT="$(date -u +'%Y-%m-%dT%H:%M:%SZ')"
           echo "image_tag=${IMAGE_TAG}" >> "$GITHUB_OUTPUT"
+          echo "release_built_at=${RELEASE_BUILT_AT}" >> "$GITHUB_OUTPUT"
           echo "backend_image=${REGISTRY}/${OWNER_LOWER}/${BACKEND_IMAGE_NAME}" >> "$GITHUB_OUTPUT"
           echo "nginx_image=${REGISTRY}/${OWNER_LOWER}/${NGINX_IMAGE_NAME}" >> "$GITHUB_OUTPUT"
 
@@ -94,6 +97,8 @@ jobs:
             ${{ steps.meta.outputs.nginx_image }}:${{ steps.meta.outputs.image_tag }}
             ${{ steps.meta.outputs.nginx_image }}:latest
           build-args: |
+            VITE_RELEASE_SHA=${{ env.VITE_RELEASE_SHA }}
+            VITE_RELEASE_BUILT_AT=${{ steps.meta.outputs.release_built_at }}
             VITE_API_URL=${{ env.VITE_API_URL }}
             VITE_FIREBASE_API_KEY=${{ env.VITE_FIREBASE_API_KEY }}
             VITE_FIREBASE_AUTH_DOMAIN=${{ env.VITE_FIREBASE_AUTH_DOMAIN }}

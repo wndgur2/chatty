@@ -11,12 +11,29 @@ import { useFcmForeground } from '../features/notifications/hooks/useFcmForegrou
 import { useUIStore } from '../shared/stores/uiStore'
 import GithubLink from '../shared/ui/GithubLink'
 
+const releaseSha = import.meta.env.VITE_RELEASE_SHA?.slice(0, 7)
+const releaseBuiltAtValue = import.meta.env.VITE_RELEASE_BUILT_AT
+
+function formatReleaseBuiltAt(value: string): string {
+  const parsed = new Date(value)
+  if (Number.isNaN(parsed.getTime())) {
+    return value
+  }
+
+  return parsed.toISOString().replace('T', ' ').replace('.000Z', ' UTC')
+}
+
 export default function DefaultLayout() {
   const navigate = useNavigate()
   const { popup, clearPopup, getPopupChatroomPath } = useFcmForeground()
   const isSidebarOpen = useUIStore((state) => state.isSidebarOpen)
   const toggleSidebar = useUIStore((state) => state.toggleSidebar)
   const setSidebarOpen = useUIStore((state) => state.setSidebarOpen)
+  const formattedBuiltAt = releaseBuiltAtValue ? formatReleaseBuiltAt(releaseBuiltAtValue) : null
+  const releaseLabel =
+    releaseSha && formattedBuiltAt
+      ? `sha:${releaseSha} • built:${formattedBuiltAt}`
+      : null
 
   useEffect(() => {
     if (!popup) return
@@ -112,7 +129,12 @@ export default function DefaultLayout() {
                 height={32}
                 aria-hidden
               />
-              <h1 className="font-bold tracking-tight text-xl text-gray-900">Chatty</h1>
+              <div className="flex flex-col">
+                <h1 className="font-bold tracking-tight text-xl text-gray-900 leading-tight">Chatty</h1>
+                {releaseLabel ? (
+                  <span className="text-[10px] text-gray-500 leading-tight">{releaseLabel}</span>
+                ) : null}
+              </div>
             </Link>
           </div>
 

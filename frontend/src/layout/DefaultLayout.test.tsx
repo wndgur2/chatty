@@ -1,6 +1,5 @@
 import { fireEvent, render, screen } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import DefaultLayout from './DefaultLayout'
 
 const navigateSpy = vi.hoisted(() => vi.fn())
 const useFcmForegroundSpy = vi.hoisted(() => vi.fn())
@@ -50,7 +49,14 @@ vi.mock('../features/notifications/components/ForegroundNotificationPopup', () =
 vi.mock('../shared/ui/GithubLink', () => ({ default: () => <div>github-link</div> }))
 
 describe('DefaultLayout', () => {
+  const loadDefaultLayout = async () => {
+    const mod = await import('./DefaultLayout')
+    return mod.default
+  }
+
   beforeEach(() => {
+    vi.resetModules()
+    vi.unstubAllEnvs()
     navigateSpy.mockReset()
     clearPopupSpy.mockReset()
     getPopupChatroomPathSpy.mockReset()
@@ -70,7 +76,8 @@ describe('DefaultLayout', () => {
     )
   })
 
-  it('renders shell and navigates when foreground popup is clicked', () => {
+  it('renders shell and navigates when foreground popup is clicked', async () => {
+    const DefaultLayout = await loadDefaultLayout()
     getPopupChatroomPathSpy.mockReturnValue('/chat/2')
     render(<DefaultLayout />)
 
@@ -79,5 +86,23 @@ describe('DefaultLayout', () => {
     fireEvent.click(screen.getByText('AI:Hi'))
     expect(navigateSpy).toHaveBeenCalledWith('/chat/2')
     expect(clearPopupSpy).toHaveBeenCalled()
+  })
+
+  it('renders release metadata when release env variables exist', async () => {
+    vi.stubEnv('VITE_RELEASE_SHA', '1a2b3c4d5e6f')
+    vi.stubEnv('VITE_RELEASE_BUILT_AT', '2026-04-23T12:34:56Z')
+    const DefaultLayout = await loadDefaultLayout()
+
+    render(<DefaultLayout />)
+
+    expect(screen.getByText('sha:1a2b3c4 • built:2026-04-23 12:34:56 UTC')).toBeTruthy()
+  })
+
+  it('hides release metadata when release env variables are missing', async () => {
+    const DefaultLayout = await loadDefaultLayout()
+
+    render(<DefaultLayout />)
+
+    expect(screen.queryByText(/sha:/i)).toBeNull()
   })
 })
