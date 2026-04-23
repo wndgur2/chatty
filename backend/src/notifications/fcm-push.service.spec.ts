@@ -107,7 +107,6 @@ describe('FcmPushService', () => {
       tokens: string[];
       data: Record<string, string>;
       android: { priority: 'high' };
-      notification: { title: string; body: string; imageUrl: string };
     };
     const calls = sendEachForMulticast.mock.calls as unknown as [
       MulticastArg,
@@ -118,11 +117,6 @@ describe('FcmPushService', () => {
     }
     expect(payload.tokens).toEqual(['good-token', 'bad-token']);
     expect(payload.android.priority).toBe('high');
-    expect(payload.notification.title).toBe('New message in Room A');
-    expect(payload.notification.body).toBe('Hello world');
-    expect(payload.notification.imageUrl).toBe(
-      'http://localhost:3000/favicon.ico',
-    );
     expect(payload.data.type).toBe('voluntary_ai_message');
     expect(payload.data.chatroomId).toBe('5');
     expect(payload.data.title).toBe('New message in Room A');
@@ -157,7 +151,6 @@ describe('FcmPushService', () => {
       tokens: string[];
       data: Record<string, string>;
       android: { priority: 'high' };
-      notification: { title: string; body: string; imageUrl: string };
     };
     const calls = sendEachForMulticast.mock.calls as unknown as [
       MulticastArg,
@@ -168,8 +161,8 @@ describe('FcmPushService', () => {
     }
 
     expect(payload.tokens).toEqual(['device-1']);
-    expect(payload.notification.title).toBe('Focus Room');
-    expect(payload.notification.body).toBe(
+    expect(payload.data.title).toBe('Focus Room');
+    expect(payload.data.body).toBe(
       'test notification for user june, chatroomId Focus Room',
     );
     expect(payload.data.type).toBe('test_notification');

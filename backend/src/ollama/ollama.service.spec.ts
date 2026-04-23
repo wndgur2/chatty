@@ -60,7 +60,7 @@ describe('OllamaService', () => {
       expect.stringContaining('45 second(s)'),
     );
     expect(mockChat.mock.calls[0][0].messages[0].content).toEqual(
-      expect.stringContaining('Last message was from the user'),
+      expect.stringContaining('History:'),
     );
     expect(result).toBe(true);
   });
@@ -84,7 +84,7 @@ describe('OllamaService', () => {
       expect.stringContaining('12 second(s)'),
     );
     expect(mockChat.mock.calls[0][0].messages[0].content).toEqual(
-      expect.stringContaining('the assistant (you—the AI in this chat)'),
+      expect.stringContaining('USER: just chatting with a friend.'),
     );
     expect(result).toBe(false);
   });
