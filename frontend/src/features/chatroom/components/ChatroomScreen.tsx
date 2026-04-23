@@ -1,23 +1,14 @@
-import { useState, useRef, useEffect, useOptimistic, useTransition } from 'react'
-import { useNavigate } from 'react-router'
+import { useRef } from 'react'
 import { MoreVertical, Copy, Split } from 'lucide-react'
-import { ROUTES } from '../../../routes/paths'
 import Button from '../../../shared/ui/Button'
-import type { Message, UpdateChatroomRequest } from '../../../types/api'
 import ConfirmModal from '../../../shared/ui/ConfirmModal'
 import MessageList from './MessageList'
 import Composer from './Composer'
-
-import {
-  useChatroom,
-  useUpdateChatroom,
-  useDeleteChatroom,
-  useBranchChatroom,
-  useCloneChatroom,
-} from '../hooks/useChatroom'
-
-import { useMessages, useSendMessage } from '../hooks/useMessages'
-
+import { useChatroom } from '../hooks/useChatroom'
+import { useMessages } from '../hooks/useMessages'
+import { useChatroomActions } from '../hooks/useChatroomActions'
+import { useChatroomMessageComposer } from '../hooks/useChatroomMessageComposer'
+import { useMessageAutoScroll } from '../hooks/useMessageAutoScroll'
 import { useWebSocketStream } from '../hooks/useWebSocketStream'
 import EditChatroomModal from './EditChatroomModal'
 
@@ -26,150 +17,52 @@ export interface ChatroomScreenProps {
 }
 
 export default function ChatroomScreen({ chatroomId }: ChatroomScreenProps) {
-  const navigate = useNavigate()
-
   const { data: chatroom, isLoading: isChatroomLoading } = useChatroom(chatroomId)
   const { data: messages = [], isLoading: isMessagesLoading } = useMessages(chatroomId)
   const { isTyping, streamingContent } = useWebSocketStream(chatroomId)
-
-  const sendMessageMutation = useSendMessage()
-  const updateChatroomMutation = useUpdateChatroom()
-  const deleteChatroomMutation = useDeleteChatroom()
-  const branchChatroomMutation = useBranchChatroom()
-  const cloneChatroomMutation = useCloneChatroom()
-
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false)
-  const [inputValue, setInputValue] = useState('')
-  const [isWaitingForResponse, setIsWaitingForResponse] = useState(false)
-  const messagesScrollRef = useRef<HTMLDivElement>(null)
-  const messagesEndRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
 
-  const [isBranchConfirmOpen, setIsBranchConfirmOpen] = useState(false)
-  const [isCloneConfirmOpen, setIsCloneConfirmOpen] = useState(false)
-  const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false)
-  const [isNavigating, startNavigationTransition] = useTransition()
-  const [, startSendTransition] = useTransition()
-  const nextTempMessageIdRef = useRef(-1)
+  const {
+    inputValue,
+    setInputValue,
+    displayMessages,
+    isSendLocked,
+    isLoadingIndicatorVisible,
+    sendMessageMutation,
+    handleSendMessage,
+  } = useChatroomMessageComposer({
+    chatroomId,
+    messages,
+    isTyping,
+    streamingContent,
+  })
 
-  const [displayMessages, addOptimisticMessage] = useOptimistic(messages, (current, optimistic: Message) => [
-    ...current,
-    optimistic,
-  ])
+  const {
+    isEditModalOpen,
+    setIsEditModalOpen,
+    isBranchConfirmOpen,
+    setIsBranchConfirmOpen,
+    isCloneConfirmOpen,
+    setIsCloneConfirmOpen,
+    isDeleteConfirmOpen,
+    setIsDeleteConfirmOpen,
+    isNavigating,
+    updateChatroomMutation,
+    deleteChatroomMutation,
+    branchChatroomMutation,
+    cloneChatroomMutation,
+    handleEditChatroom,
+    handleBranch,
+    handleClone,
+    handleDeleteRequest,
+    handleConfirmDelete,
+  } = useChatroomActions(chatroomId)
 
-  const isStreaming = !!streamingContent
-  const isSendLocked =
-    sendMessageMutation.isPending || isWaitingForResponse || isTyping || isStreaming
-
-  const scrollToBottom = (behavior: ScrollBehavior = 'smooth') => {
-    messagesEndRef.current?.scrollIntoView({ behavior })
-  }
-
-  const isNearBottom = () => {
-    const container = messagesScrollRef.current
-    if (!container) return true
-
-    const distanceFromBottom = container.scrollHeight - container.scrollTop - container.clientHeight
-    return distanceFromBottom < 120
-  }
-
-  useEffect(() => {
-    let timeoutId: ReturnType<typeof setTimeout>
-    if (isStreaming) {
-      timeoutId = setTimeout(() => setIsWaitingForResponse(false), 0)
-    } else if (isWaitingForResponse && displayMessages.length > 0) {
-      const lastMsg = displayMessages[displayMessages.length - 1]
-      if (lastMsg?.sender === 'ai') {
-        timeoutId = setTimeout(() => setIsWaitingForResponse(false), 0)
-      }
-    }
-
-    return () => {
-      if (timeoutId) clearTimeout(timeoutId)
-    }
-  }, [displayMessages, isStreaming, isWaitingForResponse])
-
-  useEffect(() => {
-    scrollToBottom('smooth')
-  }, [displayMessages, sendMessageMutation.isPending, isTyping, isWaitingForResponse])
-
-  const handleComposerFocus = () => {
-    if (!isNearBottom()) return
-    scrollToBottom('auto')
-    setTimeout(() => scrollToBottom('smooth'), 300)
-  }
-
-  const handleSendMessage = (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!inputValue.trim() || isSendLocked) return
-
-    const content = inputValue.trim()
-    const tempId = nextTempMessageIdRef.current--
-    const optimisticMessage = {
-      id: tempId,
-      sender: 'user' as const,
-      content,
-      createdAt: new Date().toISOString(),
-    }
-
-    startSendTransition(async () => {
-      addOptimisticMessage(optimisticMessage)
-      setIsWaitingForResponse(true)
-      try {
-        await sendMessageMutation.mutateAsync({
-          chatroomId,
-          request: { content },
-        })
-      } catch {
-        setIsWaitingForResponse(false)
-      }
-    })
-    setInputValue('')
-    inputRef.current?.blur()
-  }
-
-  const handleEditChatroom = async (roomId: number, data: UpdateChatroomRequest) => {
-    await updateChatroomMutation.mutateAsync({ id: roomId, data })
-    setIsEditModalOpen(false)
-  }
-
-  const handleBranch = () => {
-    branchChatroomMutation.mutate(chatroomId, {
-      onSuccess: (newRoom) => {
-        startNavigationTransition(() => {
-          setIsBranchConfirmOpen(false)
-          navigate(ROUTES.CHATROOM(newRoom.id.toString()))
-        })
-      },
-    })
-  }
-
-  const handleClone = () => {
-    cloneChatroomMutation.mutate(chatroomId, {
-      onSuccess: (newRoom) => {
-        startNavigationTransition(() => {
-          setIsCloneConfirmOpen(false)
-          navigate(ROUTES.CHATROOM(newRoom.id.toString()))
-        })
-      },
-    })
-  }
-
-  const handleDeleteRequest = () => {
-    setIsEditModalOpen(false)
-    setIsDeleteConfirmOpen(true)
-  }
-
-  const handleConfirmDelete = () => {
-    deleteChatroomMutation.mutate(chatroomId, {
-      onSuccess: () => {
-        startNavigationTransition(() => {
-          setIsDeleteConfirmOpen(false)
-          navigate(ROUTES.HOME)
-        })
-      },
-    })
-  }
+  const { messagesScrollRef, messagesEndRef, handleComposerFocus } = useMessageAutoScroll({
+    displayMessagesCount: displayMessages.length,
+    isSending: sendMessageMutation.isPending,
+    isTyping,
+  })
 
   if (isChatroomLoading) {
     return <div className="flex-1 flex items-center justify-center">Loading...</div>
@@ -226,9 +119,7 @@ export default function ChatroomScreen({ chatroomId }: ChatroomScreenProps) {
           chatroom={chatroom}
           messages={displayMessages}
           isMessagesLoading={isMessagesLoading}
-          isLoadingIndicatorVisible={
-            (sendMessageMutation.isPending || isWaitingForResponse || isTyping) && !isStreaming
-          }
+          isLoadingIndicatorVisible={isLoadingIndicatorVisible}
           streamingContent={streamingContent}
         />
         <div className="max-w-4xl mx-auto">
@@ -249,7 +140,7 @@ export default function ChatroomScreen({ chatroomId }: ChatroomScreenProps) {
           isSendLocked={isSendLocked}
           onInputChange={setInputValue}
           onInputFocus={handleComposerFocus}
-          onSubmit={handleSendMessage}
+          onSubmit={(event) => handleSendMessage(event, inputRef)}
         />
         <div className="text-center mt-2">
           <span className="text-[10px] text-gray-400">
