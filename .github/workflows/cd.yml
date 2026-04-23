@@ -31,6 +31,8 @@ jobs:
   build-and-push:
     name: build-and-push
     runs-on: ubuntu-latest
+    environment:
+      name: production
     outputs:
       image_tag: ${{ steps.meta.outputs.image_tag }}
       backend_image: ${{ steps.meta.outputs.backend_image }}
