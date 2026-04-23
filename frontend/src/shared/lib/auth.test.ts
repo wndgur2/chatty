@@ -19,11 +19,11 @@ vi.mock('../stores/authStore', () => ({
 describe('auth helpers', () => {
   const state = {
     accessToken: null as string | null,
-    user: null as { id: number; email: string; name: string } | null,
+    user: null as { id: string; username: string } | null,
     setAccessToken: vi.fn((token: string) => {
       state.accessToken = token
     }),
-    setCurrentUser: vi.fn((user: { id: number; email: string; name: string }) => {
+    setCurrentUser: vi.fn((user: { id: string; username: string }) => {
       state.user = user
     }),
     clearAuth: vi.fn(() => {
@@ -49,7 +49,7 @@ describe('auth helpers', () => {
   })
 
   it('sets and reads current user', () => {
-    const user = { id: 3, email: 'u@chatty.test', name: 'User' }
+    const user = { id: '3', username: 'user' }
     setCurrentUser(user)
     expect(state.setCurrentUser).toHaveBeenCalledWith(user)
     expect(getCurrentUser()).toEqual(user)
@@ -57,7 +57,7 @@ describe('auth helpers', () => {
 
   it('clears auth state', () => {
     setAccessToken('token-2')
-    setCurrentUser({ id: 7, email: 'a@b.com', name: 'Admin' })
+    setCurrentUser({ id: '7', username: 'admin' })
     clearAuth()
     expect(state.clearAuth).toHaveBeenCalledTimes(1)
     expect(isAuthenticated()).toBe(false)
