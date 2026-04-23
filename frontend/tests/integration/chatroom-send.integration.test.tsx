@@ -55,6 +55,7 @@ vi.mock('../../src/features/chatroom/hooks/useMessages', () => ({
   }),
   useSendMessage: () => ({
     mutate: sendMutateSpy,
+    mutateAsync: sendMutateSpy,
     isPending: sendPending,
   }),
 }))
