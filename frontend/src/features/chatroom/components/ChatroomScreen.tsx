@@ -20,7 +20,7 @@ export default function ChatroomScreen({ chatroomId }: ChatroomScreenProps) {
   const { data: chatroom, isLoading: isChatroomLoading } = useChatroom(chatroomId)
   const { data: messages = [], isLoading: isMessagesLoading } = useMessages(chatroomId)
   const { isTyping, streamingContent } = useWebSocketStream(chatroomId)
-  const inputRef = useRef<HTMLInputElement>(null)
+  const inputRef = useRef<HTMLTextAreaElement>(null)
 
   const {
     inputValue,
@@ -128,10 +128,10 @@ export default function ChatroomScreen({ chatroomId }: ChatroomScreenProps) {
       </div>
 
       <div
-        className="p-4 bg-white border-t shrink-0 z-10"
+        className="px-3 sm:px-4 pt-3 pb-2 bg-white border-t shrink-0 z-10"
         style={{
           borderColor: 'var(--border-color)',
-          paddingBottom: 'calc(1rem + env(safe-area-inset-bottom, 0px))',
+          paddingBottom: 'calc(0.5rem + env(safe-area-inset-bottom, 0px))',
         }}
       >
         <Composer
@@ -142,8 +142,8 @@ export default function ChatroomScreen({ chatroomId }: ChatroomScreenProps) {
           onInputFocus={handleComposerFocus}
           onSubmit={(event) => handleSendMessage(event, inputRef)}
         />
-        <div className="text-center mt-2">
-          <span className="text-[10px] text-gray-400">
+        <div className="text-center mt-1.5 mb-0.5 px-4">
+          <span className="text-[11px] text-gray-400 leading-snug">
             Chatty can make mistakes. Consider verifying important information.
           </span>
         </div>

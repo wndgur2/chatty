@@ -13,7 +13,7 @@ const SIZE_STYLES = {
   },
   medium: {
     wrapper:
-      'inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-sm text-gray-500 hover:text-gray-700 hover:bg-gray-100',
+      'inline-flex items-center gap-1.5 rounded-md px-2 py-1 md:px-2.5 text-sm text-gray-500 hover:text-gray-700 hover:bg-gray-100',
     icon: 'h-4 w-4',
   },
 } as const
@@ -28,9 +28,10 @@ export default function GithubLink({ size = 'small', className = '' }: GithubLin
       rel="noreferrer"
       className={`${style.wrapper} transition-colors ${className}`.trim()}
       aria-label="Visit wndgur2 GitHub profile"
+      title="wndgur2 on GitHub"
     >
       <img src={githubLogo} alt="" className={style.icon} aria-hidden="true" />
-      <span>wndgur2</span>
+      <span className={size === 'medium' ? 'hidden sm:inline' : ''}>wndgur2</span>
     </a>
   )
 }
