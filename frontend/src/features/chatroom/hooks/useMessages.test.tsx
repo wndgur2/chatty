@@ -49,13 +49,9 @@ describe('useSendMessage', () => {
     expect(getMessagesQueryKey(12)[0]).toBe('messages')
   })
 
-  it('adds optimistic user message and rolls back on failure', async () => {
-    let rejectRequest: ((reason?: unknown) => void) | undefined
+  it('does not mutate cache optimistically before request resolves', async () => {
     sendMessageSpy.mockImplementationOnce(
-      () =>
-        new Promise((_resolve, reject) => {
-          rejectRequest = reject
-        }),
+      () => new Promise(() => {}),
     )
     const client = createTestQueryClient()
     const localWrapper = ({ children }: { children: ReactNode }) => (
@@ -71,23 +67,10 @@ describe('useSendMessage', () => {
     })
 
     await waitFor(() => {
-      const optimisticMessages = client.getQueryData<
+      const cachedMessages = client.getQueryData<
         Array<{ id: number; sender: 'ai' | 'user'; content: string; createdAt: string }>
       >(queryKey)
-      expect(optimisticMessages?.some((message) => message.content === 'hello optimistic')).toBe(true)
-    })
-
-    act(() => {
-      if (rejectRequest) {
-        rejectRequest(new Error('network error'))
-      }
-    })
-
-    await waitFor(() => {
-      const rolledBackMessages = client.getQueryData<
-        Array<{ id: number; sender: 'ai' | 'user'; content: string; createdAt: string }>
-      >(queryKey)
-      expect(rolledBackMessages).toEqual([
+      expect(cachedMessages).toEqual([
         { id: 1, sender: 'ai', content: 'ready', createdAt: '2026-01-01' },
       ])
     })

@@ -1,9 +1,9 @@
-import { useState, useRef, useEffect, useTransition } from 'react'
+import { useState, useRef, useEffect, useOptimistic, useTransition } from 'react'
 import { useNavigate } from 'react-router'
 import { MoreVertical, Copy, Split } from 'lucide-react'
 import { ROUTES } from '../../../routes/paths'
 import Button from '../../../shared/ui/Button'
-import type { UpdateChatroomRequest } from '../../../types/api'
+import type { Message, UpdateChatroomRequest } from '../../../types/api'
 import ConfirmModal from '../../../shared/ui/ConfirmModal'
 import MessageList from './MessageList'
 import Composer from './Composer'
@@ -49,6 +49,13 @@ export default function ChatroomScreen({ chatroomId }: ChatroomScreenProps) {
   const [isCloneConfirmOpen, setIsCloneConfirmOpen] = useState(false)
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false)
   const [isNavigating, startNavigationTransition] = useTransition()
+  const [, startSendTransition] = useTransition()
+  const nextTempMessageIdRef = useRef(-1)
+
+  const [displayMessages, addOptimisticMessage] = useOptimistic(messages, (current, optimistic: Message) => [
+    ...current,
+    optimistic,
+  ])
 
   const isStreaming = !!streamingContent
   const isSendLocked =
@@ -70,8 +77,8 @@ export default function ChatroomScreen({ chatroomId }: ChatroomScreenProps) {
     let timeoutId: ReturnType<typeof setTimeout>
     if (isStreaming) {
       timeoutId = setTimeout(() => setIsWaitingForResponse(false), 0)
-    } else if (isWaitingForResponse && messages.length > 0) {
-      const lastMsg = messages[messages.length - 1]
+    } else if (isWaitingForResponse && displayMessages.length > 0) {
+      const lastMsg = displayMessages[displayMessages.length - 1]
       if (lastMsg?.sender === 'ai') {
         timeoutId = setTimeout(() => setIsWaitingForResponse(false), 0)
       }
@@ -80,11 +87,11 @@ export default function ChatroomScreen({ chatroomId }: ChatroomScreenProps) {
     return () => {
       if (timeoutId) clearTimeout(timeoutId)
     }
-  }, [messages, isStreaming, isWaitingForResponse])
+  }, [displayMessages, isStreaming, isWaitingForResponse])
 
   useEffect(() => {
     scrollToBottom('smooth')
-  }, [messages, sendMessageMutation.isPending, isTyping, isWaitingForResponse])
+  }, [displayMessages, sendMessageMutation.isPending, isTyping, isWaitingForResponse])
 
   const handleComposerFocus = () => {
     if (!isNearBottom()) return
@@ -97,16 +104,28 @@ export default function ChatroomScreen({ chatroomId }: ChatroomScreenProps) {
     if (!inputValue.trim() || isSendLocked) return
 
     const content = inputValue.trim()
+    const tempId = nextTempMessageIdRef.current--
+    const optimisticMessage = {
+      id: tempId,
+      sender: 'user' as const,
+      content,
+      createdAt: new Date().toISOString(),
+    }
+
+    startSendTransition(async () => {
+      addOptimisticMessage(optimisticMessage)
+      setIsWaitingForResponse(true)
+      try {
+        await sendMessageMutation.mutateAsync({
+          chatroomId,
+          request: { content },
+        })
+      } catch {
+        setIsWaitingForResponse(false)
+      }
+    })
     setInputValue('')
     inputRef.current?.blur()
-    setIsWaitingForResponse(true)
-
-    // In a real app we might rely entirely on websockets returning the message,
-    // but here we wait for the HTTP fallback or rely on invalidateQueries
-    sendMessageMutation.mutate({
-      chatroomId,
-      request: { content },
-    })
   }
 
   const handleEditChatroom = async (roomId: number, data: UpdateChatroomRequest) => {
@@ -205,7 +224,7 @@ export default function ChatroomScreen({ chatroomId }: ChatroomScreenProps) {
       <div ref={messagesScrollRef} className="flex-1 min-h-0 overflow-y-auto px-4 py-6 sm:px-6">
         <MessageList
           chatroom={chatroom}
-          messages={messages}
+          messages={displayMessages}
           isMessagesLoading={isMessagesLoading}
           isLoadingIndicatorVisible={
             (sendMessageMutation.isPending || isWaitingForResponse || isTyping) && !isStreaming
