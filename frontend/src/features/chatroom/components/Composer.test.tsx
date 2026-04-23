@@ -7,7 +7,7 @@ describe('Composer', () => {
   it('disables submit button when input is blank', () => {
     render(
       <Composer
-        inputRef={createRef<HTMLInputElement>()}
+        inputRef={createRef<HTMLTextAreaElement>()}
         inputValue="   "
         isSendLocked={false}
         onInputChange={vi.fn()}
@@ -15,7 +15,7 @@ describe('Composer', () => {
       />,
     )
 
-    expect(screen.getByRole('button').hasAttribute('disabled')).toBe(true)
+    expect(screen.getByRole('button', { name: 'Send message' }).hasAttribute('disabled')).toBe(true)
   })
 
   it('calls callbacks for typing and submit', () => {
@@ -24,7 +24,7 @@ describe('Composer', () => {
 
     render(
       <Composer
-        inputRef={createRef<HTMLInputElement>()}
+        inputRef={createRef<HTMLTextAreaElement>()}
         inputValue="hello"
         isSendLocked={false}
         onInputChange={handleInputChange}
@@ -33,9 +33,23 @@ describe('Composer', () => {
     )
 
     fireEvent.change(screen.getByPlaceholderText('Message Chatty...'), { target: { value: 'new value' } })
-    fireEvent.submit(screen.getByRole('button').closest('form') as HTMLFormElement)
+    fireEvent.submit(screen.getByRole('button', { name: 'Send message' }).closest('form') as HTMLFormElement)
 
     expect(handleInputChange).toHaveBeenCalledWith('new value')
     expect(handleSubmit).toHaveBeenCalledTimes(1)
+  })
+
+  it('expands textarea rows up to 6 lines', () => {
+    render(
+      <Composer
+        inputRef={createRef<HTMLTextAreaElement>()}
+        inputValue={'1\n2\n3\n4\n5\n6\n7'}
+        isSendLocked={false}
+        onInputChange={vi.fn()}
+        onSubmit={vi.fn()}
+      />,
+    )
+
+    expect(screen.getByPlaceholderText('Message Chatty...').getAttribute('rows')).toBe('6')
   })
 })

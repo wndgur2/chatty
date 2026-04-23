@@ -20,7 +20,7 @@ function formatReleaseBuiltAt(value: string): string {
     return value
   }
 
-  return parsed.toISOString().replace('T', ' ').replace('.000Z', ' UTC')
+  return parsed.toISOString().replace('T', ' ').replace('.000Z', '')
 }
 
 export default function DefaultLayout() {
@@ -30,10 +30,7 @@ export default function DefaultLayout() {
   const toggleSidebar = useUIStore((state) => state.toggleSidebar)
   const setSidebarOpen = useUIStore((state) => state.setSidebarOpen)
   const formattedBuiltAt = releaseBuiltAtValue ? formatReleaseBuiltAt(releaseBuiltAtValue) : null
-  const releaseLabel =
-    releaseSha && formattedBuiltAt
-      ? `sha:${releaseSha} • built:${formattedBuiltAt}`
-      : null
+  const releaseLabel = releaseSha && formattedBuiltAt ? `${releaseSha} • ${formattedBuiltAt}` : null
 
   useEffect(() => {
     if (!popup) return
@@ -108,31 +105,36 @@ export default function DefaultLayout() {
       <div className="flex flex-1 flex-col min-h-0 overflow-hidden relative w-full">
         {/* Header */}
         <header
-          className="h-16 flex items-center justify-between px-4 md:px-6 border-b shrink-0 gap-4 bg-white z-30"
+          className="h-14 md:h-16 flex items-center justify-between px-3 sm:px-4 md:px-6 border-b shrink-0 gap-3 bg-white z-30"
           style={{ borderColor: 'var(--border-color)' }}
         >
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2 sm:gap-3 min-w-0">
             <div className="md:hidden">
-              <Button variant="ghost" size="icon" onClick={toggleSidebar}>
+              <Button variant="ghost" size="icon" onClick={toggleSidebar} className="h-9 w-9">
                 <Menu className="h-6 w-6" />
               </Button>
             </div>
             <Link
               to={ROUTES.HOME}
-              className="flex items-center gap-2 hover:opacity-80 transition-opacity"
+              className="flex items-center gap-2 hover:opacity-80 transition-opacity min-w-0"
             >
               <img
                 src="/icon.svg"
                 alt=""
-                className="w-8 h-8 shrink-0 rounded-lg"
+                className="w-7 h-7 md:w-8 md:h-8 shrink-0 rounded-lg"
                 width={32}
                 height={32}
                 aria-hidden
               />
-              <div className="flex flex-col">
-                <h1 className="font-bold tracking-tight text-xl text-gray-900 leading-tight">Chatty</h1>
+              <div className="flex flex-col min-w-0">
+                <h1 className="font-bold tracking-tight text-lg md:text-xl text-gray-900 leading-tight truncate">
+                  Chatty
+                </h1>
                 {releaseLabel ? (
-                  <span className="text-[10px] text-gray-500 leading-tight">{releaseLabel}</span>
+                  <span className="text-[10px] text-gray-500 leading-tight truncate" title={releaseLabel}>
+                    <span className="sm:hidden">{releaseSha}</span>
+                    <span className="hidden sm:inline">{releaseLabel}</span>
+                  </span>
                 ) : null}
               </div>
             </Link>

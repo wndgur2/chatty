@@ -45,9 +45,9 @@ describe('useChatroomMessageComposer', () => {
   })
 
   it('sends message payload and clears input', async () => {
-    const input = document.createElement('input')
-    const blurSpy = vi.spyOn(input, 'blur')
-    const inputRef = { current: input } as unknown as RefObject<HTMLInputElement | null>
+    const textarea = document.createElement('textarea')
+    const blurSpy = vi.spyOn(textarea, 'blur')
+    const inputRef = { current: textarea } as unknown as RefObject<HTMLTextAreaElement | null>
     const { result } = renderHook(() =>
       useChatroomMessageComposer({
         chatroomId: 12,

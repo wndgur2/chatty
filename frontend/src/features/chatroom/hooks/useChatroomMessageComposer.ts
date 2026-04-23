@@ -48,7 +48,7 @@ export const useChatroomMessageComposer = ({
     }
   }, [displayMessages, isStreaming, isWaitingForResponse])
 
-  const handleSendMessage = (event: FormEvent, inputRef: RefObject<HTMLInputElement | null>) => {
+  const handleSendMessage = (event: FormEvent, inputRef: RefObject<HTMLTextAreaElement | null>) => {
     event.preventDefault()
     if (!inputValue.trim() || isSendLocked) return
 
