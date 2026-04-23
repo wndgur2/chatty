@@ -95,7 +95,7 @@ describe('DefaultLayout', () => {
 
     render(<DefaultLayout />)
 
-    expect(screen.getByText('sha:1a2b3c4 • built:2026-04-23 12:34:56 UTC')).toBeTruthy()
+    expect(screen.getByText('1a2b3c4 • 2026-04-23 12:34:56')).toBeTruthy()
   })
 
   it('hides release metadata when release env variables are missing', async () => {

@@ -19,6 +19,9 @@ function ComposerComponent({
   onInputFocus,
   inputRef,
 }: ComposerProps) {
+  const lineCount = inputValue.split('\n').length
+  const textareaRows = Math.min(Math.max(lineCount, 1), 6)
+
   const handleKeyDown = (event: KeyboardEvent<HTMLTextAreaElement>) => {
     if (event.key !== 'Enter' || event.shiftKey) {
       return
@@ -38,7 +41,7 @@ function ComposerComponent({
             onChange={(e) => onInputChange(e.target.value)}
             onKeyDown={handleKeyDown}
             onFocus={onInputFocus}
-            rows={1}
+            rows={textareaRows}
             placeholder="Message Chatty..."
             autoComplete="off"
             spellCheck={false}
@@ -50,6 +53,7 @@ function ComposerComponent({
         type="submit"
         className="rounded-full h-11 w-11 shrink-0 p-0 shadow-sm"
         disabled={!inputValue.trim() || isSendLocked}
+        aria-label="Send message"
       >
         <Send className="h-5 w-5" />
       </Button>
