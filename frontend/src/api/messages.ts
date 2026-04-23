@@ -7,6 +7,14 @@ export interface GetMessagesParams {
   offset?: number
 }
 
+const SEND_MESSAGE_DEBUG_DELAY_MS = 1200
+
+function delay(ms: number): Promise<void> {
+  return new Promise((resolve) => {
+    setTimeout(resolve, ms)
+  })
+}
+
 export function getMessages({ chatroomId, limit, offset }: GetMessagesParams): Promise<Message[]> {
   return apiClient.get(`/chatrooms/${chatroomId}/messages`, {
     params: { limit, offset },
@@ -20,5 +28,7 @@ export function sendMessage({
   chatroomId: number
   request: SendMessageRequest
 }): Promise<SendMessageResponse> {
-  return apiClient.post(`/chatrooms/${chatroomId}/messages`, request)
+  return delay(SEND_MESSAGE_DEBUG_DELAY_MS).then(() =>
+    apiClient.post(`/chatrooms/${chatroomId}/messages`, request),
+  )
 }

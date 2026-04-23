@@ -1,4 +1,4 @@
-import { useActionState, useState, useTransition } from 'react'
+import { useActionState, useState } from 'react'
 import { Navigate, useNavigate } from 'react-router'
 import { ROUTES } from '../routes/paths'
 import Input from '../shared/ui/Input'
@@ -10,7 +10,6 @@ export default function LoginPage() {
   const navigate = useNavigate()
   const loginMutation = useLogin()
   const [username, setUsername] = useState('')
-  const [isNavigating, startNavigationTransition] = useTransition()
   const [loginState, submitLogin, isSubmitting] = useActionState(
     async (_: { error: string }, formData: FormData) => {
       const trimmed = String(formData.get('username') ?? '').trim()
@@ -20,9 +19,7 @@ export default function LoginPage() {
 
       try {
         await loginMutation.mutateAsync({ username: trimmed })
-        startNavigationTransition(() => {
-          navigate(ROUTES.HOME, { replace: true, state: { fromLogin: true } })
-        })
+        navigate(ROUTES.HOME, { replace: true, state: { fromLogin: true } })
         return { error: '' }
       } catch {
         return { error: 'Login failed. Please try again.' }
@@ -31,7 +28,7 @@ export default function LoginPage() {
     { error: '' },
   )
   const isAuthenticated = useAuthStore((state) => !!state.accessToken)
-  const isBusy = isSubmitting || loginMutation.isPending || isNavigating
+  const isBusy = isSubmitting || loginMutation.isPending
 
   if (isAuthenticated) {
     return <Navigate to={ROUTES.HOME} replace />
