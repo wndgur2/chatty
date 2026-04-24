@@ -1,6 +1,13 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { Sender } from '@prisma/client';
+import { Prisma, Sender, type AiMessageDeliveryMode } from '@prisma/client';
+
+type CreateAiMessageMetadataInput = {
+  readAt?: Date | null;
+  deliveryMode: AiMessageDeliveryMode;
+  triggerReason: string;
+  triggerContext?: Prisma.InputJsonValue | null;
+};
 
 @Injectable()
 export class MessagesRepository {
@@ -23,12 +30,30 @@ export class MessagesRepository {
     });
   }
 
-  createMessage(chatroomId: bigint, sender: Sender, content: string) {
+  createMessage(
+    chatroomId: bigint,
+    sender: Sender,
+    content: string,
+    aiMetadata?: CreateAiMessageMetadataInput,
+  ) {
     return this.prisma.message.create({
       data: {
-        chatroomId,
+        chatroom: { connect: { id: chatroomId } },
         sender,
         content,
+        aiMessageMetadata:
+          sender === 'ai' && aiMetadata
+            ? {
+                create: {
+                  readAt: aiMetadata.readAt ?? null,
+                  deliveryMode: aiMetadata.deliveryMode,
+                  triggerReason: aiMetadata.triggerReason,
+                  ...(aiMetadata.triggerContext != null
+                    ? { triggerContext: aiMetadata.triggerContext }
+                    : {}),
+                },
+              }
+            : undefined,
       },
     });
   }

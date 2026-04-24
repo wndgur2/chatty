@@ -71,10 +71,9 @@ Important Socket.IO events include:
 
 ## Documentation Index
 
-- Product proposal: `.cursor/skills/nestjs-development/references/PROJECT_PROPOSAL.md`
+- Product proposal: `.cursor/references/PROJECT_PROPOSAL.md`
 - API contract: `.cursor/skills/api-development/references/API_DOCUMENTATION.md`
-- Data model: `.cursor/skills/nestjs-development/references/SCHEMA.md`
-- Frontend testing guide: `contexts/FRONTEND_TESTING.md`
+- Data model: `.cursor/references/SCHEMA.md`
 - Backend guide: `backend/README.md`
 - Frontend guide: `frontend/README.md`
 - Deployment guide: `deploy/README.md`

@@ -1,3 +1,4 @@
+import { ForbiddenException, Logger } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { MessagesService } from './messages.service';
 import { MessageHistoryService } from './message-history.service';
@@ -59,6 +60,7 @@ describe('MessagesService', () => {
 
   afterEach(() => {
     jest.clearAllMocks();
+    mockFcmPushService.notifyVoluntaryAiMessage.mockResolvedValue(undefined);
   });
 
   it('should be defined', () => {
@@ -77,6 +79,15 @@ describe('MessagesService', () => {
       10,
       0,
     );
+  });
+
+  it('should reject findHistory when user does not own chatroom', async () => {
+    mockChatroomStateRepository.findByIdAndUser.mockResolvedValue(null);
+
+    await expect(service.findHistory('1', 1)).rejects.toBeInstanceOf(
+      ForbiddenException,
+    );
+    expect(mockMessageHistoryService.findHistory).not.toHaveBeenCalled();
   });
 
   it('should send a message to AI and process background stream', async () => {
@@ -108,6 +119,90 @@ describe('MessagesService', () => {
     processMock.mockRestore();
   });
 
+  it('should log when background processing rejects after sendToAI', async () => {
+    const errSpy = jest.spyOn(Logger.prototype, 'error').mockImplementation();
+    mockChatroomStateRepository.findByIdAndUser.mockResolvedValue({ id: 1n });
+    mockMessageSendService.saveUserMessage.mockResolvedValue({ id: 1n });
+    mockChatroomStateRepository.clearNextEvaluationTime.mockResolvedValue(
+      undefined,
+    );
+    jest
+      .spyOn(service, 'processBackgroundMessage')
+      .mockRejectedValue(new Error('bg fail'));
+
+    await service.sendToAI('1', 1, { content: 'x' });
+    await new Promise((r) => setImmediate(r));
+
+    expect(errSpy).toHaveBeenCalledWith(
+      'Background processing failed',
+      expect.any(Error),
+    );
+    errSpy.mockRestore();
+  });
+
+  it('should no-op processBackgroundMessage when chatroom is missing', async () => {
+    mockChatroomStateRepository.findById.mockResolvedValue(null);
+
+    await service.processBackgroundMessage(99, false);
+
+    expect(mockAiResponseService.generate).not.toHaveBeenCalled();
+  });
+
+  it('should warn when voluntary FCM notify fails', async () => {
+    const warnSpy = jest.spyOn(Logger.prototype, 'warn').mockImplementation();
+    mockChatroomStateRepository.findById.mockResolvedValue({
+      id: 1n,
+      userId: 2n,
+      name: 'Room',
+      basePrompt: '',
+    });
+    mockMessagesRepository.findRecent.mockResolvedValue([
+      {
+        id: 1n,
+        chatroomId: 1n,
+        sender: 'user',
+        content: 'hi',
+        createdAt: new Date(),
+      },
+    ]);
+    mockAiResponseService.generate.mockResolvedValue('done');
+    mockMessagesRepository.createMessage.mockResolvedValue({ id: 1n });
+    mockChatroomStateRepository.resetDelay.mockResolvedValue(undefined);
+    mockFcmPushService.notifyVoluntaryAiMessage.mockRejectedValue(
+      new Error('fcm down'),
+    );
+
+    await service.processBackgroundMessage(1, true);
+
+    expect(warnSpy).toHaveBeenCalledWith(
+      'FCM voluntary message notify failed',
+      expect.any(Error),
+    );
+    warnSpy.mockRestore();
+  });
+
+  it('should stop typing and reset delay when AI generation throws', async () => {
+    const errSpy = jest.spyOn(Logger.prototype, 'error').mockImplementation();
+    mockChatroomStateRepository.findById.mockResolvedValue({
+      id: 1n,
+      userId: 2n,
+      name: 'Room',
+      basePrompt: '',
+    });
+    mockMessagesRepository.findRecent.mockResolvedValue([]);
+    mockAiResponseService.generate.mockRejectedValue(new Error('ollama'));
+
+    await service.processBackgroundMessage(3, false);
+
+    expect(mockMessageStreamService.setTyping).toHaveBeenCalledWith(3, false);
+    expect(mockChatroomStateRepository.resetDelay).toHaveBeenCalledWith(3n);
+    expect(errSpy).toHaveBeenCalledWith(
+      'Error processing AI message for room 3',
+      expect.any(Error),
+    );
+    errSpy.mockRestore();
+  });
+
   it('should notify FCM after a voluntary background message completes', async () => {
     mockChatroomStateRepository.findById.mockResolvedValue({
       id: 1n,
@@ -131,6 +226,15 @@ describe('MessagesService', () => {
     await service.processBackgroundMessage(1, true);
 
     expect(mockAiResponseService.generate).toHaveBeenCalled();
+    expect(mockMessagesRepository.createMessage).toHaveBeenCalledWith(
+      1n,
+      'ai',
+      'AI reply text',
+      expect.objectContaining({
+        deliveryMode: 'proactive',
+        triggerReason: 'scheduler_evaluation_yes',
+      }),
+    );
     const genArgs = mockAiResponseService.generate.mock.calls[0] as [
       { role: string; content: string }[],
       string,
@@ -175,6 +279,15 @@ describe('MessagesService', () => {
 
     await service.processBackgroundMessage(1, false);
 
+    expect(mockMessagesRepository.createMessage).toHaveBeenCalledWith(
+      1n,
+      'ai',
+      'reply',
+      expect.objectContaining({
+        deliveryMode: 'reply',
+        triggerReason: 'user_request',
+      }),
+    );
     expect(mockAiResponseService.generate).toHaveBeenCalledWith(
       [{ role: 'user', content: 'hello' }],
       `${NORMAL_CHAT_BASE_SYSTEM}\n\nYou are helpful.`,

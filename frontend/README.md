@@ -97,4 +97,3 @@ npm run test:coverage
 - API contract tests: `src/api/*.contract.test.ts`.
 - Integration flow tests: `tests/integration/*.integration.test.tsx`.
 - Shared test utilities and fixtures: `src/test/`.
-- Detailed conventions and checklist: `../contexts/FRONTEND_TESTING.md`.

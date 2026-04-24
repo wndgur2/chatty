@@ -25,12 +25,12 @@ The system allows AI to send messages to users without waiting for user input, b
 - Stream AI responses in real time.
 - Maintain continuous message flow during generation.
 
-#### 3.1.2 Voluntary AI Messaging
+#### 3.1.2 Proactive AI Messaging
 
 - Trigger AI messages without user input using a slow-start scheduling algorithm:
   - Initializes a 4-second delay after the last message.
   - At the scheduled time, a lightweight "Evaluator" model decides whether to initiate a message.
-  - If yes, initiates the voluntary message. If no, the delay time is doubled for the next check.
+  - If yes, initiates a proactive message. If no, the delay time is doubled for the next check.
 - Use chatroom context for message generation.
 
 #### 3.1.3 Chatrooms
@@ -58,9 +58,16 @@ The system allows AI to send messages to users without waiting for user input, b
 
 #### 3.2.4 Notifications
 
-- Receive push notifications indicating voluntary AI messages using Firebase Cloud Messaging (FCM).
+- Receive push notifications indicating proactive AI messages using Firebase Cloud Messaging (FCM).
 
-#### 3.2.5 Cloning/branching Chatroom
+#### 3.2.5 AI Message Metadata
+
+- Store explainability and delivery metadata for AI-authored messages in a dedicated 1:1 metadata record.
+- Track read state using `read_at` (nullable datetime) instead of a boolean.
+- Track AI delivery type using `delivery_mode` (`reply` or `proactive`).
+- Store trigger diagnostics with `trigger_reason` and optional JSON `trigger_context`.
+
+#### 3.2.6 Cloning/branching Chatroom
 
 - Create a new chatroom from an existing one.
 - Clone: Copy configuration(prompt, profile-image) only.
