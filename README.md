@@ -34,8 +34,11 @@ Chatty is an AI chat application with real-time streamed replies and scheduled, 
 
 Best when you work on frontend or backend alone and want hot reload.
 
-1. **MySQL** (example using Compose for DB only):
+1. **MySQL**:
 
+   If you run the backend directly on your host machine, use a local MySQL instance that listens on `localhost:3306`.
+   The `mysql` service in `docker-compose.dev.yml` is intended for the full Docker stack and, as configured there, is not published to the host by default.
+   If you want to use Compose for MySQL while running the backend on the host, you must publish port `3306` to the host first; otherwise use the full-stack Docker setup below so the backend and DB run on the same Compose network.
    ```bash
    docker compose -f docker-compose.dev.yml up -d mysql
    ```
