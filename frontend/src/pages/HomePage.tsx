@@ -38,7 +38,7 @@ export default function HomePage() {
         </svg>
       </div>
       <h2 className="text-2xl font-bold text-gray-900 mb-2">Welcome to Chatty</h2>
-      <p className="text-gray-500 max-w-md mb-8">
+      <p className="text-gray-500 max-w-lg mb-8">
         Select a chatroom from the sidebar to start messaging, or create a new one to begin a fresh
         conversation with your AI assistant.
       </p>

@@ -2,6 +2,8 @@ services:
   mysql:
     image: mysql:8.0
     restart: unless-stopped
+    ports:
+      - "${MYSQL_PORT:-3306}:3306"
     environment:
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
       MYSQL_DATABASE: ${MYSQL_DATABASE}
@@ -11,7 +13,8 @@ services:
       test:
         [
           "CMD-SHELL",
-          'mysqladmin ping -h 127.0.0.1 -uroot -p"$$MYSQL_ROOT_PASSWORD" || exit 1',
+          "mysqladmin ping -h 127.0.0.1 -uroot -p\"$$MYSQL_ROOT_PASSWORD\" ||
+            exit 1",
         ]
       interval: 5s
       timeout: 5s
