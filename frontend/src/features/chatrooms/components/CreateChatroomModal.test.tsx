@@ -68,7 +68,7 @@ describe('CreateChatroomModal', () => {
     render(<CreateChatroomModal isOpen onClose={onClose} onSubmit={vi.fn()} />)
 
     fireEvent.change(screen.getByLabelText(/Name/i), { target: { value: 'To reset' } })
-    fireEvent.change(screen.getByLabelText(/Base Prompt/i), { target: { value: 'To reset' } })
+    fireEvent.change(screen.getByLabelText(/Base Prompt/i), { target: { value: 'Reset prompt' } })
 
     fireEvent.click(screen.getByRole('button', { name: 'Cancel' }))
 
