@@ -36,8 +36,8 @@ describe('CreateChatroomModal', () => {
     const onSubmit = vi.fn()
     render(<CreateChatroomModal isOpen onClose={vi.fn()} onSubmit={onSubmit} />)
 
-    fireEvent.change(screen.getByLabelText('Name'), { target: { value: '  Team Alpha  ' } })
-    fireEvent.change(screen.getByLabelText('Base Prompt'), { target: { value: '  Be concise  ' } })
+    fireEvent.change(screen.getByLabelText(/Name/i), { target: { value: '  Team Alpha  ' } })
+    fireEvent.change(screen.getByLabelText(/Base Prompt/i), { target: { value: '  Be concise  ' } })
     fireEvent.click(screen.getByRole('button', { name: 'Create' }))
 
     expect(onSubmit).toHaveBeenCalledWith({
@@ -52,8 +52,8 @@ describe('CreateChatroomModal', () => {
 
     render(<CreateChatroomModal isOpen onClose={vi.fn()} onSubmit={onSubmit} />)
 
-    fireEvent.change(screen.getByLabelText('Name'), { target: { value: 'Room' } })
-    fireEvent.change(screen.getByLabelText('Base Prompt'), { target: { value: 'Prompt' } })
+    fireEvent.change(screen.getByLabelText(/Name/i), { target: { value: 'Room' } })
+    fireEvent.change(screen.getByLabelText(/Base Prompt/i), { target: { value: 'Prompt' } })
     fireEvent.click(screen.getByRole('button', { name: 'Create' }))
 
     expect(onSubmit).toHaveBeenCalledWith({
@@ -67,8 +67,8 @@ describe('CreateChatroomModal', () => {
     const onClose = vi.fn()
     render(<CreateChatroomModal isOpen onClose={onClose} onSubmit={vi.fn()} />)
 
-    fireEvent.change(screen.getByLabelText('Name'), { target: { value: 'To reset' } })
-    fireEvent.change(screen.getByLabelText('Base Prompt'), { target: { value: 'To reset prompt' } })
+    fireEvent.change(screen.getByLabelText(/Name/i), { target: { value: 'To reset' } })
+    fireEvent.change(screen.getByLabelText(/Base Prompt/i), { target: { value: 'Reset prompt' } })
 
     fireEvent.click(screen.getByRole('button', { name: 'Cancel' }))
 

@@ -1,121 +1,121 @@
-# Chatty Backend
+# Chatty backend
 
-Chatty is a real-time, AI-based chat application backend built with **NestJS**, **TypeScript**, and **Prisma ORM**.
+NestJS API, Socket.IO streaming gateway, Prisma/MySQL persistence, Ollama integration, optional FCM, and scheduled voluntary-AI evaluation.
 
-## Tech Stack
-- **Framework**: [NestJS](https://nestjs.com/)
-- **Language**: [TypeScript](https://www.typescriptlang.org/)
-- **Database**: MySQL via [Prisma ORM](https://www.prisma.io/)
-- **Testing**: Jest & Supertest (Unit & E2E)
-- **Static Assets**: `@nestjs/serve-static` & `@nestjs/platform-express` (Multer) for image uploads
+## Tech stack
 
-## Git Workflow Convention
+- [NestJS](https://nestjs.com/) 11, TypeScript
+- [Prisma](https://www.prisma.io/) + MySQL 8
+- [Jest](https://jestjs.io/) + Supertest (unit + e2e)
+- Static uploads via `@nestjs/serve-static` and Multer (`@nestjs/platform-express`)
+- [Socket.IO](https://socket.io/) (`@nestjs/platform-socket.io`)
 
-Use the shared Git convention skill before creating branches, commits, and PRs:
+## Git workflow
+
+Shared branching, commits, and PR conventions:
 
 - `.cursor/skills/git/SKILL.md`
 
 ## Prerequisites
-- **Node.js** (v18+ recommended)
-- **MySQL** Server
 
-## Getting Started
+- Node.js 18+ (repo targets current LTS-style versions)
+- MySQL 8 (local install or Docker from root `docker-compose.dev.yml`)
 
-1. **Install Dependencies**
+## Getting started
+
+1. **Install dependencies** (Prisma Client is generated on `postinstall`):
+
    ```bash
    npm install
    ```
 
-2. **Environment Configuration**
-   Ensure you have a `.env` file at `backend/.env` containing your Database URL.
+2. **Environment** — create `backend/.env`:
+
    ```env
-   DATABASE_URL="mysql://<user>:<password>@localhost:3306/chatty"
+   DATABASE_URL="mysql://root:chatty_root@127.0.0.1:3306/chatty"
    JWT_SECRET="replace-with-a-strong-secret"
    JWT_EXPIRES_IN="7d"
    OLLAMA_HOST="http://127.0.0.1:11434"
-   OLLAMA_CHAT_MODEL="hf.co/soob3123/amoral-gemma3-12B-v2-qat-Q4_0-GGUF:Q4_0"
+   OLLAMA_CHAT_MODEL="qwen2.5:1.5b"
    OLLAMA_EVAL_MODEL="qwen2.5:1.5b"
    ```
 
-3. **Database Setup**
-   Run Prisma migrations and generate Prisma Client bindings:
+   Optional (push notifications; leave empty to disable FCM sends):
+
+   ```env
+   FIREBASE_SERVICE_ACCOUNT_JSON=
+   GOOGLE_APPLICATION_CREDENTIALS=
+   ```
+
+   **Port:** `PORT` defaults to **8080** in `main.ts` if unset.
+
+3. **Database**
+
    ```bash
    npm run prisma:migrate:dev
-   npx prisma generate
    ```
 
-4. **Running the Application**
+   `npx prisma generate` is not usually needed after `npm install`, but you can run it after schema changes if the client is stale.
+
+4. **Run**
+
    ```bash
-   # development
-   npm run start
-
-   # watch mode
-   npm run dev
-
-   # production mode
-   npm run start:prod
+   npm run dev          # watch mode (typical local dev)
+   npm run start        # single run
+   npm run start:prod   # production (compiled dist)
    ```
 
-## WebSocket Streaming
+## WebSocket streaming
 
-AI response streaming is delivered over Socket.IO via the backend gateway.
+Streaming lives on the **messages** gateway: `src/messages/messages.gateway.ts`.
 
-- Client events:
-  - `joinRoom` with `{ chatroomId: number }`
-  - `leaveRoom` with `{ chatroomId: number }`
-- Server events:
-  - `ai_typing_state` with `{ chatroomId: number, isTyping: boolean }`
-  - `ai_message_chunk` with `{ chatroomId: number, chunk: string }`
-  - `ai_message_complete` with `{ chatroomId: number, content: string, messageId: number }`
+- **Client → server**
+  - `joinRoom` — `{ chatroomId: number }`
+  - `leaveRoom` — `{ chatroomId: number }`
+- **Server → client**
+  - `ai_typing_state` — `{ chatroomId, isTyping }`
+  - `ai_message_chunk` — `{ chatroomId, chunk }`
+  - `ai_message_complete` — `{ chatroomId, content, messageId }`
 
-Note: current WebSocket room join/leave does not enforce JWT auth at gateway level.
+Join/leave handlers do not validate JWT at the gateway today; treat the socket surface accordingly for your threat model.
 
-## Features Implemented
-- **Chatrooms (CRUD)**: Create, View, Update, and Delete customized DB Chatrooms. Native file uploading handles saving profile images seamlessly locally into `src/assets` and hosts them via `.baseUrl`.
-- **Messages Management**: Send user messages to the AI and read chat histories attached securely to specific Chatroom constraints.
-- **Robust Testing**: Comprehensive Unit tests and End-to-End (E2E) Integration Tests spanning live Database evaluations (`/test/chatrooms.e2e-spec.ts` & `/test/messages.e2e-spec.ts`).
-- **JWT Authentication**: `POST /api/auth/login` issues bearer tokens used by protected API routes.
+## Features (high level)
 
-## Running Tests
+- **Auth** — `POST /api/auth/login` creates or loads a user and returns a JWT for Bearer-protected routes.
+- **Chatrooms** — CRUD, optional profile image upload, clone/branch flows.
+- **Messages** — history, user sends, streamed AI replies, background voluntary sends coordinated with tasks/cron.
+- **Notifications** — device registration and FCM when credentials are configured.
 
-```bash
-# Unit tests
-npm run test
-
-# End-to-End (E2E) integration tests
-npm run test:e2e
-
-# Test coverage
-npm run test:cov
-```
-
-## Linter & Formatter
+## Scripts
 
 ```bash
-# Run linting
-npm run lint
+npm run lint                 # ESLint
+npm run test                 # Unit tests (*.spec.ts under src/)
+npm run test:e2e             # E2E (test/*.e2e-spec.ts)
+npm run test:cov             # Coverage
+npm run prisma:migrate:dev   # Dev migrations
+npm run prisma:migrate:deploy # Deploy migrations (CI/prod)
 ```
 
-## Project Structure
-
-This section summarizes backend relationships, file layout, and the main request flow.
-
-### File Structure
+## Project structure
 
 ```text
 backend/
-├── prisma/              # Prisma schema, migrations, and DB setup
+├── prisma/                 # schema, migrations
 ├── src/
-│   ├── auth/            # Authentication (login, JWT handling)
-│   ├── chatrooms/       # Chatroom CRUD and configuration logic
-│   ├── messages/        # Message APIs and chat history operations
-│   ├── websocket/       # Socket.IO gateway and streaming events
-│   ├── assets/          # Uploaded/static files (e.g., profile images)
-│   └── ...              # Shared modules, bootstrap, and app wiring
-└── test/                # E2E and integration tests
+│   ├── auth/
+│   ├── chatrooms/
+│   ├── messages/           # REST + MessagesGateway (Socket.IO)
+│   ├── notifications/
+│   ├── tasks/              # scheduled evaluation / voluntary AI
+│   ├── ollama/
+│   ├── infrastructure/
+│   ├── common/
+│   └── ...
+└── test/                   # e2e specs (e.g. app, chatrooms, messages)
 ```
 
-### Entity Relations
+## Entity overview
 
 ```mermaid
 erDiagram
@@ -158,56 +158,47 @@ erDiagram
   }
 ```
 
-### Sequence Diagram
+## Request flow (simplified)
 
 ```mermaid
 sequenceDiagram
-  participant Client as FrontendClient
+  participant Client as Client
   participant Auth as AuthController
   participant Chatrooms as ChatroomsController
   participant Messages as MessagesController
-  participant Scheduler as CronTasksService
-  participant EvalAI as OllamaEvaluationModel
+  participant Tasks as TasksService
+  participant Eval as Ollama
   participant Push as FcmPushService
-  participant Gateway as ChatGateway
-  participant AI as AIService
-  participant DB as MySQLPrisma
+  participant Gateway as MessagesGateway
+  participant AI as AI streaming path
+  participant DB as Prisma
 
   Client->>Auth: POST /api/auth/login
-  Auth->>DB: validateOrCreateUser()
-  DB-->>Auth: user + tokenPayload
-  Auth-->>Client: JWT accessToken
+  Auth->>DB: user upsert / load
+  Auth-->>Client: JWT
 
-  Client->>Chatrooms: POST /api/chatrooms (Bearer JWT)
-  Chatrooms->>DB: create chatroom row
-  DB-->>Chatrooms: chatroom
-  Chatrooms-->>Client: created chatroom
+  Client->>Chatrooms: POST /api/chatrooms (Bearer)
+  Chatrooms->>DB: insert chatroom
+  Chatrooms-->>Client: chatroom
 
-  Client->>Messages: POST /api/messages (chatroomId, content)
-  Messages->>DB: store user message
-  Messages->>AI: request streamed response
-  AI-->>Gateway: chunks + completion events
+  Client->>Messages: POST /api/messages
+  Messages->>DB: user message
+  Messages->>AI: stream generation
+  AI-->>Gateway: chunks / complete
   Gateway-->>Client: ai_message_chunk / ai_message_complete
-  Messages->>DB: persist AI message
+  Messages->>DB: persist assistant message
 
-  opt Voluntary background evaluation flow
-    Scheduler->>DB: find rooms where nextEvaluationTime <= now
-    DB-->>Scheduler: eligible chatrooms
-    Scheduler->>DB: lock room (nextEvaluationTime = null)
-    Scheduler->>DB: load recent messages
-    Scheduler->>EvalAI: evaluateToAnswer(history, context)
-    EvalAI-->>Scheduler: shouldAnswer true/false
-
-    alt shouldAnswer is true
-      Scheduler->>Messages: processBackgroundMessage(chatroomId, voluntary=true)
-      Messages->>AI: generate voluntary response
-      AI-->>Gateway: ai_message_chunk / ai_message_complete
-      Gateway-->>Client: stream voluntary AI response
-      Messages->>DB: persist AI message and reset delay
-      Messages->>Push: notifyVoluntaryAiMessage()
-      Push-->>Client: push notification
-    else shouldAnswer is false
-      Scheduler->>DB: apply evaluation backoff and schedule nextEvaluationTime
+  opt Voluntary evaluation
+    Tasks->>DB: rooms due for evaluation
+    Tasks->>Eval: should answer?
+    Eval-->>Tasks: decision
+    alt send voluntary message
+      Tasks->>Messages: background send
+      Messages->>AI: stream
+      Gateway-->>Client: stream events
+      Messages->>Push: optional FCM
+    else defer
+      Tasks->>DB: backoff / nextEvaluationTime
     end
   end
 ```

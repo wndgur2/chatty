@@ -1,6 +1,5 @@
 import { Navigate, useLocation } from 'react-router'
 import Button from '../shared/ui/Button'
-import GithubLink from '../shared/ui/GithubLink'
 import CreateChatroomModal from '../features/chatrooms/components/CreateChatroomModal'
 import { useCreateChatroomFlow } from '../features/chatrooms/hooks/useCreateChatroomFlow'
 import { useChatrooms } from '../features/chatrooms/hooks/useChatrooms'
@@ -46,7 +45,6 @@ export default function HomePage() {
       <Button variant="primary" size="lg" className="shadow-sm" onClick={openCreateModal}>
         Create New Chatroom
       </Button>
-      <GithubLink size="medium" className="mt-4" />
 
       <CreateChatroomModal
         isOpen={isCreateModalOpen}

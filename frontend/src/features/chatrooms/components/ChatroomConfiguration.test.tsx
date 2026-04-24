@@ -52,9 +52,9 @@ describe('ChatroomConfiguration', () => {
 
   it('supports promptRequired true/false', () => {
     const { rerender } = render(<ChatroomConfiguration {...baseProps()} promptRequired />)
-    expect(screen.getByLabelText('Base Prompt')).toHaveProperty('required', true)
+    expect(screen.getByLabelText(/Base Prompt/i)).toHaveProperty('required', true)
 
     rerender(<ChatroomConfiguration {...baseProps()} promptRequired={false} />)
-    expect(screen.getByLabelText('Base Prompt')).toHaveProperty('required', false)
+    expect(screen.getByLabelText(/Base Prompt/i)).toHaveProperty('required', false)
   })
 })
