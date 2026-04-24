@@ -87,6 +87,12 @@ Symptoms: API or WebSocket failures, wrong host in image URLs. Align **`PUBLIC_O
 - Server deploy uses **`deploy/docker-compose.prod.yml`** and **`deploy/scripts/deploy-prod.sh`** (copied or referenced per your ops runbook).
 - Required secrets, host layout, and health checks are documented in **`.github/ci-cd.md`**.
 
+### CD reliability model
+
+- Production CD currently targets **ARM64** images to match the production host architecture and avoid emulation instability.
+- Build jobs are cancelable so newer commits replace older queued builds.
+- Deploy jobs are serialized and non-cancelable, and include a stale-run guard so only the latest `main` commit proceeds to remote deployment.
+
 ## Operations
 
 - Uploaded files persist in the Docker volume **`backend_assets`** (`ASSETS_DIR=/app/assets` in the backend service).

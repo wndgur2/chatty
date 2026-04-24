@@ -97,6 +97,8 @@ MySQL + backend + nginx serving the production build of the frontend.
 
 Full deployment and troubleshooting: `deploy/README.md`.
 
+Production CD currently publishes ARM64 images and uses serialized deploy execution to improve reliability on M1-based production hosts. See `.github/ci-cd.md` for operational details.
+
 ## API and WebSocket reference
 
 - REST and Socket.IO contracts: `.cursor/skills/api-development/references/API_DOCUMENTATION.md`
