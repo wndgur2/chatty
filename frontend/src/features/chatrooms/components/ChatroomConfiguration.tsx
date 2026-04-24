@@ -11,6 +11,7 @@ export interface ChatroomConfigurationProps {
   promptFieldId: string
   basePrompt: string
   onBasePromptChange: (e: ChangeEvent<HTMLTextAreaElement>) => void
+  nameRequired?: boolean
   promptRequired?: boolean
   imageFieldId: string
   previewUrl: string | null
@@ -27,6 +28,7 @@ export default function ChatroomConfiguration({
   promptFieldId,
   basePrompt,
   onBasePromptChange,
+  nameRequired = true,
   promptRequired = true,
   imageFieldId,
   previewUrl,
@@ -40,6 +42,12 @@ export default function ChatroomConfiguration({
       <div>
         <label htmlFor={nameFieldId} className="block text-sm font-medium text-gray-700 mb-1">
           Name
+          {nameRequired && (
+            <span className="ml-1 text-red-500" aria-hidden="true">
+              *
+            </span>
+          )}
+          {nameRequired && <span className="sr-only"> (required)</span>}
         </label>
         <Input
           id={nameFieldId}
@@ -47,6 +55,7 @@ export default function ChatroomConfiguration({
           placeholder="e.g., Frontend Team"
           value={name}
           onChange={onNameChange}
+          required={nameRequired}
         />
       </div>
 
