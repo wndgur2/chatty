@@ -1,99 +1,84 @@
-# Chatty - Frontend
+# Chatty frontend
+
+Vite + React 19 SPA for multi-room chat, Socket.IO streaming, optional web push (FCM), and chatroom management (create, edit, clone, branch).
 
 ## Purpose
 
-Chatty is an intelligent, web-based AI Chat application. Unlike traditional AI chatbots that only respond to user input, Chatty features a scheduling algorithm that allows the AI to _voluntarily_ initiate conversations and send messages to users without waiting for user requests.
+Chatty supports both user-initiated messages and **voluntary** AI messages: the backend runs evaluations on a schedule; the UI reflects streaming replies and can surface push notifications when Firebase is configured.
 
-It provides real-time streaming of messages using local LLMs (via Ollama) and acts as an "Evaluator" to decide if the AI should initiate a chat.
+## Tech stack
 
-## Frontend Specifications
-
-The frontend architecture prioritizes performance optimization, strict TypeScript implementation, and modular design.
-
-### Tech Stack
-
-- **Core Framework:** React (using Vite)
-- **Language:** Strict TypeScript
-- **Styling:** Tailwind CSS (with utility libraries like `clsx` and `tailwind-merge` for readability)
-- **Data Fetching & State Management:** TanStack Query (React Query)
-- **Real-Time Communication:** WebSockets (character-by-character text streaming)
-- **Push Notifications:** Firebase Cloud Messaging (Web Push / Service Worker API)
-
-### Key Features
-
-- **Real-time Streamed Responses:** Custom hooks (`useWebSocketStream`) handle incoming chunks of message data in real-time, computing deltas and smoothly updating the UI without entire app re-renders.
-- **Voluntary AI Chat & Notifications:** Integration with FCM to deliver push notifications indicating voluntary AI messages using a slow-start check scheduling algorithm.
-- **Advanced Chatroom Management:** Support for multiple chatrooms with separate contexts. Users can create, update, delete, clone (copy prompt/image config), and branch (copy history + config) chatrooms.
-- **AI Customization:** Users can independently tailor the underlying base prompt and AI profile image for each chatroom environment.
-
-### Architectural Priorities
-
-- **Clean Abstractions:** Complex business logic and API connections are decoupled into centralized, generic custom hooks (`useChatrooms`, `useMessages`, `useNotifications`, etc.).
-- **Strict Typing:** All REST endpoints and WebSocket channels are guarded by explicit TypeScript interfaces (`src/types/api.ts`).
+- **React 19**, **TypeScript**, **Vite 7**
+- **Tailwind CSS 4** (`@tailwindcss/vite`), `clsx`, `tailwind-merge`
+- **TanStack Query** for server state
+- **Socket.IO client** for realtime chunks and typing state
+- **React Router 7** for routing
+- **Firebase** (optional) for FCM / web push; **vite-plugin-pwa** for the service worker shell
+- **Vitest** + Testing Library for tests
 
 ## Prerequisites
 
-- **Node.js** (v18+ recommended)
-- Running backend API (default local backend URL: `http://localhost:3000`)
+- Node.js 18+
+- Running Chatty backend (default in this repo: **`http://localhost:8080`** — set `VITE_API_URL` to match)
 
-## Getting Started
-
-1. **Install Dependencies**
-   ```bash
-   npm install
-   ```
-2. **Environment Configuration**
-   Create `frontend/.env` (optional for local basic usage) and set values as needed:
-   ```env
-   VITE_API_URL=http://localhost:3000
-   VITE_FIREBASE_API_KEY=
-   VITE_FIREBASE_AUTH_DOMAIN=
-   VITE_FIREBASE_PROJECT_ID=
-   VITE_FIREBASE_MESSAGING_SENDER_ID=
-   VITE_FIREBASE_APP_ID=
-   VITE_FCM_VAPID_KEY=
-   ```
-3. **Run Development Server**
-   ```bash
-   npm run dev
-   ```
-4. **Build Production Bundle**
-   ```bash
-   npm run build
-   npm run preview
-   ```
-
-## Available Scripts
+## Getting started
 
 ```bash
-# Development server
-npm run dev
-
-# Type-check + production build
-npm run build
-
-# Lint source files
-npm run lint
-
-# TypeScript project checks
-npm run typecheck
-
-# Run unit/component tests
-npm run test
-
-# Run unit-only tests
-npm run test:unit
-
-# Run integration flow tests
-npm run test:integration
-
-# Run test suite with coverage report
-npm run test:coverage
+npm install
+cp .env.example .env
 ```
 
-## Testing
+Edit `.env`:
 
-- Unit/component/hook tests: colocated as `src/**/<name>.test.ts(x)`.
-- API contract tests: `src/api/*.contract.test.ts`.
-- Integration flow tests: `tests/integration/*.integration.test.tsx`.
-- Shared test utilities and fixtures: `src/test/`.
+- **`VITE_API_URL`** — backend origin, **no trailing slash** (e.g. `http://localhost:8080` for local Nest with default `PORT`).
+- **Firebase / `VITE_FCM_VAPID_KEY`** — optional; omit for local UI flows without push.
+
+```bash
+npm run dev
+```
+
+Production build and preview:
+
+```bash
+npm run build
+npm run preview
+```
+
+## Environment variables
+
+| Variable | Purpose |
+| --- | --- |
+| `VITE_API_URL` | REST + Socket.IO base (same host/path the browser uses to reach the API). |
+| `VITE_FIREBASE_*` | Firebase web app config for FCM. |
+| `VITE_FCM_VAPID_KEY` | Web Push VAPID key from Firebase Console. |
+| `VITE_RELEASE_SHA`, `VITE_RELEASE_BUILT_AT` | Optional build metadata (e.g. CI). |
+
+## Scripts
+
+```bash
+npm run dev                 # Vite dev server (--host)
+npm run build               # tsc -b && vite build
+npm run preview             # Preview production build
+npm run lint                # ESLint
+npm run typecheck           # TypeScript project references
+npm run test                # Vitest run (all configured tests)
+npm run test:unit           # Under src/
+npm run test:integration    # tests/integration/
+npm run test:ui             # Vitest UI
+npm run test:coverage       # Coverage report
+npm run test:coverage:enforce  # Coverage with enforcement flag
+```
+
+## Architecture notes
+
+- **Hooks** — data and side effects are grouped in hooks such as chatrooms, messages, notifications, and websocket streaming (deltas for partial AI text).
+- **Types** — REST shapes and enums are centralized (e.g. `src/types/api.ts`) to stay aligned with the backend contract.
+- **State** — TanStack Query for remote data; lightweight client state where appropriate (e.g. Zustand where used).
+
+## Testing layout
+
+- **Unit / component / hook tests** — colocated as `src/**/<name>.test.ts(x)`.
+- **API contract tests** — `src/api/*.contract.test.ts`.
+- **Integration flows** — `tests/integration/*.integration.test.tsx`.
+- **Shared helpers** — `src/test/` (fixtures, render helpers).
+- **Shared mocks** — `src/test/mocks/` (see `src/test/mocks/README.md`).

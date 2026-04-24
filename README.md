@@ -1,79 +1,114 @@
 # Chatty
 
-Chatty is an AI-based chat application with real-time streamed responses and scheduled, voluntary AI messages. The project is organized as a local-first monorepo with a React frontend, NestJS backend, MySQL, and Ollama.
+Chatty is an AI chat application with real-time streamed replies and scheduled, voluntary AI messages. The repo is a monorepo: React frontend, NestJS backend, MySQL (Prisma), and Ollama for local LLM calls.
 
-## Core Capabilities
+## Core capabilities
 
-- Real-time AI response streaming over Socket.IO.
-- Slow-start voluntary AI trigger flow based on scheduled evaluations.
-- Multi-chatroom support with per-room prompt and profile image customization.
-- Clone and branch chatrooms for reusable conversation setups.
-- Optional Firebase Cloud Messaging (FCM) support for push notifications.
+- Real-time AI streaming over Socket.IO.
+- Voluntary AI messages driven by scheduled evaluations (slow-start style).
+- Multiple chatrooms with per-room base prompt and profile image.
+- Clone (copy settings) and branch (copy history + settings) chatrooms.
+- Optional Firebase Cloud Messaging (FCM) for push notifications.
 
-## Architecture Snapshot
+## Architecture
 
-- Frontend: React + TypeScript + Tailwind + TanStack Query
-- Backend: NestJS + TypeScript + Prisma
-- Database: MySQL
-- LLM runtime: Ollama (local)
-- Realtime: Socket.IO WebSocket events
-- Optional notifications: Firebase Admin / FCM
+| Layer | Technology |
+| --- | --- |
+| Frontend | React 19, TypeScript, Vite, Tailwind CSS 4, TanStack Query, Socket.IO client |
+| Backend | NestJS 11, TypeScript, Prisma |
+| Database | MySQL 8 |
+| LLM | Ollama (HTTP API) |
+| Realtime | Socket.IO |
+| Push (optional) | Firebase Admin (backend), Firebase Web + VAPID (frontend) |
 
-## Monorepo Layout
+## Repository layout
 
-- `frontend/`: React web app.
-- `backend/`: NestJS API + WebSocket gateway + scheduler logic.
-- `deploy/`: Docker/nginx deployment assets and deployment guide.
-- `.cursor/skills/`: reusable agent skills and reference documents.
-- `.cursor/rules/`: lightweight always-on or file-scoped agent rules.
+- `frontend/` — Vite SPA.
+- `backend/` — REST API, WebSocket gateway, cron-style scheduling, file uploads.
+- `deploy/` — nginx image, production Compose, deploy scripts, deployment notes.
+- `docker-compose.dev.yml` — local full stack: MySQL, backend, nginx (built frontend).
+- `.cursor/skills/` — agent skills and API reference material.
+- `.cursor/rules/` — editor/agent rules for this codebase.
 
-## Quick Start (Local Development)
+## Quick start (split local dev)
 
-Use this path when developing frontend/backend directly without Dockerized nginx.
+Best when you work on frontend or backend alone and want hot reload.
 
-1. Backend setup:
-   - Go to `backend/`.
-   - Install dependencies: `npm install`
-   - Configure `.env` (database/JWT/Ollama values)
-   - Run migrations: `npm run prisma:migrate:dev`
-   - Start dev server: `npm run dev`
-2. Frontend setup:
-   - Go to `frontend/`.
-   - Install dependencies: `npm install`
-   - Start dev server: `npm run dev`
+1. **MySQL** (example using Compose for DB only):
 
-For backend-specific commands and details, see `backend/README.md`.
-For frontend-specific commands and details, see `frontend/README.md`.
+   ```bash
+   docker compose -f docker-compose.dev.yml up -d mysql
+   ```
 
-## Quick Start (Docker Deployment)
+2. **Backend** (`backend/`):
 
-Use this path for a containerized stack (MySQL + backend + nginx-served frontend).
+   ```bash
+   npm install
+   ```
 
-1. Copy env template:
-   - `cp .env.docker.example .env`
-2. Build and run:
-   - `docker compose up -d --build`
-3. Open:
-   - `http://localhost:8080` (or your configured `PUBLIC_ORIGIN` / `HTTP_PORT`)
+   Create `backend/.env` (see `backend/README.md`). Then:
 
-Full deployment instructions and troubleshooting are documented in `deploy/README.md`.
+   ```bash
+   npm run prisma:migrate:dev
+   npm run dev
+   ```
 
-## API and WebSocket References
+   The API listens on **`http://localhost:8080`** unless you set `PORT`.
 
-REST and event contracts are documented in:
+3. **Frontend** (`frontend/`):
 
-- `.cursor/skills/api-development/references/API_DOCUMENTATION.md`
+   ```bash
+   npm install
+   cp .env.example .env
+   ```
 
-Important Socket.IO events include:
+   Set `VITE_API_URL` to your backend origin (no trailing slash), e.g. `http://localhost:8080`. Then:
 
-- Client -> Server: `joinRoom`, `leaveRoom`
-- Server -> Client: `ai_typing_state`, `ai_message_chunk`, `ai_message_complete`
+   ```bash
+   npm run dev
+   ```
 
-## Documentation Index
+   Vite serves the app (by default `http://localhost:5173`).
+
+Details: `backend/README.md`, `frontend/README.md`.
+
+## Quick start (Docker full stack)
+
+MySQL + backend + nginx serving the production build of the frontend.
+
+1. From the repo root:
+
+   ```bash
+   cp .env.docker.example .env
+   ```
+
+2. Adjust `.env` (JWT secret, origins, Ollama host/models, optional Firebase). If you change `PUBLIC_ORIGIN`, `CORS_ORIGIN`, or any `VITE_*` build args, rebuild images.
+
+3. Run:
+
+   ```bash
+   docker compose -f docker-compose.dev.yml up -d --build
+   ```
+
+4. Open **`http://localhost:8080`** (or the host/port matching `PUBLIC_ORIGIN` / `HTTP_PORT`).
+
+Full deployment and troubleshooting: `deploy/README.md`.
+
+## API and WebSocket reference
+
+- REST and Socket.IO contracts: `.cursor/skills/api-development/references/API_DOCUMENTATION.md`
+
+Common Socket.IO events:
+
+- Client → server: `joinRoom`, `leaveRoom`
+- Server → client: `ai_typing_state`, `ai_message_chunk`, `ai_message_complete`
+
+## Documentation index
 
 - Product proposal: `.cursor/references/PROJECT_PROPOSAL.md`
 - API contract: `.cursor/skills/api-development/references/API_DOCUMENTATION.md`
 - Data model: `.cursor/references/SCHEMA.md`
-- Backend guide: `backend/README.md`
-- Frontend guide: `frontend/README.md`
-- Deployment guide: `deploy/README.md`
+- Backend: `backend/README.md`
+- Frontend: `frontend/README.md`
+- Docker / deploy: `deploy/README.md`
+- CI/CD operations: `.github/ci-cd.md`
