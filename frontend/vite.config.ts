@@ -37,9 +37,9 @@ export default defineConfig({
       },
       manifest: {
         id: '/',
-        name: 'Chatty - Real-time Team Chat',
+        name: 'Chatty - Texting with AI',
         short_name: 'Chatty',
-        description: 'A fast real-time chat app for teams with push notifications.',
+        description: 'A fast real-time texting app with AI.',
         start_url: '/',
         scope: '/',
         display: 'standalone',

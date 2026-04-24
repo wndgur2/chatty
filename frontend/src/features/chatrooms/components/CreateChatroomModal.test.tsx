@@ -36,12 +36,12 @@ describe('CreateChatroomModal', () => {
     const onSubmit = vi.fn()
     render(<CreateChatroomModal isOpen onClose={vi.fn()} onSubmit={onSubmit} />)
 
-    fireEvent.change(screen.getByLabelText(/Name/i), { target: { value: '  Team Alpha  ' } })
+    fireEvent.change(screen.getByLabelText(/Name/i), { target: { value: '  Alpha  ' } })
     fireEvent.change(screen.getByLabelText(/Base Prompt/i), { target: { value: '  Be concise  ' } })
     fireEvent.click(screen.getByRole('button', { name: 'Create' }))
 
     expect(onSubmit).toHaveBeenCalledWith({
-      name: 'Team Alpha',
+      name: 'Alpha',
       basePrompt: 'Be concise',
     })
   })
