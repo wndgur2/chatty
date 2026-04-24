@@ -104,6 +104,13 @@ export class MessagesService {
         chatRoomIdBigInt,
         'ai',
         fullContent,
+        {
+          deliveryMode: voluntary ? 'proactive' : 'reply',
+          triggerReason: voluntary
+            ? 'scheduler_evaluation_yes'
+            : 'user_request',
+          triggerContext: voluntary ? { source: 'scheduler' } : null,
+        },
       );
       await this.chatroomStateRepository.resetDelay(chatRoomIdBigInt);
       this.messageStreamService.streamComplete(

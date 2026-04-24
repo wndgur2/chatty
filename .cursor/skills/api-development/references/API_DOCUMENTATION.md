@@ -212,6 +212,12 @@ Create a new chatroom from an existing one, copying BOTH the configuration and t
 
 ## 3. Messaging
 
+### 3.0 Backend Storage Note (No Contract Change)
+
+- AI-authored messages are persisted with an internal 1:1 metadata record in `ai_message_metadata`.
+- This metadata currently includes `read_at`, `delivery_mode` (`reply` or `proactive`), `trigger_reason`, and optional `trigger_context`.
+- This is internal persistence only for now: REST and Socket.IO payload schemas in this document remain unchanged.
+
 ### 3.1 Retrieve Message History
 
 Retrieve the message history for a specific chatroom.
@@ -275,7 +281,7 @@ Send a message from the user to the AI. _(Note: Responses are streamed via WebSo
 
 ### 4.1 Register FCM Device Token
 
-Register a user's device for receiving FCM push notifications (for voluntary AI messages).
+Register a user's device for receiving FCM push notifications (for proactive AI messages).
 
 - **Method:** `POST`
 - **URL:** `/api/notifications/register`

@@ -9,6 +9,7 @@ erDiagram
     users ||--o{ user_devices : "has"
     users ||--o{ chatrooms : "owns"
     chatrooms ||--o{ messages : "contains"
+    messages ||--|| ai_message_metadata : "has metadata"
 
     users {
         bigint id PK
@@ -42,6 +43,16 @@ erDiagram
         enum sender "'user', 'ai'"
         longtext content
         timestamp created_at
+    }
+
+    ai_message_metadata {
+        bigint message_id PK, FK
+        datetime read_at "NULL until read"
+        enum delivery_mode "'reply', 'proactive'"
+        varchar trigger_reason
+        json trigger_context "NULL optional explainability context"
+        timestamp created_at
+        timestamp updated_at
     }
 ```
 
@@ -111,11 +122,30 @@ CREATE TABLE IF NOT EXISTS messages (
         REFERENCES chatrooms(id)
         ON DELETE CASCADE
 );
+
+-- -----------------------------------------------------
+-- Table `ai_message_metadata`
+-- 1:1 metadata for AI-authored messages only.
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS ai_message_metadata (
+    message_id BIGINT PRIMARY KEY,
+    read_at DATETIME NULL,
+    delivery_mode ENUM('reply', 'proactive') NOT NULL,
+    trigger_reason VARCHAR(255) NOT NULL,
+    trigger_context JSON NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    CONSTRAINT fk_ai_message_metadata_message_id
+        FOREIGN KEY (message_id)
+        REFERENCES messages(id)
+        ON DELETE CASCADE
+);
 ```
 
 ## 3. Agentic Implementation Notes
 
 - **Primary Keys:** Standardized as auto-incrementing `BIGINT`. Adjust to UUID/ULID if the architecture demands decentralization, but `BIGINT` provides better indexing performance for MySQL.
-- **Voluntary AI Messaging Logic:** The `chatrooms` table holds `current_delay_seconds` and `next_evaluation_time`. DB default is `60`, and app logic resets it to `4` after a user message, then computes `next_evaluation_time`. If the scheduled evaluation fails (decides not to send), multiply `current_delay_seconds` by 2 and recalculate `next_evaluation_time`.
+- **Proactive AI Messaging Logic:** The `chatrooms` table holds `current_delay_seconds` and `next_evaluation_time`. DB default is `60`, and app logic resets it to `4` after a user message, then computes `next_evaluation_time`. If the scheduled evaluation fails (decides not to send), multiply `current_delay_seconds` by 2 and recalculate `next_evaluation_time`.
+- **AI Message Metadata Invariant:** `ai_message_metadata` rows are created only when `messages.sender = 'ai'` and are always 1:1 keyed by `message_id`.
 - **Image Uploads:** `profile_image_url` on `chatrooms` holds the CDN/S3 URL indicating the reference after the Blob upload is resolved by the backend.
 - **Constraints:** Foreign key cascading removes orphaned tokens, chatrooms, and messages when a parent entity is deleted.

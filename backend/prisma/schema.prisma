@@ -52,6 +52,11 @@ enum Sender {
   ai
 }
 
+enum AiMessageDeliveryMode {
+  reply
+  proactive
+}
+
 model Message {
   id         BigInt   @id @default(autoincrement())
   chatroomId BigInt   @map("chatroom_id")
@@ -59,7 +64,22 @@ model Message {
   content    String   @db.LongText
   createdAt  DateTime @default(now()) @map("created_at")
 
-  chatroom Chatroom @relation(fields: [chatroomId], references: [id], onDelete: Cascade)
+  chatroom          Chatroom           @relation(fields: [chatroomId], references: [id], onDelete: Cascade)
+  aiMessageMetadata AiMessageMetadata?
 
   @@map("messages")
+}
+
+model AiMessageMetadata {
+  messageId      BigInt                @id @map("message_id")
+  readAt         DateTime?             @map("read_at")
+  deliveryMode   AiMessageDeliveryMode @map("delivery_mode")
+  triggerReason  String                @map("trigger_reason") @db.VarChar(255)
+  triggerContext Json?                 @map("trigger_context")
+  createdAt      DateTime              @default(now()) @map("created_at")
+  updatedAt      DateTime              @updatedAt @map("updated_at")
+
+  message Message @relation(fields: [messageId], references: [id], onDelete: Cascade)
+
+  @@map("ai_message_metadata")
 }
