@@ -1,5 +1,5 @@
 # Repo-root context: docker compose build from project root.
-FROM node:22-alpine AS frontend-build
+FROM node:22-bookworm-slim AS frontend-build
 WORKDIR /app
 
 ARG VITE_API_URL=http://localhost

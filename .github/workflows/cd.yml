@@ -4,10 +4,7 @@ on:
   push:
     branches:
       - main
-
-concurrency:
-  group: cd-${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: false
+      - cd-test/**
 
 permissions:
   contents: read
@@ -31,7 +28,10 @@ env:
 jobs:
   build-and-push:
     name: build-and-push
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04-arm
+    concurrency:
+      group: cd-build-${{ github.ref }}
+      cancel-in-progress: true
     environment:
       name: production
     outputs:
@@ -56,9 +56,6 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
-
       - name: Log in to GHCR
         uses: docker/login-action@v3
         with:
@@ -71,7 +68,7 @@ jobs:
         with:
           context: ./backend
           file: ./backend/Dockerfile
-          platforms: linux/amd64,linux/arm64
+          platforms: linux/arm64
           push: true
           tags: |
             ${{ steps.meta.outputs.backend_image }}:${{ steps.meta.outputs.image_tag }}
@@ -91,7 +88,7 @@ jobs:
         with:
           context: .
           file: ./deploy/nginx/Dockerfile
-          platforms: linux/amd64,linux/arm64
+          platforms: linux/arm64
           push: true
           tags: |
             ${{ steps.meta.outputs.nginx_image }}:${{ steps.meta.outputs.image_tag }}
@@ -111,25 +108,50 @@ jobs:
 
   deploy-production:
     name: deploy-production
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     needs: build-and-push
+    concurrency:
+      group: cd-deploy-production
+      cancel-in-progress: false
     environment:
       name: production
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Evaluate deployment freshness
+        id: freshness
+        env:
+          CURRENT_SHA: ${{ github.sha }}
+        run: |
+          LATEST_SHA="$(git ls-remote origin refs/heads/main | awk '{print $1}')"
+          if [ -z "${LATEST_SHA}" ]; then
+            echo "should_deploy=true" >> "$GITHUB_OUTPUT"
+            echo "Failed to resolve latest main SHA; continuing deploy."
+            exit 0
+          fi
+          if [ "${CURRENT_SHA}" != "${LATEST_SHA}" ]; then
+            echo "should_deploy=false" >> "$GITHUB_OUTPUT"
+            echo "Stale run (${CURRENT_SHA}); latest main is ${LATEST_SHA}. Skipping deploy."
+            exit 0
+          fi
+          echo "should_deploy=true" >> "$GITHUB_OUTPUT"
+
       - name: Start SSH agent
+        if: steps.freshness.outputs.should_deploy == 'true'
         uses: webfactory/ssh-agent@v0.9.0
         with:
           ssh-private-key: ${{ secrets.DEPLOY_SSH_KEY }}
 
       - name: Add deploy host to known_hosts
+        if: steps.freshness.outputs.should_deploy == 'true'
         run: |
           mkdir -p ~/.ssh
           ssh-keyscan -H "${{ secrets.DEPLOY_HOST }}" >> ~/.ssh/known_hosts
 
       - name: Deploy on production host
+        if: steps.freshness.outputs.should_deploy == 'true'
         env:
           DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
           DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
@@ -153,6 +175,7 @@ jobs:
             '${DEPLOY_PATH}/deploy-prod.sh'"
 
       - name: Smoke health check
+        if: steps.freshness.outputs.should_deploy == 'true'
         env:
           PROD_HEALTHCHECK_URL: ${{ secrets.PROD_HEALTHCHECK_URL }}
         run: |
