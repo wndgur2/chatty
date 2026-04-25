@@ -4,14 +4,14 @@ import { MessagesService } from './messages.service';
 import { MessageHistoryService } from './message-history.service';
 import { MessageSendService } from './message-send.service';
 import { MessageStreamService } from './message-stream.service';
-import { AiResponseService } from './ai-response.service';
 import { MessagesRepository } from './messages.repository';
 import { ChatroomStateRepository } from './chatroom-state.repository';
 import { FcmPushService } from '../notifications/fcm-push.service';
 import {
   NORMAL_CHAT_BASE_SYSTEM,
   STABLE_VOLUNTARY_ALIGNMENT,
-} from '../ai-evaluation.constants';
+} from '../inference/prompts/chat-system.prompt';
+import { ChatGenerationService } from '../inference/tasks/chat-generation.service';
 
 const mockMessageHistoryService = { findHistory: jest.fn() };
 const mockMessageSendService = { saveUserMessage: jest.fn() };
@@ -20,7 +20,7 @@ const mockMessageStreamService = {
   streamChunk: jest.fn(),
   streamComplete: jest.fn(),
 };
-const mockAiResponseService = { generate: jest.fn() };
+const mockChatGenerationService = { generate: jest.fn() };
 const mockMessagesRepository = {
   createMessage: jest.fn(),
   findRecent: jest.fn(),
@@ -45,7 +45,10 @@ describe('MessagesService', () => {
         { provide: MessageHistoryService, useValue: mockMessageHistoryService },
         { provide: MessageSendService, useValue: mockMessageSendService },
         { provide: MessageStreamService, useValue: mockMessageStreamService },
-        { provide: AiResponseService, useValue: mockAiResponseService },
+        {
+          provide: ChatGenerationService,
+          useValue: mockChatGenerationService,
+        },
         { provide: MessagesRepository, useValue: mockMessagesRepository },
         {
           provide: ChatroomStateRepository,
@@ -145,7 +148,7 @@ describe('MessagesService', () => {
 
     await service.processBackgroundMessage(99, false);
 
-    expect(mockAiResponseService.generate).not.toHaveBeenCalled();
+    expect(mockChatGenerationService.generate).not.toHaveBeenCalled();
   });
 
   it('should warn when voluntary FCM notify fails', async () => {
@@ -165,7 +168,7 @@ describe('MessagesService', () => {
         createdAt: new Date(),
       },
     ]);
-    mockAiResponseService.generate.mockResolvedValue('done');
+    mockChatGenerationService.generate.mockResolvedValue('done');
     mockMessagesRepository.createMessage.mockResolvedValue({ id: 1n });
     mockChatroomStateRepository.resetDelay.mockResolvedValue(undefined);
     mockFcmPushService.notifyVoluntaryAiMessage.mockRejectedValue(
@@ -190,7 +193,7 @@ describe('MessagesService', () => {
       basePrompt: '',
     });
     mockMessagesRepository.findRecent.mockResolvedValue([]);
-    mockAiResponseService.generate.mockRejectedValue(new Error('ollama'));
+    mockChatGenerationService.generate.mockRejectedValue(new Error('ollama'));
 
     await service.processBackgroundMessage(3, false);
 
@@ -219,13 +222,13 @@ describe('MessagesService', () => {
         createdAt: new Date(),
       },
     ]);
-    mockAiResponseService.generate.mockResolvedValue('AI reply text');
+    mockChatGenerationService.generate.mockResolvedValue('AI reply text');
     mockMessagesRepository.createMessage.mockResolvedValue({ id: 42n });
     mockChatroomStateRepository.resetDelay.mockResolvedValue(undefined);
 
     await service.processBackgroundMessage(1, true);
 
-    expect(mockAiResponseService.generate).toHaveBeenCalled();
+    expect(mockChatGenerationService.generate).toHaveBeenCalled();
     expect(mockMessagesRepository.createMessage).toHaveBeenCalledWith(
       1n,
       'ai',
@@ -235,7 +238,7 @@ describe('MessagesService', () => {
         triggerReason: 'scheduler_evaluation_yes',
       }),
     );
-    const genArgs = mockAiResponseService.generate.mock.calls[0] as [
+    const genArgs = mockChatGenerationService.generate.mock.calls[0] as [
       { role: string; content: string }[],
       string,
       (chunk: string) => void,
@@ -273,7 +276,7 @@ describe('MessagesService', () => {
         createdAt: new Date(),
       },
     ]);
-    mockAiResponseService.generate.mockResolvedValue('reply');
+    mockChatGenerationService.generate.mockResolvedValue('reply');
     mockMessagesRepository.createMessage.mockResolvedValue({ id: 1n });
     mockChatroomStateRepository.resetDelay.mockResolvedValue(undefined);
 
@@ -288,7 +291,7 @@ describe('MessagesService', () => {
         triggerReason: 'user_request',
       }),
     );
-    expect(mockAiResponseService.generate).toHaveBeenCalledWith(
+    expect(mockChatGenerationService.generate).toHaveBeenCalledWith(
       [{ role: 'user', content: 'hello' }],
       `${NORMAL_CHAT_BASE_SYSTEM}\n\nYou are helpful.`,
       expect.any(Function),
@@ -312,13 +315,13 @@ describe('MessagesService', () => {
         createdAt: new Date(),
       },
     ]);
-    mockAiResponseService.generate.mockResolvedValue('ok');
+    mockChatGenerationService.generate.mockResolvedValue('ok');
     mockMessagesRepository.createMessage.mockResolvedValue({ id: 1n });
     mockChatroomStateRepository.resetDelay.mockResolvedValue(undefined);
 
     await service.processBackgroundMessage(1, false);
 
-    expect(mockAiResponseService.generate).toHaveBeenCalledWith(
+    expect(mockChatGenerationService.generate).toHaveBeenCalledWith(
       [{ role: 'user', content: 'hey' }],
       NORMAL_CHAT_BASE_SYSTEM,
       expect.any(Function),

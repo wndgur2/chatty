@@ -4,15 +4,15 @@ import { SendMessageDto } from './dto/send-message.dto';
 import { MessageHistoryService } from './message-history.service';
 import { MessageSendService } from './message-send.service';
 import { MessageStreamService } from './message-stream.service';
-import { AiResponseService } from './ai-response.service';
 import { MessagesRepository } from './messages.repository';
 import { ChatroomStateRepository } from './chatroom-state.repository';
 import {
   buildVoluntaryLastInstruction,
   NORMAL_CHAT_BASE_SYSTEM,
   STABLE_VOLUNTARY_ALIGNMENT,
-} from '../ai-evaluation.constants';
-import { toChatHistory } from './chat-history.util';
+} from '../inference/prompts/chat-system.prompt';
+import { toChatHistory } from '../inference/shared/chat-history.util';
+import { ChatGenerationService } from '../inference/tasks/chat-generation.service';
 
 @Injectable()
 export class MessagesService {
@@ -22,7 +22,7 @@ export class MessagesService {
     private readonly messageHistoryService: MessageHistoryService,
     private readonly messageSendService: MessageSendService,
     private readonly messageStreamService: MessageStreamService,
-    private readonly aiResponseService: AiResponseService,
+    private readonly chatGenerationService: ChatGenerationService,
     private readonly messagesRepository: MessagesRepository,
     private readonly chatroomStateRepository: ChatroomStateRepository,
     private readonly fcmPushService: FcmPushService,
@@ -92,7 +92,7 @@ export class MessagesService {
       }
 
       this.messageStreamService.setTyping(chatroomId, true);
-      const fullContent = await this.aiResponseService.generate(
+      const fullContent = await this.chatGenerationService.generate(
         history,
         systemPrompt,
         (chunk) => this.messageStreamService.streamChunk(chatroomId, chunk),

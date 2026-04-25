@@ -4,15 +4,15 @@ import {
   AI_BACKGROUND_EVALUATION_CRON,
   INITIAL_AI_EVALUATION_DELAY_SECONDS,
   MAX_VOLUNTARY_MESSAGES_IN_A_ROW,
-  type VoluntaryEvaluationContext,
-} from '../ai-evaluation.constants';
+} from './scheduling.constants';
 import { PrismaService } from '../prisma/prisma.service';
-import { OllamaService } from '../ollama/ollama.service';
 import { MessagesService } from '../messages/messages.service';
 import {
   toChatHistory,
   voluntaryAiCountInRowFromNewestFirst,
-} from '../messages/chat-history.util';
+} from '../inference/shared/chat-history.util';
+import { VoluntaryEvaluationContext } from '../inference/prompts/voluntary-evaluator.prompt';
+import { VoluntaryEvaluatorService } from '../inference/tasks/voluntary-evaluator.service';
 
 @Injectable()
 export class TasksService {
@@ -21,7 +21,7 @@ export class TasksService {
 
   constructor(
     private prisma: PrismaService,
-    private ollama: OllamaService,
+    private voluntaryEvaluator: VoluntaryEvaluatorService,
     private messages: MessagesService,
   ) {}
 
@@ -93,7 +93,7 @@ export class TasksService {
         const basePrompt = room.basePrompt || 'You are a helpful assistant.';
 
         try {
-          const shouldAnswer = await this.ollama.evaluateToAnswer(
+          const shouldAnswer = await this.voluntaryEvaluator.shouldAnswer(
             history,
             basePrompt,
             evalCtx,

@@ -1,11 +1,11 @@
 import { Module } from '@nestjs/common';
 import { TasksService } from './tasks.service';
 import { PrismaModule } from '../prisma/prisma.module';
-import { OllamaModule } from '../ollama/ollama.module';
 import { MessagesModule } from '../messages/messages.module';
+import { InferenceModule } from '../inference/inference.module';
 
 @Module({
-  imports: [PrismaModule, OllamaModule, MessagesModule],
+  imports: [PrismaModule, InferenceModule, MessagesModule],
   providers: [TasksService],
 })
 export class TasksModule {}
