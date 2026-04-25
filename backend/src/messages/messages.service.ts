@@ -7,7 +7,7 @@ import { MessageStreamService } from './message-stream.service';
 import { MessagesRepository } from './messages.repository';
 import { ChatroomStateRepository } from './chatroom-state.repository';
 import {
-  buildVoluntaryLastInstruction,
+  buildProactiveLastInstruction,
   NORMAL_CHAT_BASE_SYSTEM,
   STABLE_VOLUNTARY_ALIGNMENT,
 } from '../inference/prompts/chat-system.prompt';
@@ -58,7 +58,7 @@ export class MessagesService {
     };
   }
 
-  public async processBackgroundMessage(chatroomId: number, voluntary = false) {
+  public async processBackgroundMessage(chatroomId: number, proactive = false) {
     try {
       const chatRoomIdBigInt = BigInt(chatroomId);
       const room =
@@ -67,7 +67,7 @@ export class MessagesService {
       if (!room) return;
 
       const basePrompt = room.basePrompt || '';
-      const systemPrompt = voluntary
+      const systemPrompt = proactive
         ? (basePrompt ? `${basePrompt}\n\n` : '') + STABLE_VOLUNTARY_ALIGNMENT
         : [NORMAL_CHAT_BASE_SYSTEM, basePrompt]
             .filter((s) => s.trim())
@@ -79,15 +79,15 @@ export class MessagesService {
 
       const historyRaw = await this.messagesRepository.findRecent(
         chatRoomIdBigInt,
-        voluntary ? 5 : 8,
+        proactive ? 5 : 8,
       );
       const history = toChatHistory(historyRaw);
 
-      if (voluntary) {
+      if (proactive) {
         const lastContent = history[history.length - 1]?.content ?? '';
         history.push({
           role: 'system',
-          content: buildVoluntaryLastInstruction(lastContent),
+          content: buildProactiveLastInstruction(lastContent),
         });
       }
 
@@ -96,7 +96,7 @@ export class MessagesService {
         history,
         systemPrompt,
         (chunk) => this.messageStreamService.streamChunk(chatroomId, chunk),
-        voluntary ? { voluntary: true } : undefined,
+        proactive ? { proactive: true } : undefined,
       );
 
       this.messageStreamService.setTyping(chatroomId, false);
@@ -105,11 +105,11 @@ export class MessagesService {
         'ai',
         fullContent,
         {
-          deliveryMode: voluntary ? 'proactive' : 'reply',
-          triggerReason: voluntary
+          deliveryMode: proactive ? 'proactive' : 'reply',
+          triggerReason: proactive
             ? 'scheduler_evaluation_yes'
             : 'user_request',
-          triggerContext: voluntary ? { source: 'scheduler' } : null,
+          triggerContext: proactive ? { source: 'scheduler' } : null,
         },
       );
       await this.chatroomStateRepository.resetDelay(chatRoomIdBigInt);
@@ -119,15 +119,15 @@ export class MessagesService {
         aiDbMessage.id.toString(),
       );
 
-      if (voluntary) {
+      if (proactive) {
         await this.fcmPushService
-          .notifyVoluntaryAiMessage(room.userId, {
+          .notifyProactiveAiMessage(room.userId, {
             chatroomId: chatroomId.toString(),
             chatroomName: room.name,
             messagePreview: fullContent,
           })
           .catch((err) => {
-            this.logger.warn('FCM voluntary message notify failed', err);
+            this.logger.warn('FCM proactive message notify failed', err);
           });
       }
     } catch (e) {

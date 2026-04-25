@@ -3,12 +3,12 @@ import {
   CLASSIFICATION_PORT,
   type ClassificationPort,
 } from '../ports/classification.port';
-import { buildVoluntaryEvaluationPrompt } from '../prompts/voluntary-evaluator.prompt';
+import { buildProactiveEvaluationPrompt } from '../prompts/proactive-evaluator.prompt';
 import { ChatMessage } from '../shared/chat-message';
-import { VoluntaryEvaluationContext } from '../prompts/voluntary-evaluator.prompt';
+import { ProactiveEvaluationContext } from '../prompts/proactive-evaluator.prompt';
 
 @Injectable()
-export class VoluntaryEvaluatorService {
+export class ProactiveEvaluatorService {
   constructor(
     @Inject(CLASSIFICATION_PORT)
     private readonly classificationPort: ClassificationPort,
@@ -17,13 +17,13 @@ export class VoluntaryEvaluatorService {
   async shouldAnswer(
     history: ChatMessage[],
     basePrompt: string,
-    ctx: VoluntaryEvaluationContext,
+    ctx: ProactiveEvaluationContext,
   ): Promise<boolean> {
     const formattedHistory = history
       .slice(-10)
       .map((msg) => `${msg.role.toUpperCase()}: ${msg.content}`)
       .join('\n');
-    const evaluationPrompt = buildVoluntaryEvaluationPrompt(
+    const evaluationPrompt = buildProactiveEvaluationPrompt(
       basePrompt,
       formattedHistory,
       ctx,

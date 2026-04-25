@@ -32,7 +32,7 @@ const mockChatroomStateRepository = {
   findById: jest.fn(),
 };
 const mockFcmPushService = {
-  notifyVoluntaryAiMessage: jest.fn().mockResolvedValue(undefined),
+  notifyProactiveAiMessage: jest.fn().mockResolvedValue(undefined),
 };
 
 describe('MessagesService', () => {
@@ -63,7 +63,7 @@ describe('MessagesService', () => {
 
   afterEach(() => {
     jest.clearAllMocks();
-    mockFcmPushService.notifyVoluntaryAiMessage.mockResolvedValue(undefined);
+    mockFcmPushService.notifyProactiveAiMessage.mockResolvedValue(undefined);
   });
 
   it('should be defined', () => {
@@ -151,7 +151,7 @@ describe('MessagesService', () => {
     expect(mockChatGenerationService.generate).not.toHaveBeenCalled();
   });
 
-  it('should warn when voluntary FCM notify fails', async () => {
+  it('should warn when proactive FCM notify fails', async () => {
     const warnSpy = jest.spyOn(Logger.prototype, 'warn').mockImplementation();
     mockChatroomStateRepository.findById.mockResolvedValue({
       id: 1n,
@@ -171,14 +171,14 @@ describe('MessagesService', () => {
     mockChatGenerationService.generate.mockResolvedValue('done');
     mockMessagesRepository.createMessage.mockResolvedValue({ id: 1n });
     mockChatroomStateRepository.resetDelay.mockResolvedValue(undefined);
-    mockFcmPushService.notifyVoluntaryAiMessage.mockRejectedValue(
+    mockFcmPushService.notifyProactiveAiMessage.mockRejectedValue(
       new Error('fcm down'),
     );
 
     await service.processBackgroundMessage(1, true);
 
     expect(warnSpy).toHaveBeenCalledWith(
-      'FCM voluntary message notify failed',
+      'FCM proactive message notify failed',
       expect.any(Error),
     );
     warnSpy.mockRestore();
@@ -206,11 +206,11 @@ describe('MessagesService', () => {
     errSpy.mockRestore();
   });
 
-  it('should notify FCM after a voluntary background message completes', async () => {
+  it('should notify FCM after a proactive background message completes', async () => {
     mockChatroomStateRepository.findById.mockResolvedValue({
       id: 1n,
       userId: 2n,
-      name: 'Voluntary Room',
+      name: 'Proactive Room',
       basePrompt: 'be brief',
     });
     mockMessagesRepository.findRecent.mockResolvedValue([
@@ -242,25 +242,25 @@ describe('MessagesService', () => {
       { role: string; content: string }[],
       string,
       (chunk: string) => void,
-      { voluntary?: boolean } | undefined,
+      { proactive?: boolean } | undefined,
     ];
     expect(genArgs[0][0]).toEqual({ role: 'user', content: 'hi' });
     expect(genArgs[0][1].role).toBe('system');
-    expect(genArgs[0][1].content).toContain('Voluntary = short');
+    expect(genArgs[0][1].content).toContain('Proactive = short');
     expect(genArgs[0][1].content).toContain('hi');
     expect(genArgs[1]).toBe(`be brief\n\n${STABLE_VOLUNTARY_ALIGNMENT}`);
-    expect(genArgs[3]).toEqual({ voluntary: true });
-    expect(mockFcmPushService.notifyVoluntaryAiMessage).toHaveBeenCalledWith(
+    expect(genArgs[3]).toEqual({ proactive: true });
+    expect(mockFcmPushService.notifyProactiveAiMessage).toHaveBeenCalledWith(
       2n,
       expect.objectContaining({
         chatroomId: '1',
-        chatroomName: 'Voluntary Room',
+        chatroomName: 'Proactive Room',
         messagePreview: 'AI reply text',
       }),
     );
   });
 
-  it('should prepend normal base system prompt for non-voluntary background messages', async () => {
+  it('should prepend normal base system prompt for non-proactive background messages', async () => {
     mockChatroomStateRepository.findById.mockResolvedValue({
       id: 1n,
       userId: 2n,

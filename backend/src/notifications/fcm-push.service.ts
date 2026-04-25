@@ -57,12 +57,12 @@ export class FcmPushService implements OnModuleInit {
   }
 
   /**
-   * Sends a notification with data payload FCM multicast for a voluntary AI message. Clients must
+   * Sends a notification with data payload FCM multicast for a proactive AI message. Clients must
    * show a user-visible notification (e.g. service worker `showNotification`,
    * Android/iOS local notification) using `data.title` and `data.body`. Use
    * `data` for routing and dedupe on `data.type`.
    */
-  async notifyVoluntaryAiMessage(
+  async notifyProactiveAiMessage(
     userId: bigint,
     payload: {
       chatroomId: string;
@@ -81,7 +81,7 @@ export class FcmPushService implements OnModuleInit {
         : 'Open the app to read the message.';
 
     const data: Record<string, string> = {
-      type: 'voluntary_ai_message',
+      type: 'proactive_ai_message',
       chatroomId: payload.chatroomId,
       title,
       body,

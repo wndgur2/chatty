@@ -4,7 +4,7 @@ Vite + React 19 SPA for multi-room chat, Socket.IO streaming, optional web push 
 
 ## Purpose
 
-Chatty supports both user-initiated messages and **voluntary** AI messages: the backend runs evaluations on a schedule; the UI reflects streaming replies and can surface push notifications when Firebase is configured.
+Chatty supports both user-initiated messages and **proactive** AI messages: the backend runs evaluations on a schedule; the UI reflects streaming replies and can surface push notifications when Firebase is configured.
 
 ## Tech stack
 
@@ -46,12 +46,12 @@ npm run preview
 
 ## Environment variables
 
-| Variable | Purpose |
-| --- | --- |
-| `VITE_API_URL` | REST + Socket.IO base (same host/path the browser uses to reach the API). |
-| `VITE_FIREBASE_*` | Firebase web app config for FCM. |
-| `VITE_FCM_VAPID_KEY` | Web Push VAPID key from Firebase Console. |
-| `VITE_RELEASE_SHA`, `VITE_RELEASE_BUILT_AT` | Optional build metadata (e.g. CI). |
+| Variable                                    | Purpose                                                                   |
+| ------------------------------------------- | ------------------------------------------------------------------------- |
+| `VITE_API_URL`                              | REST + Socket.IO base (same host/path the browser uses to reach the API). |
+| `VITE_FIREBASE_*`                           | Firebase web app config for FCM.                                          |
+| `VITE_FCM_VAPID_KEY`                        | Web Push VAPID key from Firebase Console.                                 |
+| `VITE_RELEASE_SHA`, `VITE_RELEASE_BUILT_AT` | Optional build metadata (e.g. CI).                                        |
 
 ## Scripts
 

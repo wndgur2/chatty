@@ -96,7 +96,7 @@ describe('FcmPushService', () => {
     });
     repository.deleteByDeviceTokens.mockResolvedValue({ count: 1 });
 
-    await service.notifyVoluntaryAiMessage(1n, {
+    await service.notifyProactiveAiMessage(1n, {
       chatroomId: '5',
       chatroomName: 'Room A',
       messagePreview: 'Hello world',
@@ -117,7 +117,7 @@ describe('FcmPushService', () => {
     }
     expect(payload.tokens).toEqual(['good-token', 'bad-token']);
     expect(payload.android.priority).toBe('high');
-    expect(payload.data.type).toBe('voluntary_ai_message');
+    expect(payload.data.type).toBe('proactive_ai_message');
     expect(payload.data.chatroomId).toBe('5');
     expect(payload.data.title).toBe('New message in Room A');
     expect(payload.data.body).toBe('Hello world');
@@ -127,7 +127,7 @@ describe('FcmPushService', () => {
   it('should skip when no tokens', async () => {
     repository.findDeviceTokensByUserId.mockResolvedValue([]);
 
-    await service.notifyVoluntaryAiMessage(1n, { chatroomId: '1' });
+    await service.notifyProactiveAiMessage(1n, { chatroomId: '1' });
 
     expect(sendEachForMulticast).not.toHaveBeenCalled();
   });

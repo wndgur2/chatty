@@ -1,9 +1,9 @@
-export type VoluntaryEvaluationContext = {
+export type ProactiveEvaluationContext = {
   secondsSinceLastMessage: number;
   lastSender: 'user' | 'ai';
 };
 
-export function buildLegacyVoluntaryEvaluationPrompt(
+export function buildLegacyProactiveEvaluationPrompt(
   basePrompt: string,
   formattedHistory: string,
 ): string {
@@ -35,10 +35,10 @@ export function formatElapsedForEvaluation(totalSeconds: number): string {
   return remM === 0 ? `${h} hour(s)` : `${h} hour(s) and ${remM} minute(s)`;
 }
 
-export function buildVoluntaryEvaluationPrompt(
+export function buildProactiveEvaluationPrompt(
   basePrompt: string,
   formattedHistory: string,
-  ctx: VoluntaryEvaluationContext,
+  ctx: ProactiveEvaluationContext,
 ): string {
   const elapsed = formatElapsedForEvaluation(ctx.secondsSinceLastMessage);
 
