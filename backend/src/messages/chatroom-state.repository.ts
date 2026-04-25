@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { INITIAL_AI_EVALUATION_DELAY_SECONDS } from '../ai-evaluation.constants';
+import { INITIAL_AI_EVALUATION_DELAY_SECONDS } from '../tasks/scheduling.constants';
 import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()

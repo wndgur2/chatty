@@ -1,4 +1,4 @@
-import { ChatMessage } from '../ollama/ollama.service';
+import { ChatMessage } from './chat-message';
 
 type MessageLike = {
   sender: 'user' | 'ai';
@@ -22,8 +22,11 @@ export function voluntaryAiCountInRowFromNewestFirst(
 ): number {
   let tailAiCount = 0;
   for (const m of messages) {
-    if (m.sender === 'ai') tailAiCount += 1;
-    else break;
+    if (m.sender === 'ai') {
+      tailAiCount += 1;
+    } else {
+      break;
+    }
   }
   return Math.max(0, tailAiCount - 1);
 }

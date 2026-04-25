@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { ChatroomStateRepository } from './chatroom-state.repository';
 import { PrismaService } from '../prisma/prisma.service';
-import { INITIAL_AI_EVALUATION_DELAY_SECONDS } from '../ai-evaluation.constants';
+import { INITIAL_AI_EVALUATION_DELAY_SECONDS } from '../tasks/scheduling.constants';
 
 describe('ChatroomStateRepository', () => {
   let repository: ChatroomStateRepository;
