@@ -1,8 +1,8 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { TasksService } from './tasks.service';
 import { PrismaService } from '../prisma/prisma.service';
-import { OllamaService } from '../ollama/ollama.service';
 import { MessagesService } from '../messages/messages.service';
+import { VoluntaryEvaluatorService } from '../inference/tasks/voluntary-evaluator.service';
 describe('TasksService', () => {
   let service: TasksService;
 
@@ -23,9 +23,9 @@ describe('TasksService', () => {
           },
         },
         {
-          provide: OllamaService,
+          provide: VoluntaryEvaluatorService,
           useValue: {
-            evaluateToAnswer: jest.fn().mockResolvedValue(true),
+            shouldAnswer: jest.fn().mockResolvedValue(true),
           },
         },
         {
@@ -45,7 +45,7 @@ describe('TasksService', () => {
   });
 
   it('backs off without Ollama or voluntary AI when voluntary streak is at cap', async () => {
-    const evaluateToAnswer = jest.fn();
+    const shouldAnswer = jest.fn();
     const processBackgroundMessage = jest.fn();
     const chatroomUpdate = jest.fn().mockResolvedValue({});
     const prisma = {
@@ -76,7 +76,7 @@ describe('TasksService', () => {
       providers: [
         TasksService,
         { provide: PrismaService, useValue: prisma },
-        { provide: OllamaService, useValue: { evaluateToAnswer } },
+        { provide: VoluntaryEvaluatorService, useValue: { shouldAnswer } },
         { provide: MessagesService, useValue: { processBackgroundMessage } },
       ],
     }).compile();
@@ -84,7 +84,7 @@ describe('TasksService', () => {
     const svc = module.get<TasksService>(TasksService);
     await svc.handleAIBackgroundEvaluations();
 
-    expect(evaluateToAnswer).not.toHaveBeenCalled();
+    expect(shouldAnswer).not.toHaveBeenCalled();
     expect(processBackgroundMessage).not.toHaveBeenCalled();
 
     type RoomUpdateArg = {
@@ -99,7 +99,7 @@ describe('TasksService', () => {
   });
 
   it('still evaluates when voluntary streak is below cap', async () => {
-    const evaluateToAnswer = jest.fn().mockResolvedValue(true);
+    const shouldAnswer = jest.fn().mockResolvedValue(true);
     const processBackgroundMessage = jest.fn().mockResolvedValue(undefined);
     const chatroomUpdate = jest.fn().mockResolvedValue({});
     const prisma = {
@@ -135,7 +135,7 @@ describe('TasksService', () => {
       providers: [
         TasksService,
         { provide: PrismaService, useValue: prisma },
-        { provide: OllamaService, useValue: { evaluateToAnswer } },
+        { provide: VoluntaryEvaluatorService, useValue: { shouldAnswer } },
         { provide: MessagesService, useValue: { processBackgroundMessage } },
       ],
     }).compile();
@@ -143,7 +143,7 @@ describe('TasksService', () => {
     const svc = module.get<TasksService>(TasksService);
     await svc.handleAIBackgroundEvaluations();
 
-    expect(evaluateToAnswer).toHaveBeenCalled();
+    expect(shouldAnswer).toHaveBeenCalled();
     expect(processBackgroundMessage).toHaveBeenCalledWith(1, true);
   });
 });

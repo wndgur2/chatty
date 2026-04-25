@@ -9,11 +9,11 @@ import { ChatroomsModule } from './chatrooms/chatrooms.module';
 import { MessagesModule } from './messages/messages.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { PrismaModule } from './prisma/prisma.module';
-import { OllamaModule } from './ollama/ollama.module';
 import { TasksModule } from './tasks/tasks.module';
 import { AuthModule } from './auth/auth.module';
 import { JwtAuthGuard } from './auth/jwt-auth.guard';
 import { resolveAssetsDir } from './common/utils/assets-path.util';
+import { InferenceModule } from './inference/inference.module';
 
 const assetsRootPath = resolveAssetsDir(process.env.ASSETS_DIR);
 
@@ -29,7 +29,7 @@ const assetsRootPath = resolveAssetsDir(process.env.ASSETS_DIR);
     MessagesModule,
     NotificationsModule,
     PrismaModule,
-    OllamaModule,
+    InferenceModule,
     TasksModule,
     AuthModule,
   ],

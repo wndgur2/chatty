@@ -74,6 +74,10 @@ jobs:
         if: needs.changes.outputs.backend == 'true'
         run: npm run test -- --runInBand
 
+      - name: Build
+        if: needs.changes.outputs.backend == 'true'
+        run: npm run build
+
       - name: Skip backend checks when unchanged
         if: needs.changes.outputs.backend != 'true'
         run: echo "No backend changes detected."
@@ -112,6 +116,10 @@ jobs:
       - name: Test
         if: needs.changes.outputs.frontend == 'true'
         run: npm run test
+
+      - name: Build
+        if: needs.changes.outputs.frontend == 'true'
+        run: npm run build
 
       - name: Skip frontend checks when unchanged
         if: needs.changes.outputs.frontend != 'true'
