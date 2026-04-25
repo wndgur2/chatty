@@ -1,7 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 import {
   CHAT_COMPLETION_PORT,
-  ChatCompletionPort,
+  type ChatCompletionPort,
 } from '../ports/chat-completion.port';
 import { ChatMessage } from '../shared/chat-message';
 import {

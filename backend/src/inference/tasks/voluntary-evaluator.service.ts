@@ -1,7 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 import {
   CLASSIFICATION_PORT,
-  ClassificationPort,
+  type ClassificationPort,
 } from '../ports/classification.port';
 import { buildVoluntaryEvaluationPrompt } from '../prompts/voluntary-evaluator.prompt';
 import { ChatMessage } from '../shared/chat-message';
