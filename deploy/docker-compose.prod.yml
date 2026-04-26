@@ -33,6 +33,13 @@ services:
       OLLAMA_HOST: ${OLLAMA_HOST}
       OLLAMA_CHAT_MODEL: ${OLLAMA_CHAT_MODEL}
       OLLAMA_EVAL_MODEL: ${OLLAMA_EVAL_MODEL}
+      OLLAMA_EMBED_MODEL: ${OLLAMA_EMBED_MODEL}
+      QDRANT_URL: ${QDRANT_URL}
+      QDRANT_COLLECTION: ${QDRANT_COLLECTION}
+      RAG_RECENT_WINDOW: ${RAG_RECENT_WINDOW:-8}
+      RAG_TOP_K: ${RAG_TOP_K:-5}
+      RAG_MIN_SCORE: ${RAG_MIN_SCORE:-0.4}
+      RAG_SNIPPET_CHARS: ${RAG_SNIPPET_CHARS:-200}
       PORT: "8080"
       ASSETS_DIR: /app/assets
       FIREBASE_SERVICE_ACCOUNT_JSON: ${FIREBASE_SERVICE_ACCOUNT_JSON:-}
@@ -45,6 +52,12 @@ services:
     extra_hosts:
       - "host.docker.internal:host-gateway"
 
+  qdrant:
+    image: qdrant/qdrant:v1.12.4
+    restart: unless-stopped
+    volumes:
+      - qdrant_data:/qdrant/storage
+
   nginx:
     image: ${NGINX_IMAGE}:${IMAGE_TAG}
     restart: unless-stopped
@@ -56,3 +69,4 @@ services:
 volumes:
   mysql_data:
   backend_assets:
+  qdrant_data:

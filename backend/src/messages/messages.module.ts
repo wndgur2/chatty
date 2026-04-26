@@ -10,9 +10,10 @@ import { MessageStreamService } from './message-stream.service';
 import { MessagesRepository } from './messages.repository';
 import { ChatroomStateRepository } from './chatroom-state.repository';
 import { InferenceModule } from '../inference/inference.module';
+import { MemoryModule } from './memory/memory.module';
 
 @Module({
-  imports: [PrismaModule, InferenceModule, NotificationsModule],
+  imports: [PrismaModule, InferenceModule, NotificationsModule, MemoryModule],
   providers: [
     MessagesService,
     MessagesGateway,
