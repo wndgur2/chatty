@@ -13,6 +13,12 @@ import {
 } from '../inference/prompts/chat-system.prompt';
 import { toChatHistory } from '../inference/shared/chat-history.util';
 import { ChatGenerationService } from '../inference/tasks/chat-generation.service';
+import { MemoryService } from './memory/memory.service';
+import { formatMemorySnippets } from './memory/memory.formatter';
+import { ConfigService } from '@nestjs/config';
+
+const PROACTIVE_HISTORY_WINDOW_SIZE = 5;
+const DEFAULT_HISTORY_WINDOW_SIZE = 8;
 
 @Injectable()
 export class MessagesService {
@@ -26,6 +32,8 @@ export class MessagesService {
     private readonly messagesRepository: MessagesRepository,
     private readonly chatroomStateRepository: ChatroomStateRepository,
     private readonly fcmPushService: FcmPushService,
+    private readonly memoryService: MemoryService,
+    private readonly configService: ConfigService,
   ) {}
 
   async findHistory(
@@ -47,6 +55,9 @@ export class MessagesService {
     await this.chatroomStateRepository.clearNextEvaluationTime(
       BigInt(chatroomId),
     );
+    this.memoryService.indexOlderMessage(chatroomId).catch((err) => {
+      this.logger.warn('Memory indexing failed', err);
+    });
 
     this.processBackgroundMessage(chatroomId).catch((err) => {
       this.logger.error('Background processing failed', err);
@@ -60,6 +71,7 @@ export class MessagesService {
 
   public async processBackgroundMessage(chatroomId: number, proactive = false) {
     try {
+      const ragTopK = Number(this.configService.get('RAG_TOP_K', 5));
       const chatRoomIdBigInt = BigInt(chatroomId);
       const room =
         await this.chatroomStateRepository.findById(chatRoomIdBigInt);
@@ -79,9 +91,35 @@ export class MessagesService {
 
       const historyRaw = await this.messagesRepository.findRecent(
         chatRoomIdBigInt,
-        proactive ? 5 : 8,
+        proactive ? PROACTIVE_HISTORY_WINDOW_SIZE : DEFAULT_HISTORY_WINDOW_SIZE,
+      );
+      this.logger.debug(
+        `Loaded ${historyRaw.length} recent messages for chatroom=${chatroomId} (proactive=${proactive})`,
       );
       const history = toChatHistory(historyRaw);
+      const recentMessageIds = historyRaw.map((message) =>
+        message.id.toString(),
+      );
+      const queryMessage = [...history]
+        .reverse()
+        .find((message) => message.role === 'user');
+      const memorySnippets = queryMessage
+        ? await this.memoryService.retrieveContext(
+            chatroomId,
+            queryMessage.content,
+            {
+              k: ragTopK,
+              recentMessageIds,
+            },
+          )
+        : [];
+      this.logger.debug(
+        `Retrieved ${memorySnippets.length} memory snippets for chatroom=${chatroomId}`,
+      );
+      const memoryBlock = formatMemorySnippets(memorySnippets);
+      const resolvedSystemPrompt = memoryBlock
+        ? `${systemPrompt}\n\n${memoryBlock}`
+        : systemPrompt;
 
       if (proactive) {
         const lastContent = history[history.length - 1]?.content ?? '';
@@ -94,7 +132,7 @@ export class MessagesService {
       this.messageStreamService.setTyping(chatroomId, true);
       const fullContent = await this.chatGenerationService.generate(
         history,
-        systemPrompt,
+        resolvedSystemPrompt,
         (chunk) => this.messageStreamService.streamChunk(chatroomId, chunk),
         proactive ? { proactive: true } : undefined,
       );

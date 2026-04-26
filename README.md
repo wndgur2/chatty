@@ -1,6 +1,6 @@
 # Chatty
 
-Chatty is an AI chat application with real-time streamed replies and scheduled, proactive AI messages. The repo is a monorepo: React frontend, NestJS backend, MySQL (Prisma), and Ollama for local LLM calls.
+Chatty is an AI chat application with real-time streamed replies and scheduled, proactive AI messages. The repo is a monorepo: React frontend, NestJS backend, MySQL (Prisma), Ollama for local LLM calls/embeddings, and Qdrant for long-term memory retrieval.
 
 ## Core capabilities
 
@@ -18,6 +18,7 @@ Chatty is an AI chat application with real-time streamed replies and scheduled, 
 | Backend         | NestJS 11, TypeScript, Prisma                                                |
 | Database        | MySQL 8                                                                      |
 | LLM             | Ollama (HTTP API)                                                            |
+| Vector store    | Qdrant                                                                        |
 | Realtime        | Socket.IO                                                                    |
 | Push (optional) | Firebase Admin (backend), Firebase Web + VAPID (frontend)                    |
 
@@ -86,7 +87,13 @@ MySQL + backend + nginx serving the production build of the frontend.
    cp .env.docker.example .env
    ```
 
-2. Adjust `.env` (JWT secret, origins, Ollama host/models, optional Firebase). If you change `PUBLIC_ORIGIN`, `CORS_ORIGIN`, or any `VITE_*` build args, rebuild images.
+2. Adjust `.env` (JWT secret, origins, Ollama host/models, optional Firebase, Qdrant settings). If you change `PUBLIC_ORIGIN`, `CORS_ORIGIN`, or any `VITE_*` build args, rebuild images.
+
+   Pull the embedding model on your host before first run:
+
+   ```bash
+   ollama pull all-minilm
+   ```
 
 3. Run:
 
