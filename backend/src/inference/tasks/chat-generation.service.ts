@@ -20,9 +20,9 @@ export class ChatGenerationService {
     history: ChatMessage[],
     systemPrompt: string,
     onChunk?: (chunk: string) => void,
-    opts?: { voluntary?: boolean },
+    opts?: { proactive?: boolean },
   ) {
-    const decoding = opts?.voluntary
+    const decoding = opts?.proactive
       ? { ...VOLUNTARY_OLLAMA_OPTIONS }
       : { ...DEFAULT_CHAT_OLLAMA_OPTIONS };
     const stream = this.chatCompletionPort.stream({

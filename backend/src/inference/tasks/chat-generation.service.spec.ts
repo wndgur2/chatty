@@ -57,10 +57,10 @@ describe('ChatGenerationService', () => {
     );
   });
 
-  it('passes voluntary decoding options when voluntary option is true', async () => {
+  it('passes proactive decoding options when proactive option is true', async () => {
     streamMock.mockReturnValue(mockStream([{ delta: 'x' }]));
 
-    await service.generate([], 'prompt', undefined, { voluntary: true });
+    await service.generate([], 'prompt', undefined, { proactive: true });
 
     expect(streamMock).toHaveBeenCalledWith(
       expect.objectContaining({

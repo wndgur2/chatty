@@ -1,11 +1,12 @@
 # Chatty backend
 
-NestJS API, Socket.IO streaming gateway, Prisma/MySQL persistence, Ollama integration, optional FCM, and scheduled voluntary-AI evaluation.
+NestJS API, Socket.IO streaming gateway, Prisma/MySQL persistence, Ollama integration, Qdrant-backed long-term memory retrieval (RAG), optional FCM, and scheduled evaluation for proactive AI message.
 
 ## Tech stack
 
 - [NestJS](https://nestjs.com/) 11, TypeScript
 - [Prisma](https://www.prisma.io/) + MySQL 8
+- [Qdrant](https://qdrant.tech/) vector store for long-term memory search
 - [Jest](https://jestjs.io/) + Supertest (unit + e2e)
 - Static uploads via `@nestjs/serve-static` and Multer (`@nestjs/platform-express`)
 - [Socket.IO](https://socket.io/) (`@nestjs/platform-socket.io`)
@@ -38,6 +39,19 @@ Shared branching, commits, and PR conventions:
    OLLAMA_HOST="http://127.0.0.1:11434"
    OLLAMA_CHAT_MODEL="qwen2.5:1.5b"
    OLLAMA_EVAL_MODEL="qwen2.5:1.5b"
+   OLLAMA_EMBED_MODEL="all-minilm"
+   QDRANT_URL="http://127.0.0.1:6333"
+   QDRANT_COLLECTION="chat_memory"
+   RAG_RECENT_WINDOW="8"
+   RAG_TOP_K="5"
+   RAG_MIN_SCORE="0.4"
+   RAG_SNIPPET_CHARS="200"
+   ```
+
+   Pull the local embedding model once:
+
+   ```bash
+   ollama pull all-minilm
    ```
 
    Optional (push notifications; leave empty to disable FCM sends):
@@ -83,7 +97,7 @@ Join/leave handlers do not validate JWT at the gateway today; treat the socket s
 
 - **Auth** — `POST /api/auth/login` creates or loads a user and returns a JWT for Bearer-protected routes.
 - **Chatrooms** — CRUD, optional profile image upload, clone/branch flows.
-- **Messages** — history, user sends, streamed AI replies, background voluntary sends coordinated with tasks/cron.
+- **Messages** — history, user sends, streamed AI replies, background proactive sends coordinated with tasks/cron.
 - **Notifications** — device registration and FCM when credentials are configured.
 
 ## Scripts
@@ -107,7 +121,7 @@ backend/
 │   ├── chatrooms/
 │   ├── messages/           # REST + MessagesGateway (Socket.IO)
 │   ├── notifications/
-│   ├── tasks/              # scheduled evaluation / voluntary AI
+│   ├── tasks/              # scheduled evaluation / proactive AI
 │   ├── ollama/
 │   ├── infrastructure/
 │   ├── common/
@@ -188,11 +202,11 @@ sequenceDiagram
   Gateway-->>Client: ai_message_chunk / ai_message_complete
   Messages->>DB: persist assistant message
 
-  opt Voluntary evaluation
+  opt Proactive evaluation
     Tasks->>DB: rooms due for evaluation
     Tasks->>Eval: should answer?
     Eval-->>Tasks: decision
-    alt send voluntary message
+    alt send proactive message
       Tasks->>Messages: background send
       Messages->>AI: stream
       Gateway-->>Client: stream events

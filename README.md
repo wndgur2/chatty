@@ -1,25 +1,26 @@
 # Chatty
 
-Chatty is an AI chat application with real-time streamed replies and scheduled, voluntary AI messages. The repo is a monorepo: React frontend, NestJS backend, MySQL (Prisma), and Ollama for local LLM calls.
+Chatty is an AI chat application with real-time streamed replies and scheduled, proactive AI messages. The repo is a monorepo: React frontend, NestJS backend, MySQL (Prisma), Ollama for local LLM calls/embeddings, and Qdrant for long-term memory retrieval.
 
 ## Core capabilities
 
 - Real-time AI streaming over Socket.IO.
-- Voluntary AI messages driven by scheduled evaluations (slow-start style).
+- Proactive AI messages driven by scheduled evaluations (slow-start style).
 - Multiple chatrooms with per-room base prompt and profile image.
 - Clone (copy settings) and branch (copy history + settings) chatrooms.
 - Optional Firebase Cloud Messaging (FCM) for push notifications.
 
 ## Architecture
 
-| Layer | Technology |
-| --- | --- |
-| Frontend | React 19, TypeScript, Vite, Tailwind CSS 4, TanStack Query, Socket.IO client |
-| Backend | NestJS 11, TypeScript, Prisma |
-| Database | MySQL 8 |
-| LLM | Ollama (HTTP API) |
-| Realtime | Socket.IO |
-| Push (optional) | Firebase Admin (backend), Firebase Web + VAPID (frontend) |
+| Layer           | Technology                                                                   |
+| --------------- | ---------------------------------------------------------------------------- |
+| Frontend        | React 19, TypeScript, Vite, Tailwind CSS 4, TanStack Query, Socket.IO client |
+| Backend         | NestJS 11, TypeScript, Prisma                                                |
+| Database        | MySQL 8                                                                      |
+| LLM             | Ollama (HTTP API)                                                            |
+| Vector store    | Qdrant                                                                        |
+| Realtime        | Socket.IO                                                                    |
+| Push (optional) | Firebase Admin (backend), Firebase Web + VAPID (frontend)                    |
 
 ## Repository layout
 
@@ -39,6 +40,7 @@ Best when you work on frontend or backend alone and want hot reload.
    If you run the backend directly on your host machine, use a local MySQL instance that listens on `localhost:3306`.
    The `mysql` service in `docker-compose.dev.yml` is intended for the full Docker stack and, as configured there, is not published to the host by default.
    If you want to use Compose for MySQL while running the backend on the host, you must publish port `3306` to the host first; otherwise use the full-stack Docker setup below so the backend and DB run on the same Compose network.
+
    ```bash
    docker compose -f docker-compose.dev.yml up -d mysql
    ```
@@ -85,7 +87,13 @@ MySQL + backend + nginx serving the production build of the frontend.
    cp .env.docker.example .env
    ```
 
-2. Adjust `.env` (JWT secret, origins, Ollama host/models, optional Firebase). If you change `PUBLIC_ORIGIN`, `CORS_ORIGIN`, or any `VITE_*` build args, rebuild images.
+2. Adjust `.env` (JWT secret, origins, Ollama host/models, optional Firebase, Qdrant settings). If you change `PUBLIC_ORIGIN`, `CORS_ORIGIN`, or any `VITE_*` build args, rebuild images.
+
+   Pull the embedding model on your host before first run:
+
+   ```bash
+   ollama pull all-minilm
+   ```
 
 3. Run:
 

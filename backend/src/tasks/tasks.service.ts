@@ -9,10 +9,10 @@ import { PrismaService } from '../prisma/prisma.service';
 import { MessagesService } from '../messages/messages.service';
 import {
   toChatHistory,
-  voluntaryAiCountInRowFromNewestFirst,
+  proactiveAiCountInRowFromNewestFirst,
 } from '../inference/shared/chat-history.util';
-import { VoluntaryEvaluationContext } from '../inference/prompts/voluntary-evaluator.prompt';
-import { VoluntaryEvaluatorService } from '../inference/tasks/voluntary-evaluator.service';
+import { ProactiveEvaluationContext } from '../inference/prompts/proactive-evaluator.prompt';
+import { ProactiveEvaluatorService } from '../inference/tasks/proactive-evaluator.service';
 
 @Injectable()
 export class TasksService {
@@ -21,7 +21,7 @@ export class TasksService {
 
   constructor(
     private prisma: PrismaService,
-    private voluntaryEvaluator: VoluntaryEvaluatorService,
+    private proactiveEvaluator: ProactiveEvaluatorService,
     private messages: MessagesService,
   ) {}
 
@@ -69,10 +69,10 @@ export class TasksService {
           continue;
         }
 
-        const voluntaryInRow = voluntaryAiCountInRowFromNewestFirst(historyRaw);
-        if (voluntaryInRow >= MAX_VOLUNTARY_MESSAGES_IN_A_ROW) {
+        const proactiveInRow = proactiveAiCountInRowFromNewestFirst(historyRaw);
+        if (proactiveInRow >= MAX_VOLUNTARY_MESSAGES_IN_A_ROW) {
           this.logger.log(
-            `Room ${room.id} voluntary streak at cap (${voluntaryInRow} >= ${MAX_VOLUNTARY_MESSAGES_IN_A_ROW}). Backing off.`,
+            `Room ${room.id} proactive streak at cap (${proactiveInRow} >= ${MAX_VOLUNTARY_MESSAGES_IN_A_ROW}). Backing off.`,
           );
           await this.applyEvaluationBackoff(room);
           continue;
@@ -85,7 +85,7 @@ export class TasksService {
           0,
           (now.getTime() - newest.createdAt.getTime()) / 1000,
         );
-        const evalCtx: VoluntaryEvaluationContext = {
+        const evalCtx: ProactiveEvaluationContext = {
           secondsSinceLastMessage,
           lastSender: newest.sender === 'user' ? 'user' : 'ai',
         };
@@ -93,7 +93,7 @@ export class TasksService {
         const basePrompt = room.basePrompt || 'You are a helpful assistant.';
 
         try {
-          const shouldAnswer = await this.voluntaryEvaluator.shouldAnswer(
+          const shouldAnswer = await this.proactiveEvaluator.shouldAnswer(
             history,
             basePrompt,
             evalCtx,

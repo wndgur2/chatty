@@ -15,9 +15,9 @@ export function toChatHistory(messages: MessageLike[]): ChatMessage[] {
 /**
  * `messages` must be newest-first (e.g. Prisma `orderBy: { createdAt: 'desc' }`).
  * Counts consecutive `ai` from the newest message; the first such AI after a `user` is treated as
- * the non-voluntary reply, so voluntary count is max(0, tailAiCount - 1).
+ * the non-proactive reply, so proactive count is max(0, tailAiCount - 1).
  */
-export function voluntaryAiCountInRowFromNewestFirst(
+export function proactiveAiCountInRowFromNewestFirst(
   messages: { sender: 'user' | 'ai' }[],
 ): number {
   let tailAiCount = 0;

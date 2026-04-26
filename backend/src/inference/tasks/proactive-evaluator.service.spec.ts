@@ -1,12 +1,12 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { VoluntaryEvaluatorService } from './voluntary-evaluator.service';
+import { ProactiveEvaluatorService } from './proactive-evaluator.service';
 import {
   CLASSIFICATION_PORT,
   ClassificationPort,
 } from '../ports/classification.port';
 
-describe('VoluntaryEvaluatorService', () => {
-  let service: VoluntaryEvaluatorService;
+describe('ProactiveEvaluatorService', () => {
+  let service: ProactiveEvaluatorService;
   const classifyMock: jest.MockedFunction<ClassificationPort['classify']> =
     jest.fn();
   const mockClassificationPort: ClassificationPort = {
@@ -16,12 +16,12 @@ describe('VoluntaryEvaluatorService', () => {
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
-        VoluntaryEvaluatorService,
+        ProactiveEvaluatorService,
         { provide: CLASSIFICATION_PORT, useValue: mockClassificationPort },
       ],
     }).compile();
 
-    service = module.get<VoluntaryEvaluatorService>(VoluntaryEvaluatorService);
+    service = module.get<ProactiveEvaluatorService>(ProactiveEvaluatorService);
   });
 
   afterEach(() => {

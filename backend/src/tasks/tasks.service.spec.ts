@@ -2,7 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { TasksService } from './tasks.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { MessagesService } from '../messages/messages.service';
-import { VoluntaryEvaluatorService } from '../inference/tasks/voluntary-evaluator.service';
+import { ProactiveEvaluatorService } from '../inference/tasks/proactive-evaluator.service';
 describe('TasksService', () => {
   let service: TasksService;
 
@@ -23,7 +23,7 @@ describe('TasksService', () => {
           },
         },
         {
-          provide: VoluntaryEvaluatorService,
+          provide: ProactiveEvaluatorService,
           useValue: {
             shouldAnswer: jest.fn().mockResolvedValue(true),
           },
@@ -44,7 +44,7 @@ describe('TasksService', () => {
     expect(service).toBeDefined();
   });
 
-  it('backs off without Ollama or voluntary AI when voluntary streak is at cap', async () => {
+  it('backs off without Ollama or proactive AI when proactive streak is at cap', async () => {
     const shouldAnswer = jest.fn();
     const processBackgroundMessage = jest.fn();
     const chatroomUpdate = jest.fn().mockResolvedValue({});
@@ -76,7 +76,7 @@ describe('TasksService', () => {
       providers: [
         TasksService,
         { provide: PrismaService, useValue: prisma },
-        { provide: VoluntaryEvaluatorService, useValue: { shouldAnswer } },
+        { provide: ProactiveEvaluatorService, useValue: { shouldAnswer } },
         { provide: MessagesService, useValue: { processBackgroundMessage } },
       ],
     }).compile();
@@ -98,7 +98,7 @@ describe('TasksService', () => {
     expect(backoffCall?.[0].data?.nextEvaluationTime).toBeInstanceOf(Date);
   });
 
-  it('still evaluates when voluntary streak is below cap', async () => {
+  it('still evaluates when proactive streak is below cap', async () => {
     const shouldAnswer = jest.fn().mockResolvedValue(true);
     const processBackgroundMessage = jest.fn().mockResolvedValue(undefined);
     const chatroomUpdate = jest.fn().mockResolvedValue({});
@@ -135,7 +135,7 @@ describe('TasksService', () => {
       providers: [
         TasksService,
         { provide: PrismaService, useValue: prisma },
-        { provide: VoluntaryEvaluatorService, useValue: { shouldAnswer } },
+        { provide: ProactiveEvaluatorService, useValue: { shouldAnswer } },
         { provide: MessagesService, useValue: { processBackgroundMessage } },
       ],
     }).compile();
