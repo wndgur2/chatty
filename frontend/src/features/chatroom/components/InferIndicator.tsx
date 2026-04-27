@@ -1,16 +1,23 @@
-import type { Chatroom } from '../../../types/api'
+import { useState } from 'react'
+import type { Chatroom, Message } from '../../../types/api'
 import ChatBubble from './ChatBubble'
+import { STREAMING_MESSAGE_ID } from '../hooks/useWebSocketStream'
 
 interface InferIndicatorProps {
   chatroom: Chatroom
+  content?: string
 }
 
-export default function InferIndicator({ chatroom }: InferIndicatorProps) {
+export default function InferIndicator({ chatroom, content = '' }: InferIndicatorProps) {
+  const [createdAt] = useState(() => new Date().toISOString())
+  const message: Message = {
+    id: STREAMING_MESSAGE_ID,
+    sender: 'ai',
+    content,
+    createdAt,
+  }
+
   return (
-    <ChatBubble
-      chatroom={chatroom}
-      message={{ id: -1, sender: 'ai', content: '', createdAt: new Date().toISOString() }}
-    />
+    <ChatBubble chatroom={chatroom} message={message} />
   )
 }
-
