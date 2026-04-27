@@ -38,7 +38,9 @@ export default function ChatBubble({ message, chatroom }: ChatBubbleProps) {
       >
         <div className="flex items-baseline gap-2 mb-1 px-1">
           {isUser && <span className="text-[10px] text-gray-500">{timeString}</span>}
-          <span className="text-sm font-semibold text-gray-900">{isUser ? 'You' : chatroom.name}</span>
+          <span className="text-sm font-semibold text-gray-900">
+            {isUser ? 'You' : chatroom.name}
+          </span>
           {!isUser && <span className="text-[10px] text-gray-500">{timeString}</span>}
         </div>
 
@@ -54,11 +56,7 @@ export default function ChatBubble({ message, chatroom }: ChatBubbleProps) {
               ),
             )}
           >
-            {isUser ? (
-              message.content
-            ) : (
-              <AiMarkdownContent content={message.content} />
-            )}
+            {isUser ? message.content : <AiMarkdownContent content={message.content} />}
           </div>
         ) : (
           <div className="flex bg-white border border-gray-100 px-4 py-3.5 rounded-2xl rounded-tl-sm shadow-sm gap-1 items-center h-10 w-[60px] justify-center">
@@ -71,4 +69,3 @@ export default function ChatBubble({ message, chatroom }: ChatBubbleProps) {
     </div>
   )
 }
-

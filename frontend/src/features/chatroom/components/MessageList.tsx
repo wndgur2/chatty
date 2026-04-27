@@ -1,7 +1,6 @@
 import { memo } from 'react'
 import ChatBubble from './ChatBubble'
 import InferIndicator from './InferIndicator'
-import { STREAMING_MESSAGE_ID } from '../hooks/useWebSocketStream'
 import type { Chatroom, Message } from '../../../types/api'
 
 interface MessageListProps {
@@ -19,6 +18,8 @@ function MessageListComponent({
   isLoadingIndicatorVisible,
   streamingContent,
 }: MessageListProps) {
+  const shouldShowInferIndicator = isLoadingIndicatorVisible || !!streamingContent
+
   return (
     <div className="flex flex-col gap-6 max-w-4xl mx-auto">
       <div className="text-center">
@@ -33,19 +34,9 @@ function MessageListComponent({
         messages.map((msg) => <ChatBubble key={msg.id} message={msg} chatroom={chatroom} />)
       )}
 
-      {streamingContent && (
-        <ChatBubble
-          message={{
-            id: STREAMING_MESSAGE_ID,
-            sender: 'ai',
-            content: streamingContent,
-            createdAt: new Date().toISOString(),
-          }}
-          chatroom={chatroom}
-        />
+      {shouldShowInferIndicator && (
+        <InferIndicator chatroom={chatroom} content={streamingContent} />
       )}
-
-      {isLoadingIndicatorVisible && <InferIndicator chatroom={chatroom} />}
     </div>
   )
 }
