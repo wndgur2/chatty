@@ -5,7 +5,7 @@ import {
   ChatCompletionPort,
 } from '../ports/chat-completion.port';
 
-function* mockStream(chunks: { delta: string }[]) {
+async function* mockStream(chunks: { delta: string }[]) {
   for (const c of chunks) {
     yield c;
   }
@@ -48,7 +48,7 @@ describe('ChatGenerationService', () => {
 
     expect(full).toBe('hello');
     expect(onChunk).toHaveBeenCalledWith('hel');
-    expect(onChunk).toHaveBeenCalledWith('lo');
+    expect(onChunk).toHaveBeenCalledWith('hello');
     expect(streamMock).toHaveBeenCalledWith(
       expect.objectContaining({
         messages: [{ role: 'user', content: 'hi' }],

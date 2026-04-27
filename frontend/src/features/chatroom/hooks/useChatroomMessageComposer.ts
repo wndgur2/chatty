@@ -9,6 +9,8 @@ import {
 } from 'react'
 import type { Message } from '../../../types/api'
 import { useSendMessage } from './useMessages'
+import { useQueryClient } from '@tanstack/react-query'
+import { getMessagesQueryKey } from '../queryKeys'
 
 interface UseChatroomMessageComposerParams {
   chatroomId: number
@@ -23,6 +25,8 @@ export const useChatroomMessageComposer = ({
   isTyping,
   streamingContent,
 }: UseChatroomMessageComposerParams) => {
+  const queryClient = useQueryClient()
+
   const sendMessageMutation = useSendMessage()
   const [inputValue, setInputValue] = useState('')
   const [isWaitingForResponse, setIsWaitingForResponse] = useState(false)
@@ -34,6 +38,10 @@ export const useChatroomMessageComposer = ({
     messages,
     (current, optimistic: Message) => [...current, optimistic],
   )
+
+  useEffect(() => {
+    console.log('displayMessages', displayMessages)
+  }, [displayMessages])
 
   const isStreaming = !!streamingContent
   const isSendLocked =
@@ -77,10 +85,17 @@ export const useChatroomMessageComposer = ({
       waitingSinceRef.current = Date.now()
       setIsWaitingForResponse(true)
       try {
-        await sendMessageMutation.mutateAsync({
-          chatroomId,
-          request: { content },
-        })
+        await sendMessageMutation
+          .mutateAsync({
+            chatroomId,
+            request: { content },
+          })
+          .then((response) => {
+            queryClient.setQueryData<Message[]>(getMessagesQueryKey(chatroomId), (oldMessages) => {
+              if (!oldMessages) return []
+              return [...oldMessages, response.message]
+            })
+          })
       } catch {
         setIsWaitingForResponse(false)
       }

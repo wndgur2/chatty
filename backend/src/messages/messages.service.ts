@@ -66,6 +66,7 @@ export class MessagesService {
     return {
       messageId: message.id,
       status: 'processing',
+      message,
     };
   }
 

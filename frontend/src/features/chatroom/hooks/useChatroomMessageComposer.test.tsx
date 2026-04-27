@@ -1,7 +1,9 @@
 import { act, renderHook } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import type { FormEvent, RefObject } from 'react'
+import type { FormEvent, ReactNode, RefObject } from 'react'
 import { useChatroomMessageComposer } from './useChatroomMessageComposer'
+import { QueryClientProvider } from '@tanstack/react-query'
+import { createTestQueryClient } from '../../../test/utils/createTestQueryClient'
 
 const mutateAsyncSpy = vi.hoisted(() => vi.fn())
 let isPending = false
@@ -14,6 +16,10 @@ vi.mock('./useMessages', () => ({
     },
   }),
 }))
+
+function wrapper({ children }: { children: ReactNode }) {
+  return <QueryClientProvider client={createTestQueryClient()}>{children}</QueryClientProvider>
+}
 
 describe('useChatroomMessageComposer', () => {
   beforeEach(() => {
@@ -30,6 +36,7 @@ describe('useChatroomMessageComposer', () => {
         isTyping: true,
         streamingContent: '',
       }),
+      { wrapper },
     )
     expect(typingResult.current.isSendLocked).toBe(true)
 
@@ -40,6 +47,7 @@ describe('useChatroomMessageComposer', () => {
         isTyping: false,
         streamingContent: 'chunk',
       }),
+      { wrapper },
     )
     expect(streamingResult.current.isSendLocked).toBe(true)
   })
@@ -55,6 +63,7 @@ describe('useChatroomMessageComposer', () => {
         isTyping: false,
         streamingContent: '',
       }),
+      { wrapper },
     )
 
     act(() => {
@@ -73,5 +82,44 @@ describe('useChatroomMessageComposer', () => {
     })
     expect(result.current.inputValue).toBe('')
     expect(blurSpy).toHaveBeenCalled()
+  })
+
+  it('shows optimistic user message immediately while request is pending', async () => {
+    mutateAsyncSpy.mockImplementationOnce(() => new Promise(() => {}))
+    const textarea = document.createElement('textarea')
+    const inputRef = { current: textarea } as unknown as RefObject<HTMLTextAreaElement | null>
+    const { result } = renderHook(
+      () =>
+        useChatroomMessageComposer({
+          chatroomId: 12,
+          messages: [{ id: 1, sender: 'ai', content: 'ready', createdAt: '2026-01-01' }],
+          isTyping: false,
+          streamingContent: '',
+        }),
+      { wrapper },
+    )
+
+    act(() => {
+      result.current.setInputValue('hello optimistic')
+    })
+
+    await act(async () => {
+      const submitEvent = { preventDefault: vi.fn() } as unknown as FormEvent
+      result.current.handleSendMessage(submitEvent, inputRef)
+      await Promise.resolve()
+    })
+
+    expect(result.current.displayMessages).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          sender: 'user',
+          content: 'hello optimistic',
+        }),
+      ]),
+    )
+    expect(mutateAsyncSpy).toHaveBeenCalledWith({
+      chatroomId: 12,
+      request: { content: 'hello optimistic' },
+    })
   })
 })

@@ -271,7 +271,14 @@ Send a message from the user to the AI. _(Note: Responses are streamed via WebSo
   ```json
   {
     "messageId": "103",
-    "status": "processing"
+    "status": "processing",
+    "message": {
+      "id": "103",
+      "chatroomId": "2",
+      "sender": "user",
+      "content": "Tell me a joke.",
+      "createdAt": "2026-04-05T10:30:00Z"
+    }
   }
   ```
 
