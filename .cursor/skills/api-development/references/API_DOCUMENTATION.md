@@ -349,8 +349,10 @@ Register a user's device for receiving FCM push notifications (for proactive AI 
 
 - **Payload:**
   ```json
-  { "chatroomId": 2, "chunk": "partial token(s)" }
+  { "chatroomId": 2, "chunk": "current full content so far" }
   ```
+- **Streaming Semantics:** `chunk` is cumulative, not delta.  
+  Example sequence: `"a"` -> `"ab"` -> `"abc"` (not `"a"` -> `"b"` -> `"c"`).
 
 #### `ai_message_complete`
 

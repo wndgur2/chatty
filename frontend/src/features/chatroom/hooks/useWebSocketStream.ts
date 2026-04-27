@@ -10,6 +10,7 @@ export const STREAMING_MESSAGE_ID = Number.MAX_SAFE_INTEGER
 
 export const useWebSocketStream = (chatroomId: number) => {
   const queryClient = useQueryClient()
+
   const socketRef = useRef<Socket | null>(null)
   const [isTyping, setIsTyping] = useState(false)
   const [streamingContent, setStreamingContent] = useState('')
@@ -22,7 +23,7 @@ export const useWebSocketStream = (chatroomId: number) => {
   const handleMessageChunk = useEffectEvent((payload: { chatroomId: number; chunk: string }) => {
     if (payload.chatroomId !== chatroomId) return
     setIsTyping(false)
-    setStreamingContent((old) => old + payload.chunk)
+    setStreamingContent(payload.chunk)
   })
 
   const handleMessageComplete = useEffectEvent(
@@ -55,7 +56,13 @@ export const useWebSocketStream = (chatroomId: number) => {
     const socket = io(WS_URL, {
       transports: ['websocket'],
     })
+    const handleAnySocketEvent = (eventName: string, ...args: unknown[]) => {
+      if (import.meta.env.DEV) {
+        console.log(`Socket message received: ${eventName}`, ...args)
+      }
+    }
     socketRef.current = socket
+    socket.onAny(handleAnySocketEvent)
 
     socket.on('connect', () => {
       setStreamingContent('')
@@ -73,6 +80,7 @@ export const useWebSocketStream = (chatroomId: number) => {
 
     return () => {
       if (!socketRef.current) return
+      socketRef.current.offAny(handleAnySocketEvent)
       socketRef.current.off('ai_typing_state', handleTypingState)
       socketRef.current.off('ai_message_chunk', handleMessageChunk)
       socketRef.current.off('ai_message_complete', handleMessageComplete)

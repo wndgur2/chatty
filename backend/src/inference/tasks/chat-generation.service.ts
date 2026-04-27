@@ -19,7 +19,7 @@ export class ChatGenerationService {
   async generate(
     history: ChatMessage[],
     systemPrompt: string,
-    onChunk?: (chunk: string) => void,
+    onChunk?: (fullContent: string) => void,
     opts?: { proactive?: boolean },
   ) {
     const decoding = opts?.proactive
@@ -36,7 +36,7 @@ export class ChatGenerationService {
       const text = chunk.delta;
       if (text) {
         fullContent += text;
-        onChunk?.(text);
+        onChunk?.(fullContent);
       }
     }
 

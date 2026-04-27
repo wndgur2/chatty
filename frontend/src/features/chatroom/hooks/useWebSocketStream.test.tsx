@@ -11,7 +11,10 @@ type SocketEventHandler = (payload?: unknown) => void
 interface MockSocket {
   connected: boolean
   handlers: Record<string, SocketEventHandler>
+  anyHandler: ((eventName: string, ...args: unknown[]) => void) | null
   on: (event: string, handler: SocketEventHandler) => void
+  onAny: (handler: (eventName: string, ...args: unknown[]) => void) => void
+  offAny: ReturnType<typeof vi.fn>
   off: ReturnType<typeof vi.fn>
   emit: ReturnType<typeof vi.fn>
   disconnect: ReturnType<typeof vi.fn>
@@ -20,9 +23,14 @@ interface MockSocket {
 const mockSocket: MockSocket = {
   connected: false,
   handlers: {},
+  anyHandler: null,
   on(event, handler) {
     this.handlers[event] = handler
   },
+  onAny(handler) {
+    this.anyHandler = handler
+  },
+  offAny: vi.fn(),
   off: vi.fn(),
   emit: vi.fn(),
   disconnect: vi.fn(),
@@ -42,12 +50,14 @@ describe('useWebSocketStream', () => {
   beforeEach(() => {
     mockSocket.connected = false
     mockSocket.handlers = {}
+    mockSocket.anyHandler = null
     mockSocket.emit.mockClear()
+    mockSocket.offAny.mockClear()
     mockSocket.off.mockClear()
     mockSocket.disconnect.mockClear()
   })
 
-  it('joins room on socket connect and appends stream chunks', async () => {
+  it('joins room on socket connect and keeps latest cumulative stream chunk', async () => {
     const queryClient = new QueryClient({
       defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
     })
@@ -68,7 +78,7 @@ describe('useWebSocketStream', () => {
 
     act(() => {
       mockSocket.handlers.ai_message_chunk({ chatroomId: 7, chunk: 'Hello ' })
-      mockSocket.handlers.ai_message_chunk({ chatroomId: 7, chunk: 'world' })
+      mockSocket.handlers.ai_message_chunk({ chatroomId: 7, chunk: 'Hello world' })
     })
 
     expect(result.current.streamingContent).toBe('Hello world')
