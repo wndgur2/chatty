@@ -46,6 +46,12 @@ Shared branching, commits, and PR conventions:
    RAG_TOP_K="5"
    RAG_MIN_SCORE="0.4"
    RAG_SNIPPET_CHARS="200"
+   RAG_CHUNK_MIN_CHARS="200"
+   RAG_CHUNK_MIN_SENTENCES="3"
+   RAG_CHUNK_BUFFER_SIZE="1"
+   RAG_CHUNK_BREAKPOINT_PERCENTILE="95"
+   RAG_CHUNK_MAX_CHARS="1200"
+   RAG_CHUNK_OVERLAP_CHARS="200"
    ```
 
    Pull the local embedding model once:
@@ -53,6 +59,8 @@ Shared branching, commits, and PR conventions:
    ```bash
    ollama pull all-minilm
    ```
+
+   Memory indexing now uses semantic chunking before embedding for older user messages. Existing vectors remain valid and are not automatically backfilled.
 
    Optional (push notifications; leave empty to disable FCM sends):
 

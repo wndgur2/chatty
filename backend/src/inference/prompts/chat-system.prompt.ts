@@ -3,6 +3,12 @@ export const STABLE_VOLUNTARY_ALIGNMENT =
 
 export const NORMAL_CHAT_BASE_SYSTEM = 'You are texting in a casual chatroom.';
 
+export const MEMORY_SNIPPETS_PROMPT = [
+  '## Older user messages in this chat',
+  'Treat these as background you already know, not a transcript.',
+  'If they conflict with the recent conversation, trust the recent conversation. Snippets may be truncated, so do not invent details beyond what is shown.',
+].join('\n');
+
 export function buildProactiveLastInstruction(
   lastMessageContent: string,
 ): string {

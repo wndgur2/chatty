@@ -4,6 +4,8 @@ export type VectorPointPayload = {
   chatroomId: number;
   userId: string;
   messageId: string;
+  chunkIndex: number;
+  chunkCount: number;
   createdAt: string;
   sender: 'user' | 'ai';
   content: string;
@@ -33,5 +35,6 @@ export interface VectorStorePort {
   upsert(point: VectorPoint): Promise<void>;
   search(req: VectorSearchRequest): Promise<VectorSearchResult[]>;
   hasPoint(id: string): Promise<boolean>;
+  hasPointsForMessage(messageId: string): Promise<boolean>;
   deleteByChatroom(chatroomId: number): Promise<void>;
 }

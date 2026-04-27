@@ -10,6 +10,7 @@ const mockQdrantClient = {
   upsert: jest.fn(),
   search: jest.fn(),
   retrieve: jest.fn(),
+  scroll: jest.fn(),
   delete: jest.fn(),
 };
 
@@ -55,6 +56,13 @@ describe('QdrantVectorStoreAdapter', () => {
         field_schema: 'integer',
       },
     );
+    expect(mockQdrantClient.createPayloadIndex).toHaveBeenCalledWith(
+      'chat_memory',
+      {
+        field_name: 'messageId',
+        field_schema: 'keyword',
+      },
+    );
   });
 
   it('builds search filters with chatroom and exclusions', async () => {
@@ -66,6 +74,8 @@ describe('QdrantVectorStoreAdapter', () => {
           chatroomId: 1,
           userId: '1',
           messageId: '1',
+          chunkIndex: 0,
+          chunkCount: 1,
           createdAt: '2026-04-12T00:00:00.000Z',
           sender: 'user',
           content: 'context',
@@ -93,7 +103,7 @@ describe('QdrantVectorStoreAdapter', () => {
     );
   });
 
-  it('normalizes numeric string id for upsert', async () => {
+  it('derives deterministic UUIDv5-like id for upsert', async () => {
     await adapter.upsert({
       id: '481',
       vector: [0.1, 0.2],
@@ -101,29 +111,51 @@ describe('QdrantVectorStoreAdapter', () => {
         chatroomId: 1,
         userId: '1',
         messageId: '481',
+        chunkIndex: 1,
+        chunkCount: 3,
         createdAt: '2026-04-12T00:00:00.000Z',
         sender: 'user',
         content: 'context',
       },
     });
 
-    expect(mockQdrantClient.upsert).toHaveBeenCalledWith(
-      'chat_memory',
-      expect.objectContaining({
-        points: [expect.objectContaining({ id: 481 })],
-      }),
+    expect(mockQdrantClient.upsert).toHaveBeenCalledTimes(1);
+    const [, payload] = mockQdrantClient.upsert.mock.calls[0] as [
+      string,
+      { points: Array<{ id: string }> },
+    ];
+    expect(payload.points).toHaveLength(1);
+    expect(payload.points[0].id).toMatch(
+      /^[0-9a-f]{8}-[0-9a-f]{4}-5[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/,
     );
   });
 
-  it('normalizes numeric string id for retrieve', async () => {
+  it('looks up exact id for retrieve', async () => {
     mockQdrantClient.retrieve.mockResolvedValue([]);
 
-    await adapter.hasPoint('482');
+    await adapter.hasPoint('message-482-1');
 
     expect(mockQdrantClient.retrieve).toHaveBeenCalledWith(
       'chat_memory',
       expect.objectContaining({
-        ids: [482],
+        ids: ['message-482-1'],
+      }),
+    );
+  });
+
+  it('checks message-level existence by payload filter', async () => {
+    mockQdrantClient.scroll.mockResolvedValue({ points: [{ id: '1' }] });
+
+    const exists = await adapter.hasPointsForMessage('42');
+
+    expect(exists).toBe(true);
+    expect(mockQdrantClient.scroll).toHaveBeenCalledWith(
+      'chat_memory',
+      expect.objectContaining({
+        limit: 1,
+        filter: {
+          must: [{ key: 'messageId', match: { value: '42' } }],
+        },
       }),
     );
   });

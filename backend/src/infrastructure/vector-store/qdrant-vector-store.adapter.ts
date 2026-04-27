@@ -5,6 +5,7 @@ import {
   OnModuleInit,
   ServiceUnavailableException,
 } from '@nestjs/common';
+import { createHash } from 'crypto';
 import { ConfigService } from '@nestjs/config';
 import { QdrantClient } from '@qdrant/js-client-rest';
 import {
@@ -19,7 +20,6 @@ import { QDRANT_CLIENT } from './qdrant-client.provider';
 export class QdrantVectorStoreAdapter implements VectorStorePort, OnModuleInit {
   private readonly logger = new Logger(QdrantVectorStoreAdapter.name);
   private readonly collectionName: string;
-  private static readonly INTEGER_ID_PATTERN = /^\d+$/;
 
   constructor(
     @Inject(QDRANT_CLIENT) private readonly qdrantClient: QdrantClient,
@@ -42,12 +42,16 @@ export class QdrantVectorStoreAdapter implements VectorStorePort, OnModuleInit {
         field_name: 'chatroomId',
         field_schema: 'integer',
       });
+      await this.qdrantClient.createPayloadIndex(this.collectionName, {
+        field_name: 'messageId',
+        field_schema: 'keyword',
+      });
       this.logger.log(`Created Qdrant collection: ${this.collectionName}`);
     }
   }
 
   async upsert(point: VectorPoint): Promise<void> {
-    const normalizedId = this.normalizePointId(point.id);
+    const normalizedId = this.derivePointId(point);
     await this.qdrantClient.upsert(this.collectionName, {
       wait: false,
       points: [{ ...point, id: normalizedId }],
@@ -79,13 +83,25 @@ export class QdrantVectorStoreAdapter implements VectorStorePort, OnModuleInit {
   }
 
   async hasPoint(id: string): Promise<boolean> {
-    const normalizedId = this.normalizePointId(id);
     const points = await this.qdrantClient.retrieve(this.collectionName, {
-      ids: [normalizedId],
+      ids: [id],
       with_payload: false,
       with_vector: false,
     });
     return points.length > 0;
+  }
+
+  async hasPointsForMessage(messageId: string): Promise<boolean> {
+    const response = await this.qdrantClient.scroll(this.collectionName, {
+      limit: 1,
+      with_payload: false,
+      with_vector: false,
+      filter: {
+        must: [{ key: 'messageId', match: { value: messageId } }],
+      },
+    });
+
+    return response.points.length > 0;
   }
 
   async deleteByChatroom(chatroomId: number): Promise<void> {
@@ -102,10 +118,19 @@ export class QdrantVectorStoreAdapter implements VectorStorePort, OnModuleInit {
     }
   }
 
-  private normalizePointId(id: string): string | number {
-    if (QdrantVectorStoreAdapter.INTEGER_ID_PATTERN.test(id)) {
-      return Number(id);
-    }
-    return id;
+  private derivePointId(point: VectorPoint): string {
+    const { messageId, chunkIndex } = point.payload;
+    const hash = createHash('sha1')
+      .update(`${messageId}#${chunkIndex}`)
+      .digest('hex');
+    return [
+      hash.slice(0, 8),
+      hash.slice(8, 12),
+      `5${hash.slice(13, 16)}`,
+      `${((parseInt(hash.slice(16, 18), 16) & 0x3f) | 0x80)
+        .toString(16)
+        .padStart(2, '0')}${hash.slice(18, 20)}`,
+      hash.slice(20, 32),
+    ].join('-');
   }
 }

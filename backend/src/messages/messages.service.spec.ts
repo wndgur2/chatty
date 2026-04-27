@@ -10,6 +10,7 @@ import { FcmPushService } from '../notifications/fcm-push.service';
 import { MemoryService } from './memory/memory.service';
 import { ConfigService } from '@nestjs/config';
 import {
+  MEMORY_SNIPPETS_PROMPT,
   NORMAL_CHAT_BASE_SYSTEM,
   STABLE_VOLUNTARY_ALIGNMENT,
 } from '../inference/prompts/chat-system.prompt';
@@ -363,7 +364,7 @@ describe('MessagesService', () => {
       mockChatGenerationService.generate.mock.calls[0] as [unknown, string]
     )[1];
     expect(systemPrompt).toContain(NORMAL_CHAT_BASE_SYSTEM);
-    expect(systemPrompt).toContain('## Relevant earlier context');
+    expect(systemPrompt).toContain(MEMORY_SNIPPETS_PROMPT);
     expect(systemPrompt).toContain('prisma migrate deploy');
   });
 
