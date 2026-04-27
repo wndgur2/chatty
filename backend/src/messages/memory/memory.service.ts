@@ -10,6 +10,7 @@ import {
   type VectorStorePort,
 } from '../../infrastructure/vector-store/vector-store.port';
 import { MemorySnippet } from './memory.formatter';
+import { SemanticChunkerService } from './semantic-chunker.service';
 
 type RetrieveContextInput = {
   k: number;
@@ -28,6 +29,7 @@ export class MemoryService {
     @Inject(VECTOR_STORE_PORT)
     private readonly vectorStorePort: VectorStorePort,
     private readonly prisma: PrismaService,
+    private readonly semanticChunkerService: SemanticChunkerService,
     private readonly configService: ConfigService,
   ) {
     this.recentWindow = Number(this.configService.get('RAG_RECENT_WINDOW', 8));
@@ -73,36 +75,44 @@ export class MemoryService {
     }
 
     const pointId = olderMessage.id.toString();
-    const alreadyIndexed = await this.vectorStorePort.hasPoint(pointId);
+    const alreadyIndexed =
+      await this.vectorStorePort.hasPointsForMessage(pointId);
     if (alreadyIndexed) {
-      this.logger.debug(`Vector point already exists for message=${pointId}`);
+      this.logger.debug(`Vector points already exist for message=${pointId}`);
       return;
     }
 
     this.logger.debug(
-      `Embedding older message for index: message=${pointId}, contentLength=${olderMessage.content.length}`,
+      `Chunking older message for index: message=${pointId}, contentLength=${olderMessage.content.length}`,
     );
-    const embedding = await this.embeddingPort.embed(olderMessage.content);
-    if (embedding.length === 0) {
-      this.logger.warn(`Empty embedding for message ${pointId}`);
+    const chunks = await this.semanticChunkerService.chunk(
+      olderMessage.content,
+    );
+    if (chunks.length === 0) {
+      this.logger.warn(`Empty chunk embeddings for message ${pointId}`);
       return;
     }
 
-    await this.vectorStorePort.upsert({
-      id: pointId,
-      vector: embedding,
-      payload: {
-        chatroomId,
-        userId: olderMessage.chatroom.userId.toString(),
-        messageId: pointId,
-        createdAt: olderMessage.createdAt.toISOString(),
-        sender: 'user',
-        content: olderMessage.content,
-      },
-    });
+    const chunkCount = chunks.length;
+    for (const [chunkIndex, chunk] of chunks.entries()) {
+      await this.vectorStorePort.upsert({
+        id: `${pointId}#${chunkIndex}`,
+        vector: chunk.embedding,
+        payload: {
+          chatroomId,
+          userId: olderMessage.chatroom.userId.toString(),
+          messageId: pointId,
+          chunkIndex,
+          chunkCount,
+          createdAt: olderMessage.createdAt.toISOString(),
+          sender: 'user',
+          content: chunk.text,
+        },
+      });
+    }
 
     this.logger.debug(
-      `Indexed message=${pointId} into vector store with embeddingDim=${embedding.length}`,
+      `Indexed message=${pointId} into vector store with chunkCount=${chunkCount}`,
     );
   }
 
