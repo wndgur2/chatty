@@ -26,6 +26,18 @@ const mockPrismaService = {
   },
 };
 
+type UpsertPayload = {
+  messageId: string;
+  chunkIndex: number;
+  chunkCount: number;
+  content: string;
+};
+
+type UpsertRequest = {
+  id: string;
+  payload: UpsertPayload;
+};
+
 describe('MemoryService', () => {
   let service: MemoryService;
 
@@ -36,7 +48,10 @@ describe('MemoryService', () => {
         { provide: EMBEDDING_PORT, useValue: mockEmbeddingPort },
         { provide: VECTOR_STORE_PORT, useValue: mockVectorStorePort },
         { provide: PrismaService, useValue: mockPrismaService },
-        { provide: SemanticChunkerService, useValue: mockSemanticChunkerService },
+        {
+          provide: SemanticChunkerService,
+          useValue: mockSemanticChunkerService,
+        },
         {
           provide: ConfigService,
           useValue: {
@@ -101,30 +116,27 @@ describe('MemoryService', () => {
     await service.indexOlderMessage(1);
 
     expect(mockVectorStorePort.upsert).toHaveBeenCalledTimes(2);
-    expect(mockVectorStorePort.upsert).toHaveBeenNthCalledWith(
-      1,
-      expect.objectContaining({
-        id: '23#0',
-        payload: expect.objectContaining({
-          messageId: '23',
-          chunkIndex: 0,
-          chunkCount: 2,
-          content: 'chunk one',
-        }),
-      }),
-    );
-    expect(mockVectorStorePort.upsert).toHaveBeenNthCalledWith(
-      2,
-      expect.objectContaining({
-        id: '23#1',
-        payload: expect.objectContaining({
-          messageId: '23',
-          chunkIndex: 1,
-          chunkCount: 2,
-          content: 'chunk two',
-        }),
-      }),
-    );
+    const [firstUpsertArg, secondUpsertArg] = mockVectorStorePort.upsert.mock
+      .calls as [Array<UpsertRequest>, Array<UpsertRequest>];
+
+    expect(firstUpsertArg[0]).toMatchObject({
+      id: '23#0',
+      payload: {
+        messageId: '23',
+        chunkIndex: 0,
+        chunkCount: 2,
+        content: 'chunk one',
+      },
+    });
+    expect(secondUpsertArg[0]).toMatchObject({
+      id: '23#1',
+      payload: {
+        messageId: '23',
+        chunkIndex: 1,
+        chunkCount: 2,
+        content: 'chunk two',
+      },
+    });
   });
 
   it('retrieves and truncates memory snippets with score filtering handled by vector store', async () => {

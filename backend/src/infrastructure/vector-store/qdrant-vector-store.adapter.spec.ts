@@ -119,17 +119,14 @@ describe('QdrantVectorStoreAdapter', () => {
       },
     });
 
-    expect(mockQdrantClient.upsert).toHaveBeenCalledWith(
-      'chat_memory',
-      expect.objectContaining({
-        points: [
-          expect.objectContaining({
-            id: expect.stringMatching(
-              /^[0-9a-f]{8}-[0-9a-f]{4}-5[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/,
-            ),
-          }),
-        ],
-      }),
+    expect(mockQdrantClient.upsert).toHaveBeenCalledTimes(1);
+    const [, payload] = mockQdrantClient.upsert.mock.calls[0] as [
+      string,
+      { points: Array<{ id: string }> },
+    ];
+    expect(payload.points).toHaveLength(1);
+    expect(payload.points[0].id).toMatch(
+      /^[0-9a-f]{8}-[0-9a-f]{4}-5[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/,
     );
   });
 

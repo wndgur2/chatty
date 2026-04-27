@@ -30,6 +30,7 @@ Apply this skill for any Git operation in this repository, including branch nami
    - Cross-cutting: `repo`, `infra`, `deps`, `ci`, `docs`.
 
 4. Pull request defaults:
+   - make srue frontend/backend are valid. run lint, test, build for each.
    - PR title follows Conventional Commit format.
    - Prefer one concern per PR.
    - Prefer squash merge to keep `develop` and `main` history readable.
@@ -99,12 +100,15 @@ Git Task Checklist
 
 ```markdown
 ## Summary
+
 - <what changed>
 
 ## Why
+
 - <problem or goal>
 
 ## Test plan
+
 - [ ] backend: `npm run lint`
 - [ ] backend: `npm run test`
 - [ ] frontend: `npm run lint`
@@ -112,6 +116,7 @@ Git Task Checklist
 - [ ] frontend: `npm run test`
 
 ## Rollback notes
+
 - <how to safely revert if needed>
 ```
 
