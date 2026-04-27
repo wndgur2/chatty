@@ -61,6 +61,7 @@ vi.mock('../../src/features/chatroom/hooks/useMessages', () => ({
 }))
 
 vi.mock('../../src/features/chatroom/hooks/useWebSocketStream', () => ({
+  STREAMING_MESSAGE_ID: Number.MAX_SAFE_INTEGER,
   useWebSocketStream: () => ({
     isTyping: isTypingValue,
     streamingContent: streamingContentValue,
