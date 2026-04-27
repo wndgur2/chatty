@@ -1,6 +1,6 @@
 ---
 name: git
-description: Standardizes Chatty Git workflow with Light GitFlow branching, Conventional Commits, PR rules, and release/hotfix flow. Use when creating branches, writing commits, opening PRs, preparing releases, or handling hotfixes in this repository.
+description: Git workflow with Light GitFlow branching, Conventional Commits, PR rules, and release/hotfix flow. Use when creating branches, writing commits, opening PRs, preparing releases, or handling hotfixes in this repository.
 ---
 
 # Git Convention for Chatty
@@ -30,7 +30,7 @@ Apply this skill for any Git operation in this repository, including branch nami
    - Cross-cutting: `repo`, `infra`, `deps`, `ci`, `docs`.
 
 4. Pull request defaults:
-   - make srue frontend/backend are valid. run lint, test, build for each.
+   - Make srue frontend/backend are valid. run lint, test, build for each.
    - PR title follows Conventional Commit format.
    - Prefer one concern per PR.
    - Prefer squash merge to keep `develop` and `main` history readable.
