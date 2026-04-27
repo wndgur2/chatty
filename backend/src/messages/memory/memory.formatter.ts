@@ -1,3 +1,5 @@
+import { MEMORY_SNIPPETS_PROMPT } from '../../inference/prompts/chat-system.prompt';
+
 export type MemorySnippet = {
   messageId: string;
   content: string;
@@ -15,8 +17,5 @@ export function formatMemorySnippets(snippets: MemorySnippet[]): string {
     return `- (${date}) "${snippet.content}"`;
   });
 
-  return [
-    '## Relevant earlier context (do not repeat verbatim):',
-    ...lines,
-  ].join('\n');
+  return `${MEMORY_SNIPPETS_PROMPT}\n\n${lines.join('\n')}`;
 }
