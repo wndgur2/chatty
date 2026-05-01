@@ -9,6 +9,11 @@ export const MEMORY_SNIPPETS_PROMPT = [
   'If they conflict with the recent conversation, trust the recent conversation. Snippets may be truncated, so do not invent details beyond what is shown.',
 ].join('\n');
 
+export const STRUCTURED_STATE_PROMPT = [
+  '## What you already know about this conversation',
+  'Treat these as ground-truth state. They get updated as the user changes their mind.',
+].join('\n');
+
 export function buildProactiveLastInstruction(
   lastMessageContent: string,
 ): string {

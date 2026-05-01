@@ -16,6 +16,8 @@ import { ChatGenerationService } from '../inference/tasks/chat-generation.servic
 import { MemoryService } from './memory/memory.service';
 import { formatMemorySnippets } from './memory/memory.formatter';
 import { ConfigService } from '@nestjs/config';
+import { MemoryRetrieverService } from './memory/structured/memory-retriever.service';
+import { MemoryExtractorService } from './memory/structured/memory-extractor.service';
 
 const PROACTIVE_HISTORY_WINDOW_SIZE = 5;
 const DEFAULT_HISTORY_WINDOW_SIZE = 8;
@@ -33,6 +35,8 @@ export class MessagesService {
     private readonly chatroomStateRepository: ChatroomStateRepository,
     private readonly fcmPushService: FcmPushService,
     private readonly memoryService: MemoryService,
+    private readonly memoryRetriever: MemoryRetrieverService,
+    private readonly memoryExtractor: MemoryExtractorService,
     private readonly configService: ConfigService,
   ) {}
 
@@ -104,23 +108,22 @@ export class MessagesService {
       const queryMessage = [...history]
         .reverse()
         .find((message) => message.role === 'user');
-      const memorySnippets = queryMessage
-        ? await this.memoryService.retrieveContext(
-            chatroomId,
-            queryMessage.content,
-            {
+      const [memorySnippets, stateBlock] = await Promise.all([
+        queryMessage
+          ? this.memoryService.retrieveContext(chatroomId, queryMessage.content, {
               k: ragTopK,
               recentMessageIds,
-            },
-          )
-        : [];
+            })
+          : Promise.resolve([]),
+        this.memoryRetriever.getStateBlock(chatroomId),
+      ]);
       this.logger.debug(
         `Retrieved ${memorySnippets.length} memory snippets for chatroom=${chatroomId}`,
       );
       const memoryBlock = formatMemorySnippets(memorySnippets);
-      const resolvedSystemPrompt = memoryBlock
-        ? `${systemPrompt}\n\n${memoryBlock}`
-        : systemPrompt;
+      const resolvedSystemPrompt = [systemPrompt, stateBlock, memoryBlock]
+        .filter((block) => block.trim())
+        .join('\n\n');
 
       if (proactive) {
         const lastContent = history[history.length - 1]?.content ?? '';
@@ -157,6 +160,16 @@ export class MessagesService {
         fullContent,
         aiDbMessage.id.toString(),
       );
+      this.memoryExtractor
+        .extractFromTurn({
+          chatroomId,
+          userMessage: queryMessage?.content ?? '',
+          aiMessage: fullContent,
+          sourceMessageId: aiDbMessage.id,
+        })
+        .catch((err) => {
+          this.logger.warn('Structured memory extraction failed', err);
+        });
 
       if (proactive) {
         await this.fcmPushService

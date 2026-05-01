@@ -12,9 +12,12 @@ import { ConfigService } from '@nestjs/config';
 import {
   MEMORY_SNIPPETS_PROMPT,
   NORMAL_CHAT_BASE_SYSTEM,
+  STRUCTURED_STATE_PROMPT,
   STABLE_VOLUNTARY_ALIGNMENT,
 } from '../inference/prompts/chat-system.prompt';
 import { ChatGenerationService } from '../inference/tasks/chat-generation.service';
+import { MemoryRetrieverService } from './memory/structured/memory-retriever.service';
+import { MemoryExtractorService } from './memory/structured/memory-extractor.service';
 
 const mockMessageHistoryService = { findHistory: jest.fn() };
 const mockMessageSendService = { saveUserMessage: jest.fn() };
@@ -41,6 +44,12 @@ const mockMemoryService = {
   indexOlderMessage: jest.fn().mockResolvedValue(undefined),
   retrieveContext: jest.fn().mockResolvedValue([]),
 };
+const mockMemoryRetrieverService = {
+  getStateBlock: jest.fn().mockResolvedValue(''),
+};
+const mockMemoryExtractorService = {
+  extractFromTurn: jest.fn().mockResolvedValue(undefined),
+};
 const mockConfigService = {
   get: jest.fn((key: string, fallback: number) => fallback),
 };
@@ -66,6 +75,14 @@ describe('MessagesService', () => {
         },
         { provide: FcmPushService, useValue: mockFcmPushService },
         { provide: MemoryService, useValue: mockMemoryService },
+        {
+          provide: MemoryRetrieverService,
+          useValue: mockMemoryRetrieverService,
+        },
+        {
+          provide: MemoryExtractorService,
+          useValue: mockMemoryExtractorService,
+        },
         { provide: ConfigService, useValue: mockConfigService },
       ],
     }).compile();
@@ -78,6 +95,8 @@ describe('MessagesService', () => {
     mockFcmPushService.notifyProactiveAiMessage.mockResolvedValue(undefined);
     mockMemoryService.retrieveContext.mockResolvedValue([]);
     mockMemoryService.indexOlderMessage.mockResolvedValue(undefined);
+    mockMemoryRetrieverService.getStateBlock.mockResolvedValue('');
+    mockMemoryExtractorService.extractFromTurn.mockResolvedValue(undefined);
     mockConfigService.get.mockImplementation(
       (key: string, fallback: number) => fallback,
     );
@@ -362,6 +381,9 @@ describe('MessagesService', () => {
     mockChatGenerationService.generate.mockResolvedValue('reply');
     mockMessagesRepository.createMessage.mockResolvedValue({ id: 1n });
     mockChatroomStateRepository.resetDelay.mockResolvedValue(undefined);
+    mockMemoryRetrieverService.getStateBlock.mockResolvedValue(
+      `${STRUCTURED_STATE_PROMPT}\n- current_project: "Chatty MVP"`,
+    );
 
     await service.processBackgroundMessage(1, false);
 
@@ -374,8 +396,78 @@ describe('MessagesService', () => {
       mockChatGenerationService.generate.mock.calls[0] as [unknown, string]
     )[1];
     expect(systemPrompt).toContain(NORMAL_CHAT_BASE_SYSTEM);
+    expect(systemPrompt).toContain(STRUCTURED_STATE_PROMPT);
     expect(systemPrompt).toContain(MEMORY_SNIPPETS_PROMPT);
     expect(systemPrompt).toContain('prisma migrate deploy');
+  });
+
+  it('invokes structured memory extractor after creating AI reply', async () => {
+    mockChatroomStateRepository.findById.mockResolvedValue({
+      id: 1n,
+      userId: 2n,
+      name: 'Room',
+      basePrompt: '',
+    });
+    mockMessagesRepository.findRecent.mockResolvedValue([
+      {
+        id: 22n,
+        chatroomId: 1n,
+        sender: 'user',
+        content: 'remember this',
+        createdAt: new Date(),
+      },
+    ]);
+    mockChatGenerationService.generate.mockResolvedValue('reply');
+    mockMessagesRepository.createMessage.mockResolvedValue({ id: 555n });
+    mockChatroomStateRepository.resetDelay.mockResolvedValue(undefined);
+
+    await service.processBackgroundMessage(1, false);
+
+    expect(mockMemoryExtractorService.extractFromTurn).toHaveBeenCalledWith({
+      chatroomId: 1,
+      userMessage: 'remember this',
+      aiMessage: 'reply',
+      sourceMessageId: 555n,
+    });
+  });
+
+  it('does not break reply flow when structured extractor rejects', async () => {
+    const warnSpy = jest.spyOn(Logger.prototype, 'warn').mockImplementation();
+    mockMemoryExtractorService.extractFromTurn.mockRejectedValue(
+      new Error('extract failed'),
+    );
+    mockChatroomStateRepository.findById.mockResolvedValue({
+      id: 1n,
+      userId: 2n,
+      name: 'Room',
+      basePrompt: '',
+    });
+    mockMessagesRepository.findRecent.mockResolvedValue([
+      {
+        id: 30n,
+        chatroomId: 1n,
+        sender: 'user',
+        content: 'msg',
+        createdAt: new Date(),
+      },
+    ]);
+    mockChatGenerationService.generate.mockResolvedValue('reply');
+    mockMessagesRepository.createMessage.mockResolvedValue({ id: 1n });
+    mockChatroomStateRepository.resetDelay.mockResolvedValue(undefined);
+
+    await service.processBackgroundMessage(1, false);
+    await new Promise((resolve) => setImmediate(resolve));
+
+    expect(mockMessageStreamService.streamComplete).toHaveBeenCalledWith(
+      1,
+      'reply',
+      '1',
+    );
+    expect(warnSpy).toHaveBeenCalledWith(
+      'Structured memory extraction failed',
+      expect.any(Error),
+    );
+    warnSpy.mockRestore();
   });
 
   it('should use only the normal base system prompt when room basePrompt is empty', async () => {

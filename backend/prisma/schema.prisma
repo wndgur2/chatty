@@ -43,6 +43,7 @@ model Chatroom {
 
   user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   messages Message[]
+  facts    ChatroomFact[]
 
   @@map("chatrooms")
 }
@@ -66,6 +67,7 @@ model Message {
 
   chatroom          Chatroom           @relation(fields: [chatroomId], references: [id], onDelete: Cascade)
   aiMessageMetadata AiMessageMetadata?
+  facts             ChatroomFact[]
 
   @@map("messages")
 }
@@ -82,4 +84,23 @@ model AiMessageMetadata {
   message Message @relation(fields: [messageId], references: [id], onDelete: Cascade)
 
   @@map("ai_message_metadata")
+}
+
+model ChatroomFact {
+  id              BigInt   @id @default(autoincrement())
+  chatroomId      BigInt   @map("chatroom_id")
+  key             String   @db.VarChar(128)
+  value           Json
+  valueType       String   @map("value_type") @db.VarChar(32)
+  confidence      Float
+  sourceMessageId BigInt?  @map("source_message_id")
+  extractedAt     DateTime @default(now()) @map("extracted_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  chatroom      Chatroom @relation(fields: [chatroomId], references: [id], onDelete: Cascade)
+  sourceMessage Message? @relation(fields: [sourceMessageId], references: [id], onDelete: SetNull)
+
+  @@unique([chatroomId, key])
+  @@index([chatroomId])
+  @@map("chatroom_facts")
 }
