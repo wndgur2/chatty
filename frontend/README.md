@@ -37,6 +37,45 @@ Edit `.env`:
 npm run dev
 ```
 
+## Local HTTPS for mobile PWA testing
+
+If you open the app from your phone via `http://<LAN-IP>:5173`, browsers treat it as insecure and block PWA installability.
+Use local HTTPS instead:
+
+1. Install `mkcert` and its local CA on your Mac:
+
+```bash
+brew install mkcert
+mkcert -install
+```
+
+2. Create certs in `frontend/certs` (replace `<LAN-IP>` with your machine IP, for example `192.168.0.12`):
+
+```bash
+mkdir -p certs
+mkcert -key-file certs/localhost-key.pem -cert-file certs/localhost.pem localhost 127.0.0.1 ::1 <LAN-IP>
+```
+
+3. Run Vite with HTTPS:
+
+```bash
+npm run dev:https
+```
+
+4. Open from mobile:
+
+```text
+https://<LAN-IP>:5173
+```
+
+Optional `.env` overrides if your cert files live elsewhere:
+
+```bash
+VITE_HTTPS=true
+VITE_HTTPS_CERT=./path/to/cert.pem
+VITE_HTTPS_KEY=./path/to/key.pem
+```
+
 Production build and preview:
 
 ```bash
@@ -51,12 +90,15 @@ npm run preview
 | `VITE_API_URL`                              | REST + Socket.IO base (same host/path the browser uses to reach the API). |
 | `VITE_FIREBASE_*`                           | Firebase web app config for FCM.                                          |
 | `VITE_FCM_VAPID_KEY`                        | Web Push VAPID key from Firebase Console.                                 |
+| `VITE_HTTPS`                                | Set `true` to enable local HTTPS in Vite dev server.                      |
+| `VITE_HTTPS_CERT`, `VITE_HTTPS_KEY`         | Optional cert/key paths (defaults to `./certs/localhost.pem` and `./certs/localhost-key.pem`). |
 | `VITE_RELEASE_SHA`, `VITE_RELEASE_BUILT_AT` | Optional build metadata (e.g. CI).                                        |
 
 ## Scripts
 
 ```bash
 npm run dev                 # Vite dev server (--host)
+npm run dev:https           # Vite dev server with local HTTPS cert/key
 npm run build               # tsc -b && vite build
 npm run preview             # Preview production build
 npm run lint                # ESLint
