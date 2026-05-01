@@ -7,7 +7,7 @@ import {
 
 async function* mockStream(chunks: { delta: string }[]) {
   for (const c of chunks) {
-    yield c;
+    yield await Promise.resolve(c);
   }
 }
 
