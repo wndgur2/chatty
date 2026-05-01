@@ -1,6 +1,6 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { Sender } from '@prisma/client';
+import { Prisma, Sender } from '@prisma/client';
 import {
   EMBEDDING_PORT,
   type EmbeddingPort,
@@ -71,7 +71,9 @@ export class SemanticMemoryService {
       return;
     }
 
-    const chunks = await this.semanticChunkerService.chunk(olderMessage.content);
+    const chunks = await this.semanticChunkerService.chunk(
+      olderMessage.content,
+    );
     if (chunks.length === 0) {
       this.logger.warn(`Empty chunk embeddings for message ${messageId}`);
       return;
@@ -145,7 +147,10 @@ export class SemanticMemoryService {
         sourceMessageId: BigInt(params.sourceMessageId),
         sourceSender: params.sourceSender,
         extractorModel: params.model,
-        rawOutput: params.rawOutput ?? null,
+        rawOutput:
+          params.rawOutput != null
+            ? (params.rawOutput as Prisma.InputJsonValue)
+            : Prisma.JsonNull,
       },
       select: { id: true },
     });
@@ -219,7 +224,9 @@ export class SemanticMemoryService {
     }
   }
 
-  async retrieveFacts(input: MemoryQueryInput): Promise<SemanticMemoryCandidate[]> {
+  async retrieveFacts(
+    input: MemoryQueryInput,
+  ): Promise<SemanticMemoryCandidate[]> {
     const normalizedQuery = input.query.trim();
     if (!normalizedQuery) {
       return [];

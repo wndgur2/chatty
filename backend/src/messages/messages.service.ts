@@ -59,9 +59,11 @@ export class MessagesService {
     this.memoryService.indexOlderMessage(chatroomId).catch((err) => {
       this.logger.warn('Memory indexing failed', err);
     });
-    this.memoryService.extractFromMessage(message.id.toString()).catch((err) => {
-      this.logger.warn('Memory extraction failed', err);
-    });
+    this.memoryService
+      .extractFromMessage(message.id.toString())
+      .catch((err) => {
+        this.logger.warn('Memory extraction failed', err);
+      });
 
     this.processBackgroundMessage(chatroomId).catch((err) => {
       this.logger.error('Background processing failed', err);

@@ -1,6 +1,9 @@
 import { Sender } from '@prisma/client';
 
-export const MEMORY_EXTRACTOR_CLASSIFICATION_LABELS = ['EXTRACT', 'IGNORE'] as const;
+export const MEMORY_EXTRACTOR_CLASSIFICATION_LABELS = [
+  'EXTRACT',
+  'IGNORE',
+] as const;
 
 export const MEMORY_EXTRACTOR_CLASSIFICATION_PROMPT = [
   'You are a memory extraction gate.',
@@ -67,7 +70,10 @@ export const MEMORY_EXTRACTOR_JSON_SCHEMA: Record<string, unknown> = {
   },
 };
 
-export function buildMemoryExtractorPrompt(sender: Sender, messageContent: string): string {
+export function buildMemoryExtractorPrompt(
+  sender: Sender,
+  messageContent: string,
+): string {
   return [
     'You are MemoryExtractorAgent.',
     'Split memory into three layers and output strict JSON only.',
@@ -83,4 +89,3 @@ export function buildMemoryExtractorPrompt(sender: Sender, messageContent: strin
     messageContent,
   ].join('\n');
 }
-

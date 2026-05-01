@@ -1,7 +1,4 @@
-import {
-  CoreStateMutationOperation,
-  CoreStateValueType,
-} from '@prisma/client';
+import { CoreStateMutationOperation, CoreStateValueType } from '@prisma/client';
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../../prisma/prisma.service';
@@ -168,7 +165,9 @@ export class CoreStateMemoryService {
       valueType: row.valueType,
       updatedAt: row.updatedAt.toISOString(),
       expiresAt: row.expiresAt ? row.expiresAt.toISOString() : null,
-      sourceMessageId: row.sourceMessageId ? row.sourceMessageId.toString() : null,
+      sourceMessageId: row.sourceMessageId
+        ? row.sourceMessageId.toString()
+        : null,
       score: 1,
     }));
   }

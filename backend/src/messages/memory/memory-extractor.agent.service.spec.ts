@@ -24,13 +24,13 @@ const mockConfigService = {
   }),
 };
 
-async function collectIteratorChunks(chunks: string[]) {
-  async function* iterator() {
-    for (const chunk of chunks) {
-      yield { delta: chunk };
-    }
+async function* collectIteratorChunks(
+  chunks: string[],
+): AsyncIterable<{ delta: string }> {
+  for (const chunk of chunks) {
+    yield { delta: chunk };
+    await Promise.resolve();
   }
-  return iterator();
 }
 
 describe('MemoryExtractorAgentService', () => {
@@ -46,7 +46,9 @@ describe('MemoryExtractorAgentService', () => {
       ],
     }).compile();
 
-    service = module.get<MemoryExtractorAgentService>(MemoryExtractorAgentService);
+    service = module.get<MemoryExtractorAgentService>(
+      MemoryExtractorAgentService,
+    );
   });
 
   afterEach(() => {
@@ -73,8 +75,8 @@ describe('MemoryExtractorAgentService', () => {
 
   it('parses facts, episodes, and state updates from extractor JSON', async () => {
     mockClassificationPort.classify.mockResolvedValue('EXTRACT');
-    mockChatCompletionPort.stream.mockResolvedValue(
-      await collectIteratorChunks([
+    mockChatCompletionPort.stream.mockReturnValue(
+      collectIteratorChunks([
         JSON.stringify({
           facts: [{ content: 'User timezone is UTC.', confidence: 0.9 }],
           episodes: [

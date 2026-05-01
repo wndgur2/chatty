@@ -64,7 +64,10 @@ describe('MemoryService', () => {
         MemoryService,
         { provide: SemanticMemoryService, useValue: mockSemanticMemoryService },
         { provide: EpisodicMemoryService, useValue: mockEpisodicMemoryService },
-        { provide: CoreStateMemoryService, useValue: mockCoreStateMemoryService },
+        {
+          provide: CoreStateMemoryService,
+          useValue: mockCoreStateMemoryService,
+        },
         {
           provide: MemoryExtractorAgentService,
           useValue: mockMemoryExtractorAgentService,
@@ -89,7 +92,9 @@ describe('MemoryService', () => {
 
     await service.indexOlderMessage(42);
 
-    expect(mockSemanticMemoryService.indexOlderMessage).toHaveBeenCalledWith(42);
+    expect(mockSemanticMemoryService.indexOlderMessage).toHaveBeenCalledWith(
+      42,
+    );
   });
 
   it('writes all extracted layers when extractor returns facts/episodes/state', async () => {
@@ -121,7 +126,9 @@ describe('MemoryService', () => {
         },
       ],
     });
-    mockSemanticMemoryService.createExtractionRun.mockResolvedValue({ id: 555n });
+    mockSemanticMemoryService.createExtractionRun.mockResolvedValue({
+      id: 555n,
+    });
 
     await service.extractFromMessage('101');
 

@@ -1,4 +1,4 @@
-import { Sender } from '@prisma/client';
+import { CoreStateMutationOperation, CoreStateValueType } from '@prisma/client';
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import {
@@ -70,7 +70,7 @@ export class MemoryExtractorAgentService {
     }
 
     const prompt = buildMemoryExtractorPrompt(
-      sourceMessage.sender as Sender,
+      sourceMessage.sender,
       sourceMessage.content,
     );
     const rawOutput = await this.collectTextFromStream(prompt);
@@ -145,7 +145,7 @@ export class MemoryExtractorAgentService {
 
   private tryParseJson(raw: string): Record<string, unknown> | null {
     try {
-      const parsed = JSON.parse(raw);
+      const parsed: unknown = JSON.parse(raw);
       if (parsed && typeof parsed === 'object') {
         return parsed as Record<string, unknown>;
       }
@@ -157,7 +157,7 @@ export class MemoryExtractorAgentService {
         return null;
       }
       try {
-        const sliced = JSON.parse(raw.slice(start, end + 1));
+        const sliced: unknown = JSON.parse(raw.slice(start, end + 1));
         if (sliced && typeof sliced === 'object') {
           return sliced as Record<string, unknown>;
         }
@@ -173,23 +173,29 @@ export class MemoryExtractorAgentService {
       return [];
     }
 
-    return value
-      .map((item) => {
-        if (!item || typeof item !== 'object') {
-          return null;
-        }
-        const record = item as Record<string, unknown>;
-        const content = this.asTrimmed(record.content);
-        if (!content) {
-          return null;
-        }
-        return {
-          content,
-          factKey: this.asTrimmed(record.factKey) || undefined,
-          confidence: this.toConfidence(record.confidence),
-        };
-      })
-      .filter((item): item is MemoryExtractedFact => item !== null);
+    const facts: MemoryExtractedFact[] = [];
+    for (const item of value) {
+      if (!item || typeof item !== 'object') {
+        continue;
+      }
+      const record = item as Record<string, unknown>;
+      const content = this.asTrimmed(record.content);
+      if (!content) {
+        continue;
+      }
+
+      const fact: MemoryExtractedFact = { content };
+      const factKey = this.asTrimmed(record.factKey);
+      if (factKey) {
+        fact.factKey = factKey;
+      }
+      const confidence = this.toConfidence(record.confidence);
+      if (typeof confidence === 'number') {
+        fact.confidence = confidence;
+      }
+      facts.push(fact);
+    }
+    return facts;
   }
 
   private parseEpisodes(value: unknown): MemoryExtractedEpisode[] {
@@ -197,25 +203,33 @@ export class MemoryExtractorAgentService {
       return [];
     }
 
-    return value
-      .map((item) => {
-        if (!item || typeof item !== 'object') {
-          return null;
-        }
-        const record = item as Record<string, unknown>;
-        const content = this.asTrimmed(record.content);
-        const eventType = this.asTrimmed(record.eventType);
-        if (!content || !eventType) {
-          return null;
-        }
-        return {
-          content,
-          eventType,
-          happenedAtIso: this.asTrimmed(record.happenedAtIso) || undefined,
-          confidence: this.toConfidence(record.confidence),
-        };
-      })
-      .filter((item): item is MemoryExtractedEpisode => item !== null);
+    const episodes: MemoryExtractedEpisode[] = [];
+    for (const item of value) {
+      if (!item || typeof item !== 'object') {
+        continue;
+      }
+      const record = item as Record<string, unknown>;
+      const content = this.asTrimmed(record.content);
+      const eventType = this.asTrimmed(record.eventType);
+      if (!content || !eventType) {
+        continue;
+      }
+
+      const episode: MemoryExtractedEpisode = {
+        content,
+        eventType,
+      };
+      const happenedAtIso = this.asTrimmed(record.happenedAtIso);
+      if (happenedAtIso) {
+        episode.happenedAtIso = happenedAtIso;
+      }
+      const confidence = this.toConfidence(record.confidence);
+      if (typeof confidence === 'number') {
+        episode.confidence = confidence;
+      }
+      episodes.push(episode);
+    }
+    return episodes;
   }
 
   private parseStateUpdates(value: unknown): MemoryStateUpdate[] {
@@ -223,26 +237,41 @@ export class MemoryExtractorAgentService {
       return [];
     }
 
-    return value
-      .map((item) => {
-        if (!item || typeof item !== 'object') {
-          return null;
-        }
-        const record = item as Record<string, unknown>;
-        const key = this.asTrimmed(record.key);
-        if (!key) {
-          return null;
-        }
-        return {
-          key,
-          operation: this.toOperation(record.operation),
-          value: this.asOptionalTrimmed(record.value),
-          valueType: this.toValueType(record.valueType),
-          ttlSeconds: this.toPositiveInteger(record.ttlSeconds),
-          confidence: this.toConfidence(record.confidence),
-        };
-      })
-      .filter((item): item is MemoryStateUpdate => item !== null);
+    const updates: MemoryStateUpdate[] = [];
+    for (const item of value) {
+      if (!item || typeof item !== 'object') {
+        continue;
+      }
+      const record = item as Record<string, unknown>;
+      const key = this.asTrimmed(record.key);
+      if (!key) {
+        continue;
+      }
+
+      const update: MemoryStateUpdate = { key };
+      const operation = this.toOperation(record.operation);
+      if (operation) {
+        update.operation = operation;
+      }
+      const valueText = this.asOptionalTrimmed(record.value);
+      if (valueText !== undefined) {
+        update.value = valueText;
+      }
+      const valueType = this.toValueType(record.valueType);
+      if (valueType) {
+        update.valueType = valueType;
+      }
+      const ttlSeconds = this.toPositiveInteger(record.ttlSeconds);
+      if (ttlSeconds !== undefined) {
+        update.ttlSeconds = ttlSeconds;
+      }
+      const confidence = this.toConfidence(record.confidence);
+      if (typeof confidence === 'number') {
+        update.confidence = confidence;
+      }
+      updates.push(update);
+    }
+    return updates;
   }
 
   private asTrimmed(value: unknown): string {
@@ -256,25 +285,31 @@ export class MemoryExtractorAgentService {
 
   private toOperation(value: unknown): MemoryStateUpdate['operation'] {
     const normalized = this.asTrimmed(value).toLowerCase();
-    if (
-      normalized === 'upsert' ||
-      normalized === 'delete' ||
-      normalized === 'expire'
-    ) {
-      return normalized;
+    if (normalized === CoreStateMutationOperation.upsert) {
+      return CoreStateMutationOperation.upsert;
+    }
+    if (normalized === CoreStateMutationOperation.delete) {
+      return CoreStateMutationOperation.delete;
+    }
+    if (normalized === CoreStateMutationOperation.expire) {
+      return CoreStateMutationOperation.expire;
     }
     return undefined;
   }
 
   private toValueType(value: unknown): MemoryStateUpdate['valueType'] {
     const normalized = this.asTrimmed(value).toLowerCase();
-    if (
-      normalized === 'text' ||
-      normalized === 'json' ||
-      normalized === 'number' ||
-      normalized === 'boolean'
-    ) {
-      return normalized;
+    if (normalized === CoreStateValueType.text) {
+      return CoreStateValueType.text;
+    }
+    if (normalized === CoreStateValueType.json) {
+      return CoreStateValueType.json;
+    }
+    if (normalized === CoreStateValueType.number) {
+      return CoreStateValueType.number;
+    }
+    if (normalized === CoreStateValueType.boolean) {
+      return CoreStateValueType.boolean;
     }
     return undefined;
   }

@@ -118,7 +118,9 @@ export class EpisodicMemoryService {
     }
   }
 
-  async retrieveEpisodes(input: MemoryQueryInput): Promise<EpisodicMemoryCandidate[]> {
+  async retrieveEpisodes(
+    input: MemoryQueryInput,
+  ): Promise<EpisodicMemoryCandidate[]> {
     const query = input.query.trim();
     if (!query) {
       return [];
@@ -169,7 +171,8 @@ export class EpisodicMemoryService {
         const recordId = result.payload.memoryRecordId;
         const meta = recordId ? metaByVectorPointId.get(recordId) : undefined;
         const eventType = meta?.eventType ?? 'event';
-        const happenedAt = meta?.happenedAt.toISOString() ?? result.payload.createdAt;
+        const happenedAt =
+          meta?.happenedAt.toISOString() ?? result.payload.createdAt;
         return {
           id: recordId ?? `episodic:${result.payload.messageId}:${happenedAt}`,
           type: 'episodic' as const,
@@ -185,13 +188,18 @@ export class EpisodicMemoryService {
       .slice(0, limit);
   }
 
-  private parseHappenedAt(happenedAtIso: string | undefined, fallbackIso: string): Date {
+  private parseHappenedAt(
+    happenedAtIso: string | undefined,
+    fallbackIso: string,
+  ): Date {
     if (happenedAtIso) {
       const parsed = new Date(happenedAtIso);
       if (!Number.isNaN(parsed.getTime())) {
         return parsed;
       }
-      this.logger.warn(`Invalid happenedAtIso="${happenedAtIso}" from extractor`);
+      this.logger.warn(
+        `Invalid happenedAtIso="${happenedAtIso}" from extractor`,
+      );
     }
     const fallback = new Date(fallbackIso);
     if (!Number.isNaN(fallback.getTime())) {

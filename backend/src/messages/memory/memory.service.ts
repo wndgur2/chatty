@@ -142,8 +142,11 @@ export class MemoryService {
       finalLimit,
       tokenBudget: input.tokenBudget,
     });
+    const boundedSelected = selected.slice(0, finalLimit);
 
-    const byId = new Map(selected.map((candidate) => [candidate.id, candidate]));
+    const byId = new Map(
+      boundedSelected.map((candidate) => [candidate.id, candidate]),
+    );
     const selectedFacts = facts.filter((fact) => byId.has(fact.id));
     const selectedEpisodes = episodes.filter((episode) => byId.has(episode.id));
     const selectedState = coreState.filter((state) => byId.has(state.id));
@@ -152,7 +155,7 @@ export class MemoryService {
       episodic: 1,
       semantic: 2,
     };
-    const sortedSelected = [...selected].sort((left, right) => {
+    const sortedSelected = [...boundedSelected].sort((left, right) => {
       const rankDelta = left.rank - right.rank;
       if (rankDelta !== 0) {
         return rankDelta;

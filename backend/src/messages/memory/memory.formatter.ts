@@ -8,7 +8,9 @@ function isoToDate(iso: string): string {
   return iso.slice(0, 10);
 }
 
-export function formatHybridMemoryContext(context: HybridMemoryContext): string {
+export function formatHybridMemoryContext(
+  context: HybridMemoryContext,
+): string {
   const { coreState, recentEpisodes, relevantFacts } = context;
   if (
     coreState.length === 0 &&

@@ -106,7 +106,11 @@ describe('MessagesService', () => {
 
     const result = await service.findHistory('1', 1, 10, 0);
     expect(result).toEqual(mockResult);
-    expect(mockMessageHistoryService.findHistory).toHaveBeenCalledWith(1, 10, 0);
+    expect(mockMessageHistoryService.findHistory).toHaveBeenCalledWith(
+      1,
+      10,
+      0,
+    );
   });
 
   it('should reject findHistory when user does not own chatroom', async () => {
@@ -126,7 +130,9 @@ describe('MessagesService', () => {
       content: 'Tell me a joke.',
       createdAt: '2026-04-27T00:00:00.000Z',
     };
-    mockMessageSendService.saveUserMessage.mockResolvedValue(mockCreatedMessage);
+    mockMessageSendService.saveUserMessage.mockResolvedValue(
+      mockCreatedMessage,
+    );
     mockChatroomStateRepository.findByIdAndUser.mockResolvedValue({ id: 1n });
     mockChatroomStateRepository.clearNextEvaluationTime.mockResolvedValue(
       undefined,
@@ -136,7 +142,9 @@ describe('MessagesService', () => {
       .spyOn(service as any, 'processBackgroundMessage')
       .mockResolvedValue(undefined);
 
-    const result = await service.sendToAI('1', 1, { content: 'Tell me a joke.' });
+    const result = await service.sendToAI('1', 1, {
+      content: 'Tell me a joke.',
+    });
 
     expect(result).toEqual({
       messageId: '103',
@@ -331,12 +339,14 @@ describe('MessagesService', () => {
   });
 
   it('adds hybrid memory block into system prompt before generation', async () => {
-    mockConfigService.get.mockImplementation((key: string, fallback: number) => {
-      if (key === 'RAG_TOP_K') {
-        return 5;
-      }
-      return fallback;
-    });
+    mockConfigService.get.mockImplementation(
+      (key: string, fallback: number) => {
+        if (key === 'RAG_TOP_K') {
+          return 5;
+        }
+        return fallback;
+      },
+    );
     mockChatroomStateRepository.findById.mockResolvedValue({
       id: 1n,
       userId: 2n,

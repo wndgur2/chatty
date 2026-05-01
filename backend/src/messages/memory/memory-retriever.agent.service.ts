@@ -46,7 +46,10 @@ export class MemoryRetrieverAgentService {
 
   async rerank(input: {
     query: string;
-    recentConversation: Array<{ role: 'user' | 'assistant' | 'system'; content: string }>;
+    recentConversation: Array<{
+      role: 'user' | 'assistant' | 'system';
+      content: string;
+    }>;
     candidates: MemoryCandidate[];
     candidateLimit: number;
     finalLimit: number;
@@ -61,7 +64,10 @@ export class MemoryRetrieverAgentService {
       Math.max(input.candidateLimit, input.finalLimit),
     );
 
-    const fallback = this.heuristicFallback(boundedCandidates, input.finalLimit);
+    const fallback = this.heuristicFallback(
+      boundedCandidates,
+      input.finalLimit,
+    );
     const prompt = this.buildPrompt(
       input.query,
       input.recentConversation,
@@ -74,7 +80,9 @@ export class MemoryRetrieverAgentService {
       return fallback;
     }
 
-    const byId = new Map(boundedCandidates.map((candidate) => [candidate.id, candidate]));
+    const byId = new Map(
+      boundedCandidates.map((candidate) => [candidate.id, candidate]),
+    );
     const ranked: RankedMemoryCandidate[] = [];
 
     for (const row of parsed.selected) {
@@ -88,7 +96,10 @@ export class MemoryRetrieverAgentService {
         ...candidate,
         rank: ranked.length + 1,
         rerankScore: score,
-        reason: typeof row.reason === 'string' ? row.reason.trim() || undefined : undefined,
+        reason:
+          typeof row.reason === 'string'
+            ? row.reason.trim() || undefined
+            : undefined,
       });
       byId.delete(memoryId);
       if (ranked.length >= input.finalLimit) {
@@ -119,7 +130,10 @@ export class MemoryRetrieverAgentService {
 
   private buildPrompt(
     query: string,
-    recentConversation: Array<{ role: 'user' | 'assistant' | 'system'; content: string }>,
+    recentConversation: Array<{
+      role: 'user' | 'assistant' | 'system';
+      content: string;
+    }>,
     candidates: MemoryCandidate[],
     tokenBudget?: number,
   ): string {
@@ -131,7 +145,10 @@ export class MemoryRetrieverAgentService {
       )
       .join('\n');
 
-    const candidateLines = this.renderCandidatesWithBudget(candidates, tokenBudget);
+    const candidateLines = this.renderCandidatesWithBudget(
+      candidates,
+      tokenBudget,
+    );
 
     return [
       HYBRID_MEMORY_RERANK_PROMPT,
@@ -151,7 +168,9 @@ export class MemoryRetrieverAgentService {
     tokenBudget?: number,
   ): string {
     const charBudget =
-      typeof tokenBudget === 'number' && Number.isFinite(tokenBudget) && tokenBudget > 0
+      typeof tokenBudget === 'number' &&
+      Number.isFinite(tokenBudget) &&
+      tokenBudget > 0
         ? Math.floor(tokenBudget * 4)
         : Number.POSITIVE_INFINITY;
     const lines: string[] = [];
@@ -169,7 +188,10 @@ export class MemoryRetrieverAgentService {
     return lines.join('\n');
   }
 
-  private renderCandidateLine(index: number, candidate: MemoryCandidate): string {
+  private renderCandidateLine(
+    index: number,
+    candidate: MemoryCandidate,
+  ): string {
     if (candidate.type === 'core_state') {
       return `${index + 1}. id=${candidate.id}; type=core_state; key=${candidate.key}; value=${JSON.stringify(candidate.value)}; updatedAt=${candidate.updatedAt};`;
     }
@@ -201,7 +223,7 @@ export class MemoryRetrieverAgentService {
       return null;
     }
     try {
-      const parsed = JSON.parse(rawOutput);
+      const parsed: unknown = JSON.parse(rawOutput);
       if (parsed && typeof parsed === 'object') {
         return parsed as RerankOutput;
       }
@@ -214,7 +236,7 @@ export class MemoryRetrieverAgentService {
         return null;
       }
       try {
-        const parsed = JSON.parse(rawOutput.slice(start, end + 1));
+        const parsed: unknown = JSON.parse(rawOutput.slice(start, end + 1));
         if (parsed && typeof parsed === 'object') {
           return parsed as RerankOutput;
         }
@@ -237,12 +259,14 @@ export class MemoryRetrieverAgentService {
       }
       if (left.type === 'core_state' && right.type === 'core_state') {
         return (
-          new Date(right.updatedAt).getTime() - new Date(left.updatedAt).getTime()
+          new Date(right.updatedAt).getTime() -
+          new Date(left.updatedAt).getTime()
         );
       }
       if (left.type === 'episodic' && right.type === 'episodic') {
         const dateDelta =
-          new Date(right.happenedAt).getTime() - new Date(left.happenedAt).getTime();
+          new Date(right.happenedAt).getTime() -
+          new Date(left.happenedAt).getTime();
         if (dateDelta !== 0) {
           return dateDelta;
         }

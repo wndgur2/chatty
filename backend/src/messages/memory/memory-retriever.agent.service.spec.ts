@@ -4,6 +4,7 @@ import { MemoryRetrieverAgentService } from './memory-retriever.agent.service';
 
 const collectSingleChunk = (text: string) =>
   (async function* () {
+    await Promise.resolve();
     yield { delta: text };
   })();
 
@@ -36,7 +37,11 @@ describe('MemoryRetrieverAgentService', () => {
       collectSingleChunk(
         JSON.stringify({
           selected: [
-            { memoryId: 'core_state:timezone', score: 0.99, reason: 'latest state' },
+            {
+              memoryId: 'core_state:timezone',
+              score: 0.99,
+              reason: 'latest state',
+            },
             { memoryId: 'episodic:travel', score: 0.8, reason: 'recent event' },
             { memoryId: 'semantic:old', score: 0.2, reason: 'background' },
           ],
@@ -91,7 +96,9 @@ describe('MemoryRetrieverAgentService', () => {
   });
 
   it('falls back to precedence heuristic when rerank output is invalid', async () => {
-    mockChatCompletionPort.stream.mockReturnValue(collectSingleChunk('not json'));
+    mockChatCompletionPort.stream.mockReturnValue(
+      collectSingleChunk('not json'),
+    );
 
     const selected = await service.rerank({
       query: 'timezone?',
