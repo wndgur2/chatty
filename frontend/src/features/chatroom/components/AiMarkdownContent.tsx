@@ -1,5 +1,9 @@
+import 'katex/dist/katex.min.css'
+
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
+import remarkMath from 'remark-math'
+import rehypeKatex from 'rehype-katex'
 import type { Components } from 'react-markdown'
 import { twMerge } from 'tailwind-merge'
 
@@ -42,7 +46,11 @@ export function AiMarkdownContent({ content, className }: AiMarkdownContentProps
           'text-[15px] text-gray-800',
         )}
       >
-        <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>
+        <ReactMarkdown
+          remarkPlugins={[remarkGfm, remarkMath]}
+          rehypePlugins={[rehypeKatex]}
+          components={markdownComponents}
+        >
           {content}
         </ReactMarkdown>
       </div>
