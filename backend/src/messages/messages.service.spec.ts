@@ -1,20 +1,20 @@
 import { ForbiddenException, Logger } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
-import { MessagesService } from './messages.service';
-import { MessageHistoryService } from './message-history.service';
-import { MessageSendService } from './message-send.service';
-import { MessageStreamService } from './message-stream.service';
-import { MessagesRepository } from './messages.repository';
-import { ChatroomStateRepository } from './chatroom-state.repository';
-import { FcmPushService } from '../notifications/fcm-push.service';
-import { MemoryService } from './memory/memory.service';
 import { ConfigService } from '@nestjs/config';
+import { ChatGenerationService } from '../inference/tasks/chat-generation.service';
 import {
-  MEMORY_SNIPPETS_PROMPT,
+  HYBRID_MEMORY_BLOCK_PROMPT,
   NORMAL_CHAT_BASE_SYSTEM,
   STABLE_VOLUNTARY_ALIGNMENT,
 } from '../inference/prompts/chat-system.prompt';
-import { ChatGenerationService } from '../inference/tasks/chat-generation.service';
+import { FcmPushService } from '../notifications/fcm-push.service';
+import { MessageHistoryService } from './message-history.service';
+import { MessageSendService } from './message-send.service';
+import { MessageStreamService } from './message-stream.service';
+import { MemoryService } from './memory/memory.service';
+import { MessagesRepository } from './messages.repository';
+import { ChatroomStateRepository } from './chatroom-state.repository';
+import { MessagesService } from './messages.service';
 
 const mockMessageHistoryService = { findHistory: jest.fn() };
 const mockMessageSendService = { saveUserMessage: jest.fn() };
@@ -39,10 +39,16 @@ const mockFcmPushService = {
 };
 const mockMemoryService = {
   indexOlderMessage: jest.fn().mockResolvedValue(undefined),
-  retrieveContext: jest.fn().mockResolvedValue([]),
+  extractFromMessage: jest.fn().mockResolvedValue(undefined),
+  retrieveContext: jest.fn().mockResolvedValue({
+    coreState: [],
+    recentEpisodes: [],
+    relevantFacts: [],
+    selected: [],
+  }),
 };
 const mockConfigService = {
-  get: jest.fn((key: string, fallback: number) => fallback),
+  get: jest.fn((_: string, fallback: number) => fallback),
 };
 
 describe('MessagesService', () => {
@@ -76,10 +82,16 @@ describe('MessagesService', () => {
   afterEach(() => {
     jest.clearAllMocks();
     mockFcmPushService.notifyProactiveAiMessage.mockResolvedValue(undefined);
-    mockMemoryService.retrieveContext.mockResolvedValue([]);
+    mockMemoryService.retrieveContext.mockResolvedValue({
+      coreState: [],
+      recentEpisodes: [],
+      relevantFacts: [],
+      selected: [],
+    });
     mockMemoryService.indexOlderMessage.mockResolvedValue(undefined);
+    mockMemoryService.extractFromMessage.mockResolvedValue(undefined);
     mockConfigService.get.mockImplementation(
-      (key: string, fallback: number) => fallback,
+      (_: string, fallback: number) => fallback,
     );
   });
 
@@ -94,11 +106,7 @@ describe('MessagesService', () => {
 
     const result = await service.findHistory('1', 1, 10, 0);
     expect(result).toEqual(mockResult);
-    expect(mockMessageHistoryService.findHistory).toHaveBeenCalledWith(
-      1,
-      10,
-      0,
-    );
+    expect(mockMessageHistoryService.findHistory).toHaveBeenCalledWith(1, 10, 0);
   });
 
   it('should reject findHistory when user does not own chatroom', async () => {
@@ -118,33 +126,28 @@ describe('MessagesService', () => {
       content: 'Tell me a joke.',
       createdAt: '2026-04-27T00:00:00.000Z',
     };
-    mockMessageSendService.saveUserMessage.mockResolvedValue(
-      mockCreatedMessage,
-    );
+    mockMessageSendService.saveUserMessage.mockResolvedValue(mockCreatedMessage);
     mockChatroomStateRepository.findByIdAndUser.mockResolvedValue({ id: 1n });
     mockChatroomStateRepository.clearNextEvaluationTime.mockResolvedValue(
       undefined,
     );
 
-    const dto = { content: 'Tell me a joke.' };
-
-    // Let's spy on processBackgroundMessage by ignoring errors since it runs async
     const processMock = jest
       .spyOn(service as any, 'processBackgroundMessage')
       .mockResolvedValue(undefined);
 
-    const result = await service.sendToAI('1', 1, dto);
+    const result = await service.sendToAI('1', 1, { content: 'Tell me a joke.' });
 
     expect(result).toEqual({
       messageId: '103',
       status: 'processing',
       message: mockCreatedMessage,
     });
-    expect(mockMessageSendService.saveUserMessage).toHaveBeenCalled();
     expect(
       mockChatroomStateRepository.clearNextEvaluationTime,
     ).toHaveBeenCalledWith(1n);
     expect(mockMemoryService.indexOlderMessage).toHaveBeenCalledWith(1);
+    expect(mockMemoryService.extractFromMessage).toHaveBeenCalledWith('103');
     expect(processMock).toHaveBeenCalledWith(1);
 
     processMock.mockRestore();
@@ -327,15 +330,13 @@ describe('MessagesService', () => {
     );
   });
 
-  it('adds retrieved memory block into system prompt before generation', async () => {
-    mockConfigService.get.mockImplementation(
-      (key: string, fallback: number) => {
-        if (key === 'RAG_TOP_K') {
-          return 5;
-        }
-        return fallback;
-      },
-    );
+  it('adds hybrid memory block into system prompt before generation', async () => {
+    mockConfigService.get.mockImplementation((key: string, fallback: number) => {
+      if (key === 'RAG_TOP_K') {
+        return 5;
+      }
+      return fallback;
+    });
     mockChatroomStateRepository.findById.mockResolvedValue({
       id: 1n,
       userId: 2n,
@@ -351,14 +352,33 @@ describe('MessagesService', () => {
         createdAt: new Date('2026-04-12T10:00:00.000Z'),
       },
     ]);
-    mockMemoryService.retrieveContext.mockResolvedValue([
-      {
-        messageId: '7',
-        content: 'You previously said to run prisma migrate deploy in CI.',
-        createdAt: '2026-04-12T00:00:00.000Z',
-        score: 0.91,
-      },
-    ]);
+    mockMemoryService.retrieveContext.mockResolvedValue({
+      coreState: [
+        {
+          id: 'core_state:preferred_db',
+          type: 'core_state',
+          key: 'preferred_db',
+          value: 'postgres',
+          valueType: 'text',
+          updatedAt: '2026-04-12T00:00:00.000Z',
+          expiresAt: null,
+          sourceMessageId: '7',
+          score: 1,
+        },
+      ],
+      recentEpisodes: [],
+      relevantFacts: [
+        {
+          id: 'semantic:7',
+          type: 'semantic',
+          messageId: '7',
+          content: 'You previously said to run prisma migrate deploy in CI.',
+          createdAt: '2026-04-12T00:00:00.000Z',
+          score: 0.91,
+        },
+      ],
+      selected: [],
+    });
     mockChatGenerationService.generate.mockResolvedValue('reply');
     mockMessagesRepository.createMessage.mockResolvedValue({ id: 1n });
     mockChatroomStateRepository.resetDelay.mockResolvedValue(undefined);
@@ -366,16 +386,20 @@ describe('MessagesService', () => {
     await service.processBackgroundMessage(1, false);
 
     expect(mockMemoryService.retrieveContext).toHaveBeenCalledWith(
-      1,
-      'remind me about postgres migration',
-      { k: 5, recentMessageIds: ['11'] },
+      expect.objectContaining({
+        chatroomId: 1,
+        query: 'remind me about postgres migration',
+        recentMessageIds: ['11'],
+        k: 5,
+      }),
     );
     const systemPrompt = (
       mockChatGenerationService.generate.mock.calls[0] as [unknown, string]
     )[1];
     expect(systemPrompt).toContain(NORMAL_CHAT_BASE_SYSTEM);
-    expect(systemPrompt).toContain(MEMORY_SNIPPETS_PROMPT);
+    expect(systemPrompt).toContain(HYBRID_MEMORY_BLOCK_PROMPT);
     expect(systemPrompt).toContain('prisma migrate deploy');
+    expect(systemPrompt).toContain('preferred_db');
   });
 
   it('should use only the normal base system prompt when room basePrompt is empty', async () => {

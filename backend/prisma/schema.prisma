@@ -13,8 +13,11 @@ model User {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  devices   UserDevice[]
-  chatrooms Chatroom[]
+  devices               UserDevice[]
+  chatrooms             Chatroom[]
+  semanticMemoryRecords SemanticMemoryRecord[]
+  episodicMemoryRecords EpisodicMemoryRecord[]
+  coreStateMemories     CoreStateMemory[]
 
   @@map("users")
 }
@@ -41,8 +44,14 @@ model Chatroom {
   createdAt           DateTime  @default(now()) @map("created_at")
   updatedAt           DateTime  @updatedAt @map("updated_at")
 
-  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  messages Message[]
+  user                 User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  messages             Message[]
+  extractionRuns       MemoryExtractionRun[]
+  semanticMemory       SemanticMemoryRecord[]
+  episodicMemory       EpisodicMemoryRecord[]
+  coreStateMemories    CoreStateMemory[]
+  coreStateMutations   CoreStateMutation[]
+  memorySelectionLogs  MemorySelectionLog[]
 
   @@map("chatrooms")
 }
@@ -64,8 +73,13 @@ model Message {
   content    String   @db.LongText
   createdAt  DateTime @default(now()) @map("created_at")
 
-  chatroom          Chatroom           @relation(fields: [chatroomId], references: [id], onDelete: Cascade)
-  aiMessageMetadata AiMessageMetadata?
+  chatroom                    Chatroom                @relation(fields: [chatroomId], references: [id], onDelete: Cascade)
+  aiMessageMetadata           AiMessageMetadata?
+  extractionRuns              MemoryExtractionRun[]   @relation("MessageExtractionRuns")
+  semanticMemoryRecords       SemanticMemoryRecord[]  @relation("MessageSemanticMemoryRecords")
+  episodicMemoryRecords       EpisodicMemoryRecord[]  @relation("MessageEpisodicMemoryRecords")
+  coreStateMemories           CoreStateMemory[]       @relation("MessageCoreStateMemories")
+  coreStateMutationSourceRows CoreStateMutation[]     @relation("MessageCoreStateMutations")
 
   @@map("messages")
 }
@@ -82,4 +96,139 @@ model AiMessageMetadata {
   message Message @relation(fields: [messageId], references: [id], onDelete: Cascade)
 
   @@map("ai_message_metadata")
+}
+
+enum CoreStateValueType {
+  text
+  json
+  number
+  boolean
+}
+
+enum CoreStateMutationOperation {
+  upsert
+  delete
+  expire
+}
+
+model MemoryExtractionRun {
+  id             BigInt   @id @default(autoincrement())
+  chatroomId     BigInt   @map("chatroom_id")
+  sourceMessageId BigInt  @map("source_message_id")
+  sourceSender   Sender   @map("source_sender")
+  extractorModel String   @map("extractor_model") @db.VarChar(255)
+  rawOutput      Json?    @map("raw_output")
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  chatroom         Chatroom               @relation(fields: [chatroomId], references: [id], onDelete: Cascade)
+  sourceMessage    Message                @relation("MessageExtractionRuns", fields: [sourceMessageId], references: [id], onDelete: Cascade)
+  semanticMemory   SemanticMemoryRecord[]
+  episodicMemory   EpisodicMemoryRecord[]
+  stateMutations   CoreStateMutation[]
+
+  @@index([chatroomId, createdAt])
+  @@index([sourceMessageId])
+  @@map("memory_extraction_runs")
+}
+
+model SemanticMemoryRecord {
+  id              BigInt   @id @default(autoincrement())
+  chatroomId      BigInt   @map("chatroom_id")
+  userId          BigInt   @map("user_id")
+  sourceMessageId BigInt   @map("source_message_id")
+  extractionRunId BigInt   @map("extraction_run_id")
+  vectorPointId   String   @map("vector_point_id") @db.VarChar(191)
+  factKey         String?  @map("fact_key") @db.VarChar(191)
+  content         String   @db.Text
+  confidence      Float?
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  chatroom      Chatroom            @relation(fields: [chatroomId], references: [id], onDelete: Cascade)
+  user         User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  sourceMessage Message             @relation("MessageSemanticMemoryRecords", fields: [sourceMessageId], references: [id], onDelete: Cascade)
+  extractionRun MemoryExtractionRun @relation(fields: [extractionRunId], references: [id], onDelete: Cascade)
+
+  @@unique([chatroomId, vectorPointId])
+  @@index([chatroomId, createdAt])
+  @@map("semantic_memory_records")
+}
+
+model EpisodicMemoryRecord {
+  id              BigInt   @id @default(autoincrement())
+  chatroomId      BigInt   @map("chatroom_id")
+  userId          BigInt   @map("user_id")
+  sourceMessageId BigInt   @map("source_message_id")
+  extractionRunId BigInt   @map("extraction_run_id")
+  vectorPointId   String   @map("vector_point_id") @db.VarChar(191)
+  eventType       String   @map("event_type") @db.VarChar(191)
+  happenedAt      DateTime @map("happened_at")
+  content         String   @db.Text
+  confidence      Float?
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  chatroom      Chatroom            @relation(fields: [chatroomId], references: [id], onDelete: Cascade)
+  user         User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  sourceMessage Message             @relation("MessageEpisodicMemoryRecords", fields: [sourceMessageId], references: [id], onDelete: Cascade)
+  extractionRun MemoryExtractionRun @relation(fields: [extractionRunId], references: [id], onDelete: Cascade)
+
+  @@unique([chatroomId, vectorPointId])
+  @@index([chatroomId, happenedAt])
+  @@map("episodic_memory_records")
+}
+
+model CoreStateMemory {
+  id              BigInt             @id @default(autoincrement())
+  chatroomId      BigInt             @map("chatroom_id")
+  userId          BigInt             @map("user_id")
+  stateKey        String             @map("state_key") @db.VarChar(191)
+  value           String             @db.LongText
+  valueType       CoreStateValueType @default(text) @map("value_type")
+  sourceMessageId BigInt?            @map("source_message_id")
+  expiresAt       DateTime?          @map("expires_at")
+  createdAt       DateTime           @default(now()) @map("created_at")
+  updatedAt       DateTime           @updatedAt @map("updated_at")
+
+  chatroom      Chatroom            @relation(fields: [chatroomId], references: [id], onDelete: Cascade)
+  user         User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  sourceMessage Message?            @relation("MessageCoreStateMemories", fields: [sourceMessageId], references: [id], onDelete: SetNull)
+  mutations    CoreStateMutation[]
+
+  @@unique([chatroomId, stateKey])
+  @@index([chatroomId, expiresAt])
+  @@map("core_state_memories")
+}
+
+model CoreStateMutation {
+  id              BigInt                     @id @default(autoincrement())
+  coreStateId     BigInt?                    @map("core_state_id")
+  extractionRunId BigInt?                    @map("extraction_run_id")
+  chatroomId      BigInt                     @map("chatroom_id")
+  sourceMessageId BigInt                     @map("source_message_id")
+  operation       CoreStateMutationOperation
+  previousValue   String?                    @map("previous_value") @db.LongText
+  nextValue       String?                    @map("next_value") @db.LongText
+  createdAt       DateTime                   @default(now()) @map("created_at")
+
+  coreState    CoreStateMemory?     @relation(fields: [coreStateId], references: [id], onDelete: SetNull)
+  extractionRun MemoryExtractionRun? @relation(fields: [extractionRunId], references: [id], onDelete: SetNull)
+  chatroom     Chatroom             @relation(fields: [chatroomId], references: [id], onDelete: Cascade)
+  sourceMessage Message             @relation("MessageCoreStateMutations", fields: [sourceMessageId], references: [id], onDelete: Cascade)
+
+  @@index([chatroomId, createdAt])
+  @@index([sourceMessageId])
+  @@map("core_state_mutations")
+}
+
+model MemorySelectionLog {
+  id          BigInt   @id @default(autoincrement())
+  chatroomId  BigInt   @map("chatroom_id")
+  query       String   @db.Text
+  selectedIds Json     @map("selected_ids")
+  metadata    Json?    @map("metadata")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  chatroom Chatroom @relation(fields: [chatroomId], references: [id], onDelete: Cascade)
+
+  @@index([chatroomId, createdAt])
+  @@map("memory_selection_logs")
 }

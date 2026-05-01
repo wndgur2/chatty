@@ -1,61 +1,67 @@
-import { formatMemorySnippets, MemorySnippet } from './memory.formatter';
-import { MEMORY_SNIPPETS_PROMPT } from '../../inference/prompts/chat-system.prompt';
+import { formatHybridMemoryContext } from './memory.formatter';
 
-describe('formatMemorySnippets', () => {
-  it('returns an empty string when there are no snippets', () => {
-    expect(formatMemorySnippets([])).toBe('');
+describe('formatHybridMemoryContext', () => {
+  it('returns empty string when context is empty', () => {
+    expect(
+      formatHybridMemoryContext({
+        coreState: [],
+        recentEpisodes: [],
+        relevantFacts: [],
+        selected: [],
+      }),
+    ).toBe('');
   });
 
-  it('renders a heading with usage guardrails and dated snippet lines', () => {
-    const snippets: MemorySnippet[] = [
-      {
-        messageId: '7',
-        content: 'I deploy with prisma migrate deploy in CI.',
-        createdAt: '2026-04-12T10:00:00.000Z',
-        score: 0.91,
-      },
-      {
-        messageId: '8',
-        content: 'My laptop is a 16-inch MacBook Pro.',
-        createdAt: '2026-04-13T08:30:00.000Z',
-        score: 0.74,
-      },
-    ];
+  it('renders sectioned memory blocks with precedence headings', () => {
+    const output = formatHybridMemoryContext({
+      coreState: [
+        {
+          id: 'core_state:timezone',
+          type: 'core_state',
+          key: 'timezone',
+          value: 'UTC+9',
+          valueType: 'text',
+          updatedAt: '2026-04-20T00:00:00.000Z',
+          expiresAt: null,
+          sourceMessageId: '11',
+          score: 1,
+        },
+      ],
+      recentEpisodes: [
+        {
+          id: 'episodic:1',
+          type: 'episodic',
+          messageId: '9',
+          content: 'User switched jobs last week.',
+          eventType: 'job_change',
+          happenedAt: '2026-04-18T00:00:00.000Z',
+          createdAt: '2026-04-18T00:00:00.000Z',
+          score: 0.7,
+        },
+      ],
+      relevantFacts: [
+        {
+          id: 'semantic:1',
+          type: 'semantic',
+          messageId: '7',
+          content: 'User prefers concise checklists.',
+          createdAt: '2026-04-10T00:00:00.000Z',
+          score: 0.6,
+        },
+      ],
+      selected: [],
+    });
 
-    const output = formatMemorySnippets(snippets);
-
-    for (const line of MEMORY_SNIPPETS_PROMPT.split('\n')) {
-      expect(output).toContain(line);
-    }
+    expect(output).toContain('## Hybrid memory context');
+    expect(output).toContain('### CoreState (authoritative)');
+    expect(output).toContain('### RecentEpisodes (timestamped)');
+    expect(output).toContain('### RelevantFacts (background)');
+    expect(output).toContain('- timezone: "UTC+9" (updated 2026-04-20)');
     expect(output).toContain(
-      '- (2026-04-12) "I deploy with prisma migrate deploy in CI."',
+      '- (2026-04-18) [job_change] "User switched jobs last week."',
     );
     expect(output).toContain(
-      '- (2026-04-13) "My laptop is a 16-inch MacBook Pro."',
+      '- (2026-04-10) "User prefers concise checklists."',
     );
-  });
-
-  it('keeps the original order of snippets', () => {
-    const snippets: MemorySnippet[] = [
-      {
-        messageId: '1',
-        content: 'first',
-        createdAt: '2026-04-10T00:00:00.000Z',
-        score: 0.9,
-      },
-      {
-        messageId: '2',
-        content: 'second',
-        createdAt: '2026-04-11T00:00:00.000Z',
-        score: 0.8,
-      },
-    ];
-
-    const output = formatMemorySnippets(snippets);
-    const firstIdx = output.indexOf('"first"');
-    const secondIdx = output.indexOf('"second"');
-
-    expect(firstIdx).toBeGreaterThan(-1);
-    expect(secondIdx).toBeGreaterThan(firstIdx);
   });
 });

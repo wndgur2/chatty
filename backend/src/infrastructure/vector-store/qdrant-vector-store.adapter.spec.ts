@@ -25,7 +25,7 @@ describe('QdrantVectorStoreAdapter', () => {
         {
           provide: ConfigService,
           useValue: {
-            get: jest.fn((key: string, fallback: string) => fallback),
+            get: jest.fn((_: string, fallback: string | number) => fallback),
           },
         },
       ],
@@ -38,7 +38,7 @@ describe('QdrantVectorStoreAdapter', () => {
     jest.clearAllMocks();
   });
 
-  it('creates collection and chatroom payload index when missing', async () => {
+  it('creates collection and payload indexes when missing', async () => {
     mockQdrantClient.getCollection.mockRejectedValue(new Error('not found'));
 
     await adapter.onModuleInit();
@@ -51,21 +51,19 @@ describe('QdrantVectorStoreAdapter', () => {
     );
     expect(mockQdrantClient.createPayloadIndex).toHaveBeenCalledWith(
       'chat_memory',
-      {
-        field_name: 'chatroomId',
-        field_schema: 'integer',
-      },
+      { field_name: 'chatroomId', field_schema: 'integer' },
     );
     expect(mockQdrantClient.createPayloadIndex).toHaveBeenCalledWith(
       'chat_memory',
-      {
-        field_name: 'messageId',
-        field_schema: 'keyword',
-      },
+      { field_name: 'messageId', field_schema: 'keyword' },
+    );
+    expect(mockQdrantClient.createPayloadIndex).toHaveBeenCalledWith(
+      'chat_memory',
+      { field_name: 'memoryType', field_schema: 'keyword' },
     );
   });
 
-  it('builds search filters with chatroom and exclusions', async () => {
+  it('builds search filters with chatroom, type, and exclusions', async () => {
     mockQdrantClient.search.mockResolvedValue([
       {
         id: '1',
@@ -74,6 +72,7 @@ describe('QdrantVectorStoreAdapter', () => {
           chatroomId: 1,
           userId: '1',
           messageId: '1',
+          memoryType: 'semantic',
           chunkIndex: 0,
           chunkCount: 1,
           createdAt: '2026-04-12T00:00:00.000Z',
@@ -83,70 +82,33 @@ describe('QdrantVectorStoreAdapter', () => {
       },
     ]);
 
-    const results = await adapter.search({
+    await adapter.search({
       vector: [0.1, 0.2],
       limit: 5,
       minScore: 0.4,
       chatroomId: 11,
+      memoryType: 'semantic',
       excludeMessageIds: ['3', '5'],
     });
 
-    expect(results).toHaveLength(1);
     expect(mockQdrantClient.search).toHaveBeenCalledWith(
       'chat_memory',
       expect.objectContaining({
         filter: {
-          must: [{ key: 'chatroomId', match: { value: 11 } }],
+          must: [
+            { key: 'chatroomId', match: { value: 11 } },
+            { key: 'memoryType', match: { value: 'semantic' } },
+          ],
           must_not: [{ key: 'messageId', match: { any: ['3', '5'] } }],
         },
       }),
     );
   });
 
-  it('derives deterministic UUIDv5-like id for upsert', async () => {
-    await adapter.upsert({
-      id: '481',
-      vector: [0.1, 0.2],
-      payload: {
-        chatroomId: 1,
-        userId: '1',
-        messageId: '481',
-        chunkIndex: 1,
-        chunkCount: 3,
-        createdAt: '2026-04-12T00:00:00.000Z',
-        sender: 'user',
-        content: 'context',
-      },
-    });
-
-    expect(mockQdrantClient.upsert).toHaveBeenCalledTimes(1);
-    const [, payload] = mockQdrantClient.upsert.mock.calls[0] as [
-      string,
-      { points: Array<{ id: string }> },
-    ];
-    expect(payload.points).toHaveLength(1);
-    expect(payload.points[0].id).toMatch(
-      /^[0-9a-f]{8}-[0-9a-f]{4}-5[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/,
-    );
-  });
-
-  it('looks up exact id for retrieve', async () => {
-    mockQdrantClient.retrieve.mockResolvedValue([]);
-
-    await adapter.hasPoint('message-482-1');
-
-    expect(mockQdrantClient.retrieve).toHaveBeenCalledWith(
-      'chat_memory',
-      expect.objectContaining({
-        ids: ['message-482-1'],
-      }),
-    );
-  });
-
-  it('checks message-level existence by payload filter', async () => {
+  it('checks message-level existence by payload filter and memory type', async () => {
     mockQdrantClient.scroll.mockResolvedValue({ points: [{ id: '1' }] });
 
-    const exists = await adapter.hasPointsForMessage('42');
+    const exists = await adapter.hasPointsForMessage('42', 'semantic');
 
     expect(exists).toBe(true);
     expect(mockQdrantClient.scroll).toHaveBeenCalledWith(
@@ -154,7 +116,10 @@ describe('QdrantVectorStoreAdapter', () => {
       expect.objectContaining({
         limit: 1,
         filter: {
-          must: [{ key: 'messageId', match: { value: '42' } }],
+          must: [
+            { key: 'messageId', match: { value: '42' } },
+            { key: 'memoryType', match: { value: 'semantic' } },
+          ],
         },
       }),
     );

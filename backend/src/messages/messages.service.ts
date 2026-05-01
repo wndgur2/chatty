@@ -14,8 +14,9 @@ import {
 import { toChatHistory } from '../inference/shared/chat-history.util';
 import { ChatGenerationService } from '../inference/tasks/chat-generation.service';
 import { MemoryService } from './memory/memory.service';
-import { formatMemorySnippets } from './memory/memory.formatter';
+import { formatHybridMemoryContext } from './memory/memory.formatter';
 import { ConfigService } from '@nestjs/config';
+import { HybridMemoryContext } from './memory/memory.types';
 
 const PROACTIVE_HISTORY_WINDOW_SIZE = 5;
 const DEFAULT_HISTORY_WINDOW_SIZE = 8;
@@ -57,6 +58,9 @@ export class MessagesService {
     );
     this.memoryService.indexOlderMessage(chatroomId).catch((err) => {
       this.logger.warn('Memory indexing failed', err);
+    });
+    this.memoryService.extractFromMessage(message.id.toString()).catch((err) => {
+      this.logger.warn('Memory extraction failed', err);
     });
 
     this.processBackgroundMessage(chatroomId).catch((err) => {
@@ -104,20 +108,25 @@ export class MessagesService {
       const queryMessage = [...history]
         .reverse()
         .find((message) => message.role === 'user');
-      const memorySnippets = queryMessage
-        ? await this.memoryService.retrieveContext(
+      const fallbackMemoryContext: HybridMemoryContext = {
+        coreState: [],
+        recentEpisodes: [],
+        relevantFacts: [],
+        selected: [],
+      };
+      const memoryContext = queryMessage
+        ? await this.memoryService.retrieveContext({
             chatroomId,
-            queryMessage.content,
-            {
-              k: ragTopK,
-              recentMessageIds,
-            },
-          )
-        : [];
+            query: queryMessage.content,
+            recentMessageIds,
+            recentConversation: history,
+            k: ragTopK,
+          })
+        : fallbackMemoryContext;
       this.logger.debug(
-        `Retrieved ${memorySnippets.length} memory snippets for chatroom=${chatroomId}`,
+        `Retrieved hybrid memory context for chatroom=${chatroomId} state=${memoryContext.coreState.length} episodes=${memoryContext.recentEpisodes.length} facts=${memoryContext.relevantFacts.length}`,
       );
-      const memoryBlock = formatMemorySnippets(memorySnippets);
+      const memoryBlock = formatHybridMemoryContext(memoryContext);
       const resolvedSystemPrompt = memoryBlock
         ? `${systemPrompt}\n\n${memoryBlock}`
         : systemPrompt;

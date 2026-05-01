@@ -3,10 +3,18 @@ export const STABLE_VOLUNTARY_ALIGNMENT =
 
 export const NORMAL_CHAT_BASE_SYSTEM = 'You are texting in a casual chatroom.';
 
+export const HYBRID_MEMORY_BLOCK_PROMPT = '## Hybrid memory context';
+
+export const HYBRID_MEMORY_CONFLICT_RULES_PROMPT = [
+  'Conflict precedence:',
+  '1) CoreState is authoritative.',
+  '2) If CoreState is absent, prefer RecentEpisodes over RelevantFacts.',
+  '3) Always trust the recent conversation over stale memories.',
+].join('\n');
+
 export const MEMORY_SNIPPETS_PROMPT = [
-  '## Older user messages in this chat',
-  'Treat these as background you already know, not a transcript.',
-  'If they conflict with the recent conversation, trust the recent conversation. Snippets may be truncated, so do not invent details beyond what is shown.',
+  HYBRID_MEMORY_BLOCK_PROMPT,
+  HYBRID_MEMORY_CONFLICT_RULES_PROMPT,
 ].join('\n');
 
 export function buildProactiveLastInstruction(

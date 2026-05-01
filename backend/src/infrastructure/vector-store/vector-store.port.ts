@@ -4,6 +4,9 @@ export type VectorPointPayload = {
   chatroomId: number;
   userId: string;
   messageId: string;
+  memoryType?: 'semantic' | 'episodic';
+  memoryRecordId?: string;
+  memoryLabel?: string;
   chunkIndex: number;
   chunkCount: number;
   createdAt: string;
@@ -22,6 +25,7 @@ export type VectorSearchRequest = {
   limit: number;
   minScore?: number;
   chatroomId: number;
+  memoryType?: 'semantic' | 'episodic';
   excludeMessageIds?: string[];
 };
 
@@ -35,6 +39,9 @@ export interface VectorStorePort {
   upsert(point: VectorPoint): Promise<void>;
   search(req: VectorSearchRequest): Promise<VectorSearchResult[]>;
   hasPoint(id: string): Promise<boolean>;
-  hasPointsForMessage(messageId: string): Promise<boolean>;
+  hasPointsForMessage(
+    messageId: string,
+    memoryType?: 'semantic' | 'episodic',
+  ): Promise<boolean>;
   deleteByChatroom(chatroomId: number): Promise<void>;
 }

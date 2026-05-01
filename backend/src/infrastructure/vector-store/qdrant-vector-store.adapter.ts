@@ -20,6 +20,7 @@ import { QDRANT_CLIENT } from './qdrant-client.provider';
 export class QdrantVectorStoreAdapter implements VectorStorePort, OnModuleInit {
   private readonly logger = new Logger(QdrantVectorStoreAdapter.name);
   private readonly collectionName: string;
+  private readonly embeddingDimensions: number;
 
   constructor(
     @Inject(QDRANT_CLIENT) private readonly qdrantClient: QdrantClient,
@@ -29,6 +30,9 @@ export class QdrantVectorStoreAdapter implements VectorStorePort, OnModuleInit {
       'QDRANT_COLLECTION',
       'chat_memory',
     );
+    this.embeddingDimensions = Number(
+      this.configService.get('QDRANT_EMBEDDING_DIMENSIONS', 384),
+    );
   }
 
   async onModuleInit(): Promise<void> {
@@ -36,7 +40,7 @@ export class QdrantVectorStoreAdapter implements VectorStorePort, OnModuleInit {
       await this.qdrantClient.getCollection(this.collectionName);
     } catch {
       await this.qdrantClient.createCollection(this.collectionName, {
-        vectors: { size: 384, distance: 'Cosine' },
+        vectors: { size: this.embeddingDimensions, distance: 'Cosine' },
       });
       await this.qdrantClient.createPayloadIndex(this.collectionName, {
         field_name: 'chatroomId',
@@ -44,6 +48,10 @@ export class QdrantVectorStoreAdapter implements VectorStorePort, OnModuleInit {
       });
       await this.qdrantClient.createPayloadIndex(this.collectionName, {
         field_name: 'messageId',
+        field_schema: 'keyword',
+      });
+      await this.qdrantClient.createPayloadIndex(this.collectionName, {
+        field_name: 'memoryType',
         field_schema: 'keyword',
       });
       this.logger.log(`Created Qdrant collection: ${this.collectionName}`);
@@ -65,7 +73,12 @@ export class QdrantVectorStoreAdapter implements VectorStorePort, OnModuleInit {
       score_threshold: req.minScore,
       with_payload: true,
       filter: {
-        must: [{ key: 'chatroomId', match: { value: req.chatroomId } }],
+        must: [
+          { key: 'chatroomId', match: { value: req.chatroomId } },
+          ...(req.memoryType
+            ? [{ key: 'memoryType', match: { value: req.memoryType } }]
+            : []),
+        ],
         must_not:
           req.excludeMessageIds && req.excludeMessageIds.length > 0
             ? [{ key: 'messageId', match: { any: req.excludeMessageIds } }]
@@ -91,13 +104,21 @@ export class QdrantVectorStoreAdapter implements VectorStorePort, OnModuleInit {
     return points.length > 0;
   }
 
-  async hasPointsForMessage(messageId: string): Promise<boolean> {
+  async hasPointsForMessage(
+    messageId: string,
+    memoryType?: 'semantic' | 'episodic',
+  ): Promise<boolean> {
     const response = await this.qdrantClient.scroll(this.collectionName, {
       limit: 1,
       with_payload: false,
       with_vector: false,
       filter: {
-        must: [{ key: 'messageId', match: { value: messageId } }],
+        must: [
+          { key: 'messageId', match: { value: messageId } },
+          ...(memoryType
+            ? [{ key: 'memoryType', match: { value: memoryType } }]
+            : []),
+        ],
       },
     });
 
