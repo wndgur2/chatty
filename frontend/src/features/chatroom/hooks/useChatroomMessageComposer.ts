@@ -39,10 +39,6 @@ export const useChatroomMessageComposer = ({
     (current, optimistic: Message) => [...current, optimistic],
   )
 
-  useEffect(() => {
-    console.log('displayMessages', displayMessages)
-  }, [displayMessages])
-
   const isStreaming = !!streamingContent
   const isSendLocked =
     sendMessageMutation.isPending || isWaitingForResponse || isTyping || isStreaming
