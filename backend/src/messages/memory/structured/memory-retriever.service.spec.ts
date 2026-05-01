@@ -35,7 +35,9 @@ describe('MemoryRetrieverService', () => {
 
   afterEach(() => {
     jest.clearAllMocks();
-    mockConfigService.get.mockImplementation((_: string, fallback: number) => fallback);
+    mockConfigService.get.mockImplementation(
+      (_: string, fallback: number) => fallback,
+    );
   });
 
   it('returns empty string when no facts exist', async () => {
@@ -94,8 +96,11 @@ describe('MemoryRetrieverService', () => {
 
     await serviceWithConfig.getStateBlock(13);
 
-    expect(mockChatroomFactRepository.findAllForChatroom).toHaveBeenCalledWith(13, {
-      minConfidence: 0.8,
-    });
+    expect(mockChatroomFactRepository.findAllForChatroom).toHaveBeenCalledWith(
+      13,
+      {
+        minConfidence: 0.8,
+      },
+    );
   });
 });

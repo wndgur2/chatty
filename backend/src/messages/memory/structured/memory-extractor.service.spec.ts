@@ -2,6 +2,7 @@ import { Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Test, TestingModule } from '@nestjs/testing';
 import {
+  buildMemoryExtractorUserPrompt,
   MEMORY_EXTRACTOR_JSON_SCHEMA,
   MEMORY_EXTRACTOR_SYSTEM,
 } from '../../../inference/prompts/memory-extractor.prompt';
@@ -50,12 +51,15 @@ describe('MemoryExtractorService', () => {
   });
 
   it('builds extractor prompt and applies normalized ops', async () => {
-    mockChatroomFactRepository.findAllForChatroom.mockResolvedValue([
+    const currentFacts = [
       {
         key: 'task_status',
         value: 'in_progress',
         valueType: 'string',
       },
+    ];
+    mockChatroomFactRepository.findAllForChatroom.mockResolvedValue([
+      ...currentFacts,
     ]);
     mockStructuredOutputPort.extract.mockResolvedValue({
       ops: [
@@ -77,10 +81,16 @@ describe('MemoryExtractorService', () => {
       sourceMessageId: 55n,
     });
 
+    const expectedUserPrompt = buildMemoryExtractorUserPrompt({
+      currentFacts,
+      userMessage: 'Mark this done',
+      aiMessage: 'Done.',
+    });
+
     expect(mockStructuredOutputPort.extract).toHaveBeenCalledWith({
       systemPrompt: MEMORY_EXTRACTOR_SYSTEM,
       jsonSchema: MEMORY_EXTRACTOR_JSON_SCHEMA,
-      userPrompt: expect.stringContaining('"task_status"'),
+      userPrompt: expectedUserPrompt,
     });
     expect(mockChatroomFactRepository.applyOps).toHaveBeenCalledWith(
       7,
@@ -98,12 +108,14 @@ describe('MemoryExtractorService', () => {
   });
 
   it('caps operation count per turn', async () => {
-    mockConfigService.get.mockImplementation((key: string, fallback: number) => {
-      if (key === 'MEMORY_EXTRACTOR_MAX_OPS_PER_TURN') {
-        return 2;
-      }
-      return fallback;
-    });
+    mockConfigService.get.mockImplementation(
+      (key: string, fallback: number) => {
+        if (key === 'MEMORY_EXTRACTOR_MAX_OPS_PER_TURN') {
+          return 2;
+        }
+        return fallback;
+      },
+    );
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         MemoryExtractorService,
@@ -140,8 +152,20 @@ describe('MemoryExtractorService', () => {
     expect(mockChatroomFactRepository.applyOps).toHaveBeenCalledWith(
       1,
       [
-        { op: 'set', key: 'a', value: '1', valueType: 'string', confidence: undefined },
-        { op: 'set', key: 'b', value: '2', valueType: 'string', confidence: undefined },
+        {
+          op: 'set',
+          key: 'a',
+          value: '1',
+          valueType: 'string',
+          confidence: undefined,
+        },
+        {
+          op: 'set',
+          key: 'b',
+          value: '2',
+          valueType: 'string',
+          confidence: undefined,
+        },
       ],
       9n,
     );

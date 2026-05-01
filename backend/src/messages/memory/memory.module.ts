@@ -17,6 +17,11 @@ import { MemoryRetrieverService } from './structured/memory-retriever.service';
     MemoryExtractorService,
     MemoryRetrieverService,
   ],
-  exports: [MemoryService, ChatroomFactRepository, MemoryExtractorService, MemoryRetrieverService],
+  exports: [
+    MemoryService,
+    ChatroomFactRepository,
+    MemoryExtractorService,
+    MemoryRetrieverService,
+  ],
 })
 export class MemoryModule {}

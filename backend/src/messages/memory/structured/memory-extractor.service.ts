@@ -52,13 +52,12 @@ export class MemoryExtractorService {
       aiMessage: input.aiMessage,
     });
 
-    const extraction = await this.structuredOutputPort.extract<MemoryExtractorResult>(
-      {
+    const extraction =
+      await this.structuredOutputPort.extract<MemoryExtractorResult>({
         systemPrompt: MEMORY_EXTRACTOR_SYSTEM,
         userPrompt,
         jsonSchema: MEMORY_EXTRACTOR_JSON_SCHEMA,
-      },
-    );
+      });
     if (!extraction) {
       this.logger.warn(
         `Structured extractor returned null for chatroom=${input.chatroomId}`,
@@ -81,16 +80,17 @@ export class MemoryExtractorService {
   private normalizeOps(result: MemoryExtractorResult): ChatroomFactOpInput[] {
     const safeOps = Array.isArray(result.ops) ? result.ops : [];
     const capped = safeOps.slice(0, this.maxOpsPerTurn);
+    const normalized: ChatroomFactOpInput[] = [];
 
-    return capped.flatMap((op) => {
+    for (const op of capped) {
       if (!op || typeof op !== 'object') {
-        return [];
+        continue;
       }
       if (op.op !== 'set' && op.op !== 'delete') {
-        return [];
+        continue;
       }
       if (typeof op.key !== 'string' || op.key.trim().length === 0) {
-        return [];
+        continue;
       }
 
       const key = op.key.trim().slice(0, 128);
@@ -98,22 +98,23 @@ export class MemoryExtractorService {
         typeof op.confidence === 'number' ? op.confidence : undefined;
 
       if (op.op === 'delete') {
-        return [{ op: 'delete', key, confidence }];
+        normalized.push({ op: 'delete', key, confidence });
+        continue;
       }
 
       if (typeof op.valueType !== 'string') {
-        return [];
+        continue;
       }
 
-      return [
-        {
-          op: 'set',
-          key,
-          value: op.value,
-          valueType: op.valueType,
-          confidence,
-        },
-      ];
-    });
+      normalized.push({
+        op: 'set',
+        key,
+        value: op.value,
+        valueType: op.valueType,
+        confidence,
+      });
+    }
+
+    return normalized;
   }
 }

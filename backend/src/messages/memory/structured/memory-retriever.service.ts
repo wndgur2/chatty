@@ -17,9 +17,12 @@ export class MemoryRetrieverService {
   }
 
   async getStateBlock(chatroomId: number): Promise<string> {
-    const facts = await this.chatroomFactRepository.findAllForChatroom(chatroomId, {
-      minConfidence: this.minConfidence,
-    });
+    const facts = await this.chatroomFactRepository.findAllForChatroom(
+      chatroomId,
+      {
+        minConfidence: this.minConfidence,
+      },
+    );
 
     if (facts.length === 0) {
       return '';

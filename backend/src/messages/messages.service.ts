@@ -110,10 +110,14 @@ export class MessagesService {
         .find((message) => message.role === 'user');
       const [memorySnippets, stateBlock] = await Promise.all([
         queryMessage
-          ? this.memoryService.retrieveContext(chatroomId, queryMessage.content, {
-              k: ragTopK,
-              recentMessageIds,
-            })
+          ? this.memoryService.retrieveContext(
+              chatroomId,
+              queryMessage.content,
+              {
+                k: ragTopK,
+                recentMessageIds,
+              },
+            )
           : Promise.resolve([]),
         this.memoryRetriever.getStateBlock(chatroomId),
       ]);
