@@ -18,7 +18,7 @@ Chatty is an AI chat application with real-time streamed replies and scheduled, 
 | Backend         | NestJS 11, TypeScript, Prisma                                                |
 | Database        | MySQL 8                                                                      |
 | LLM             | Ollama (HTTP API)                                                            |
-| Vector store    | Qdrant                                                                        |
+| Vector store    | Qdrant                                                                       |
 | Realtime        | Socket.IO                                                                    |
 | Push (optional) | Firebase Admin (backend), Firebase Web + VAPID (frontend)                    |
 
@@ -109,7 +109,7 @@ Production CD currently publishes ARM64 images and uses serialized deploy execut
 
 ## API and WebSocket reference
 
-- REST and Socket.IO contracts: `.cursor/skills/api-development/references/API_DOCUMENTATION.md`
+- REST and Socket.IO contracts: `documents/API_DOCUMENTATION.md`
 
 Common Socket.IO events:
 
@@ -118,9 +118,9 @@ Common Socket.IO events:
 
 ## Documentation index
 
-- Product proposal: `.cursor/references/PROJECT_PROPOSAL.md`
-- API contract: `.cursor/skills/api-development/references/API_DOCUMENTATION.md`
-- Data model: `.cursor/references/SCHEMA.md`
+- Product proposal: `documents/PROJECT_PROPOSAL.md`
+- API contract: `documents/API_DOCUMENTATION.md`
+- Data model: `documents/SCHEMA.md`
 - Backend: `backend/README.md`
 - Frontend: `frontend/README.md`
 - Docker / deploy: `deploy/README.md`
