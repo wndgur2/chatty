@@ -35,6 +35,7 @@ export interface SendMessageRequest {
 export interface SendMessageResponse {
   messageId: number
   status: 'processing' | 'success' | 'failed'
+  message: Message
 }
 
 export interface RegisterNotificationRequest {

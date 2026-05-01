@@ -1,8 +1,9 @@
-import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { act, fireEvent, screen, waitFor } from '@testing-library/react'
 import React from 'react'
 import { MemoryRouter } from 'react-router'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import ChatroomScreen from '../../src/features/chatroom/components/ChatroomScreen'
+import { renderWithProviders } from '../../src/test/utils/renderWithProviders'
 
 const navigateSpy = vi.hoisted(() => vi.fn())
 const sendMutateSpy = vi.hoisted(() => vi.fn())
@@ -96,7 +97,7 @@ describe('chatroom send flow integration', () => {
   })
 
   it('submits trimmed message payload from composer', async () => {
-    render(
+    renderWithProviders(
       <MemoryRouter>
         <ChatroomScreen chatroomId={9} />
       </MemoryRouter>,
@@ -117,7 +118,7 @@ describe('chatroom send flow integration', () => {
 
   it('renders loading and not-found states', () => {
     isChatroomLoading = true
-    const { rerender } = render(
+    const { unmount } = renderWithProviders(
       <MemoryRouter>
         <ChatroomScreen chatroomId={9} />
       </MemoryRouter>,
@@ -126,7 +127,8 @@ describe('chatroom send flow integration', () => {
 
     isChatroomLoading = false
     chatroomData = null
-    rerender(
+    unmount()
+    renderWithProviders(
       <MemoryRouter>
         <ChatroomScreen chatroomId={9} />
       </MemoryRouter>,
@@ -136,7 +138,7 @@ describe('chatroom send flow integration', () => {
 
   it('blocks submit when sending is locked', () => {
     sendPending = true
-    render(
+    renderWithProviders(
       <MemoryRouter>
         <ChatroomScreen chatroomId={9} />
       </MemoryRouter>,
@@ -151,7 +153,7 @@ describe('chatroom send flow integration', () => {
   })
 
   it('runs branch/clone/delete flows and navigates on success', async () => {
-    const { container } = render(
+    const { container } = renderWithProviders(
       <MemoryRouter>
         <ChatroomScreen chatroomId={9} />
       </MemoryRouter>,

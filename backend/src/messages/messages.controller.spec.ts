@@ -40,7 +40,17 @@ describe('MessagesController', () => {
 
   it('should trigger AI message processing', async () => {
     const dto = { content: 'Tell me a joke.' };
-    const result = { messageId: 103, status: 'processing' };
+    const result = {
+      messageId: 103,
+      status: 'processing',
+      message: {
+        id: '103',
+        chatroomId: '1',
+        sender: 'user',
+        content: 'Tell me a joke.',
+        createdAt: '2026-04-27T00:00:00.000Z',
+      },
+    };
     mockMessagesService.sendToAI.mockResolvedValue(result);
 
     expect(await controller.sendToAI(authUser, 1, dto)).toBe(result);

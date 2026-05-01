@@ -48,7 +48,7 @@ describe('api client contract', () => {
     const requestInterceptor = requestHandlers[0]?.fulfilled
     expect(requestInterceptor).toBeTypeOf('function')
 
-    const nextConfig = requestInterceptor?.({ headers: {} })
+    const nextConfig = await requestInterceptor?.({ headers: {} })
 
     expect(nextConfig?.headers.Authorization).toBe('Bearer token')
   })

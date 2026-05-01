@@ -68,6 +68,11 @@ describe('MessagesController (e2e)', () => {
 
     expect(res.body.status).toBe('processing');
     expect(res.body.messageId).toBeDefined();
+    expect(res.body.message).toMatchObject({
+      sender: 'user',
+      content: 'Hello AI',
+    });
+    expect(res.body.message.id).toBe(res.body.messageId);
 
     // Validate database insertion directly
     const dbRecord = await prisma.message.findFirst({

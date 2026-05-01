@@ -111,7 +111,13 @@ describe('MessagesService', () => {
   });
 
   it('should send a message to AI and process background stream', async () => {
-    const mockCreatedMessage = { id: '103' };
+    const mockCreatedMessage = {
+      id: '103',
+      chatroomId: '1',
+      sender: 'user',
+      content: 'Tell me a joke.',
+      createdAt: '2026-04-27T00:00:00.000Z',
+    };
     mockMessageSendService.saveUserMessage.mockResolvedValue(
       mockCreatedMessage,
     );
@@ -129,7 +135,11 @@ describe('MessagesService', () => {
 
     const result = await service.sendToAI('1', 1, dto);
 
-    expect(result).toEqual({ messageId: '103', status: 'processing' });
+    expect(result).toEqual({
+      messageId: '103',
+      status: 'processing',
+      message: mockCreatedMessage,
+    });
     expect(mockMessageSendService.saveUserMessage).toHaveBeenCalled();
     expect(
       mockChatroomStateRepository.clearNextEvaluationTime,

@@ -17,7 +17,5 @@ export default function InferIndicator({ chatroom, content = '' }: InferIndicato
     createdAt,
   }
 
-  return (
-    <ChatBubble chatroom={chatroom} message={message} />
-  )
+  return <ChatBubble chatroom={chatroom} message={message} />
 }

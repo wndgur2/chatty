@@ -4,6 +4,7 @@ import { clearAuth, getAccessToken } from '../shared/lib/auth'
 import { notifySessionExpired } from '../shared/lib/sessionExpired'
 
 const baseURL = import.meta.env.VITE_API_URL + '/api'
+const DEV_API_DELAY_MS = 1500
 
 function isAuthLoginRequest(config: InternalAxiosRequestConfig | undefined): boolean {
   const url = config?.url ?? ''
@@ -18,7 +19,13 @@ export const apiClient = axios.create({
 })
 
 apiClient.interceptors.request.use(
-  (config) => {
+  async (config) => {
+    if (import.meta.env.DEV) {
+      await new Promise((resolve) => {
+        setTimeout(resolve, DEV_API_DELAY_MS)
+      })
+    }
+
     const token = getAccessToken()
     if (token) {
       config.headers.Authorization = `Bearer ${token}`

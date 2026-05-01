@@ -9,6 +9,8 @@ import {
 } from 'react'
 import type { Message } from '../../../types/api'
 import { useSendMessage } from './useMessages'
+import { useQueryClient } from '@tanstack/react-query'
+import { getMessagesQueryKey } from '../queryKeys'
 
 interface UseChatroomMessageComposerParams {
   chatroomId: number
@@ -23,11 +25,14 @@ export const useChatroomMessageComposer = ({
   isTyping,
   streamingContent,
 }: UseChatroomMessageComposerParams) => {
+  const queryClient = useQueryClient()
+
   const sendMessageMutation = useSendMessage()
   const [inputValue, setInputValue] = useState('')
   const [isWaitingForResponse, setIsWaitingForResponse] = useState(false)
   const [, startSendTransition] = useTransition()
   const nextTempMessageIdRef = useRef(-1)
+  const waitingSinceRef = useRef<number | null>(null)
 
   const [displayMessages, addOptimisticMessage] = useOptimistic(
     messages,
@@ -46,7 +51,9 @@ export const useChatroomMessageComposer = ({
       timeoutId = setTimeout(() => setIsWaitingForResponse(false), 0)
     } else if (isWaitingForResponse && displayMessages.length > 0) {
       const lastMsg = displayMessages[displayMessages.length - 1]
-      if (lastMsg?.sender === 'ai') {
+      const lastMessageCreatedAt = lastMsg?.createdAt ? new Date(lastMsg.createdAt).getTime() : 0
+      const waitingSince = waitingSinceRef.current ?? 0
+      if (lastMsg?.sender === 'ai' && lastMessageCreatedAt >= waitingSince) {
         timeoutId = setTimeout(() => setIsWaitingForResponse(false), 0)
       }
     }
@@ -71,12 +78,20 @@ export const useChatroomMessageComposer = ({
 
     startSendTransition(async () => {
       addOptimisticMessage(optimisticMessage)
+      waitingSinceRef.current = Date.now()
       setIsWaitingForResponse(true)
       try {
-        await sendMessageMutation.mutateAsync({
-          chatroomId,
-          request: { content },
-        })
+        await sendMessageMutation
+          .mutateAsync({
+            chatroomId,
+            request: { content },
+          })
+          .then((response) => {
+            queryClient.setQueryData<Message[]>(getMessagesQueryKey(chatroomId), (oldMessages) => {
+              if (!oldMessages) return []
+              return [...oldMessages, response.message]
+            })
+          })
       } catch {
         setIsWaitingForResponse(false)
       }

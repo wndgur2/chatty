@@ -32,7 +32,7 @@ describe('useMessages', () => {
 })
 
 describe('useSendMessage', () => {
-  it('invalidates message list query on success', async () => {
+  it('sends message payload without invalidating message list query', async () => {
     sendMessageSpy.mockResolvedValueOnce({ messageId: 1, status: 'processing' })
     const client = createTestQueryClient()
     const invalidateSpy = vi.spyOn(client, 'invalidateQueries')
@@ -44,8 +44,12 @@ describe('useSendMessage', () => {
     result.current.mutate({ chatroomId: 12, request: { content: 'hello' } })
 
     await waitFor(() => {
-      expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: messageKeys.list(12) })
+      expect(sendMessageSpy).toHaveBeenCalledWith(
+        { chatroomId: 12, request: { content: 'hello' } },
+        expect.any(Object),
+      )
     })
+    expect(invalidateSpy).not.toHaveBeenCalledWith({ queryKey: messageKeys.list(12) })
     expect(getMessagesQueryKey(12)[0]).toBe('messages')
   })
 
