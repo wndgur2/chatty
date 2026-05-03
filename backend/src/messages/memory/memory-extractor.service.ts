@@ -3,7 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../../prisma/prisma.service';
 import {
   MEMORY_EXTRACTION_PORT,
-  MemoryExtractionPort,
+  type MemoryExtractionPort,
 } from '../../inference/ports/memory-extraction.port';
 
 @Injectable()

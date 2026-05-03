@@ -6,7 +6,7 @@ import {
 } from '../../ports/proactive-message-evaluation.port';
 import {
   STRUCTURED_OUTPUT_PORT,
-  StructuredOutputPort,
+  type StructuredOutputPort,
 } from '../../shared/structured-output.port';
 
 const PROACTIVE_DECISION_SCHEMA = {
@@ -22,9 +22,7 @@ const PROACTIVE_DECISION_SCHEMA = {
 } as const;
 
 @Injectable()
-export class OllamaProactiveMessageEvaluationAdapter
-  implements ProactiveMessageEvaluationPort
-{
+export class OllamaProactiveMessageEvaluationAdapter implements ProactiveMessageEvaluationPort {
   private readonly logger = new Logger(
     OllamaProactiveMessageEvaluationAdapter.name,
   );
@@ -34,7 +32,9 @@ export class OllamaProactiveMessageEvaluationAdapter
     private readonly structuredOutputPort: StructuredOutputPort,
   ) {}
 
-  async evaluate(req: ProactiveMessageEvaluationRequest): Promise<'YES' | 'NO'> {
+  async evaluate(
+    req: ProactiveMessageEvaluationRequest,
+  ): Promise<'YES' | 'NO'> {
     try {
       const result = await this.structuredOutputPort.generate<{
         decision: 'YES' | 'NO';

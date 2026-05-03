@@ -129,11 +129,15 @@ export class MessagesService {
       this.logger.debug(
         `Retrieved ${memorySnippets.length} memory snippets for chatroom=${chatroomId}`,
       );
-      const canonicalMemoryBlock = formatCanonicalMemories(memoryResult.canonical);
+      const canonicalMemoryBlock = formatCanonicalMemories(
+        memoryResult.canonical,
+      );
       const memoryBlock = formatMemorySnippets(memorySnippets);
       const promptBlocks = [systemPrompt];
       if (canonicalMemoryBlock) {
-        promptBlocks.push(`${CANONICAL_MEMORY_PROMPT}\n\n${canonicalMemoryBlock}`);
+        promptBlocks.push(
+          `${CANONICAL_MEMORY_PROMPT}\n\n${canonicalMemoryBlock}`,
+        );
       }
       if (memoryBlock) {
         promptBlocks.push(memoryBlock);

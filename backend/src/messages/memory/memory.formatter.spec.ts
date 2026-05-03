@@ -3,9 +3,7 @@ import {
   formatMemorySnippets,
   MemorySnippet,
 } from './memory.formatter';
-import {
-  MEMORY_SNIPPETS_PROMPT,
-} from '../../inference/prompts/chat-system.prompt';
+import { MEMORY_SNIPPETS_PROMPT } from '../../inference/prompts/chat-system.prompt';
 import { MemoryKind } from '@prisma/client';
 
 describe('formatMemorySnippets', () => {

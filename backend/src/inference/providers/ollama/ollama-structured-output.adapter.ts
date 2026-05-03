@@ -28,7 +28,9 @@ export class OllamaStructuredOutputAdapter implements StructuredOutputPort {
         model: this.evalModel,
         messages: [
           { role: 'system', content: req.systemPrompt },
-          ...(req.userPrompt ? [{ role: 'user' as const, content: req.userPrompt }] : []),
+          ...(req.userPrompt
+            ? [{ role: 'user' as const, content: req.userPrompt }]
+            : []),
         ],
         stream: false,
         format: req.schema,

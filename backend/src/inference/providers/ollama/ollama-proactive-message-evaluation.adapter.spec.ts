@@ -7,12 +7,14 @@ import { OllamaProactiveMessageEvaluationAdapter } from './ollama-proactive-mess
 
 describe('OllamaProactiveMessageEvaluationAdapter', () => {
   let adapter: OllamaProactiveMessageEvaluationAdapter;
-
-  const mockStructuredOutputPort: StructuredOutputPort = {
-    generate: jest.fn(),
-  };
+  let generateMock: jest.MockedFunction<StructuredOutputPort['generate']>;
 
   beforeEach(async () => {
+    generateMock = jest.fn();
+    const mockStructuredOutputPort: StructuredOutputPort = {
+      generate: generateMock,
+    };
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         OllamaProactiveMessageEvaluationAdapter,
@@ -33,18 +35,14 @@ describe('OllamaProactiveMessageEvaluationAdapter', () => {
   });
 
   it('returns decision from structured output', async () => {
-    (
-      mockStructuredOutputPort.generate as jest.MockedFunction<
-        StructuredOutputPort['generate']
-      >
-    ).mockResolvedValue({ decision: 'YES' });
+    generateMock.mockResolvedValue({ decision: 'YES' });
 
     const result = await adapter.evaluate({
       systemPrompt: 'prompt',
     });
 
     expect(result).toBe('YES');
-    expect(mockStructuredOutputPort.generate).toHaveBeenCalledWith(
+    expect(generateMock).toHaveBeenCalledWith(
       expect.objectContaining({
         systemPrompt: 'prompt',
         schemaName: 'ProactiveDecision',
@@ -53,11 +51,7 @@ describe('OllamaProactiveMessageEvaluationAdapter', () => {
   });
 
   it('falls back to NO when structured output fails', async () => {
-    (
-      mockStructuredOutputPort.generate as jest.MockedFunction<
-        StructuredOutputPort['generate']
-      >
-    ).mockRejectedValue(new Error('fail'));
+    generateMock.mockRejectedValue(new Error('fail'));
 
     const result = await adapter.evaluate({
       systemPrompt: 'prompt',

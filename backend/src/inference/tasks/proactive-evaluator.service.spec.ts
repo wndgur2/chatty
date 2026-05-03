@@ -9,8 +9,7 @@ describe('ProactiveEvaluatorService', () => {
   let service: ProactiveEvaluatorService;
   const evaluateMock: jest.MockedFunction<
     ProactiveMessageEvaluationPort['evaluate']
-  > =
-    jest.fn();
+  > = jest.fn();
   const mockProactiveMessageEvaluationPort: ProactiveMessageEvaluationPort = {
     evaluate: evaluateMock,
   };
@@ -43,12 +42,14 @@ describe('ProactiveEvaluatorService', () => {
     );
 
     expect(result).toBe(true);
-    expect(evaluateMock).toHaveBeenCalledWith(
-      expect.objectContaining({
-        systemPrompt: expect.stringContaining(
-          'should the assistant send additional message?',
-        ),
-      }),
+    expect(evaluateMock).toHaveBeenCalledTimes(1);
+    const firstCall = evaluateMock.mock.calls[0];
+    if (!firstCall) {
+      throw new Error('Expected evaluate call');
+    }
+    const [callArg] = firstCall;
+    expect(callArg.systemPrompt).toContain(
+      'should the assistant send additional message?',
     );
   });
 

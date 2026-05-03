@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { MemoryKind } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import { MemoryService } from './memory.service';
 import { MemorySnippet } from './memory.formatter';
@@ -25,7 +26,7 @@ export class MemoryRetrieverService {
     opts: RetrieveInput,
   ): Promise<{
     canonical: Array<{
-      kind: string;
+      kind: MemoryKind;
       key: string;
       value: string;
       confidence: number;

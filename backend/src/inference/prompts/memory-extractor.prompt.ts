@@ -19,7 +19,7 @@ export function buildMemoryExtractorPrompt(
     'Use concise canonical keys in snake_case and plain text values.',
     'Confidence must be between 0 and 1.',
     '',
-    `Allowed kinds: ${MEMORY_KIND_LIST}.`,
+    `Allowed kinds: ${MEMORY_KIND_LIST.join(', ')}.`,
     '',
     'User message:',
     content.trim(),
