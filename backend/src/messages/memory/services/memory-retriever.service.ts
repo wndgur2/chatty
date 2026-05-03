@@ -25,9 +25,12 @@ export class MemoryRetrieverService {
     private readonly memoryService: MemoryService,
     private readonly configService: ConfigService,
   ) {
-    this.canonicalLimit = Number(
+    const rawLimit = Number(
       this.configService.get('MEMORY_CANONICAL_LIMIT', 20),
     );
+    this.canonicalLimit = Number.isFinite(rawLimit)
+      ? Math.min(Math.max(1, rawLimit), 200)
+      : 20;
   }
 
   async retrieve(
