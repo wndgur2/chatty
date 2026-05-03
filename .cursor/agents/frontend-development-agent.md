@@ -10,4 +10,4 @@ Primary reference:
 - Apply focused skills as needed:
   - `.cursor/skills/react-19-development/SKILL.md`
 - Before implementation, read:
-  - `documents/PROJECT_PROPOSAL.md`
+  - `/documents/PROJECT_PROPOSAL.md`

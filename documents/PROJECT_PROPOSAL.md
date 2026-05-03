@@ -38,6 +38,10 @@ The system allows AI to send messages to users without waiting for user input, b
 - Support multiple chatrooms per user.
 - Store context and message history per chatroom.
 
+#### 3.1.4 Long-term memory (implementation)
+
+- Vector retrieval augments prompts with relevant past snippets (RAG). Configuration and behavior live in the backend env and inference/memory modules; see repository docs for operators.
+
 ---
 
 ### 3.2 Detailed Functionalities
@@ -70,7 +74,7 @@ The system allows AI to send messages to users without waiting for user input, b
 #### 3.2.6 Cloning/branching Chatroom
 
 - Create a new chatroom from an existing one.
-- Clone: Copy configuration(prompt, profile-image) only.
+- Clone: Copy configuration (prompt, profile-image) only.
 - Branch: Copy chat history and configuration.
 
 ---
@@ -81,8 +85,11 @@ The system allows AI to send messages to users without waiting for user input, b
 
 - Frontend: Web interface for chat interaction.
 - Backend: API, websocket server for chat logic and data handling.
-- LLM: Local models via Ollama to generate responses based on context and act as an Evaluator.
+- LLM: Local models via Ollama to generate responses based on context and act as an evaluator.
+- Vector store for retrieved memory snippets.
 - Notification Service: Sends push notifications via Firebase Cloud Messaging (FCM).
+
+Authoritative technical contracts: `documents/API_DOCUMENTATION.md`, `documents/SCHEMA.md`.
 
 ---
 

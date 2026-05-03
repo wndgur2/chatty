@@ -20,108 +20,39 @@ Chatty is an AI chat application with real-time streamed replies and scheduled, 
 | LLM             | Ollama (HTTP API)                                                            |
 | Vector store    | Qdrant                                                                       |
 | Realtime        | Socket.IO                                                                    |
-| Push (optional) | Firebase Admin (backend), Firebase Web + VAPID (frontend)                    |
+| Push (optional) | Firebase Admin (backend), Firebase Web + VAPID (frontend)                  |
 
 ## Repository layout
 
-- `frontend/` — Vite SPA.
-- `backend/` — REST API, WebSocket gateway, cron-style scheduling, file uploads.
-- `deploy/` — nginx image, production Compose, deploy scripts, deployment notes.
+- `frontend/` — Vite SPA (details: [`frontend/README.md`](frontend/README.md)).
+- `backend/` — REST API, WebSocket gateway, scheduling, file uploads (details: [`backend/README.md`](backend/README.md)).
+- `deploy/` — nginx image, production Compose, deploy scripts (details: [`deploy/README.md`](deploy/README.md)).
 - `docker-compose.dev.yml` — local full stack: MySQL, backend, nginx (built frontend).
-- `.cursor/skills/` — agent skills and API reference material.
+- `.cursor/skills/` — agent skills and runbooks.
 - `.cursor/rules/` — editor/agent rules for this codebase.
 
-## Quick start (split local dev)
+## Quick start
 
-Best when you work on frontend or backend alone and want hot reload.
+### Split local dev (hot reload)
 
-1. **MySQL**:
+Use a local MySQL (or publish `3306` from Compose if the DB runs in Docker while the app runs on the host). Configure env files and run backend and frontend separately — step-by-step commands, ports, and MySQL notes are in [`backend/README.md`](backend/README.md) and [`frontend/README.md`](frontend/README.md).
 
-   If you run the backend directly on your host machine, use a local MySQL instance that listens on `localhost:3306`.
-   The `mysql` service in `docker-compose.dev.yml` is intended for the full Docker stack and, as configured there, is not published to the host by default.
-   If you want to use Compose for MySQL while running the backend on the host, you must publish port `3306` to the host first; otherwise use the full-stack Docker setup below so the backend and DB run on the same Compose network.
+### Docker full stack
 
-   ```bash
-   docker compose -f docker-compose.dev.yml up -d mysql
-   ```
+MySQL + backend + nginx serving the production build of the frontend: configure `.env` from `.env.docker.example`, pull Ollama models as needed, then `docker compose -f docker-compose.dev.yml up -d --build`. Full prerequisites, env variables, smoke checks, and troubleshooting are in [`deploy/README.md`](deploy/README.md).
 
-2. **Backend** (`backend/`):
+Production CD (ARM64 images, serialized deploys) is summarized in [`.github/ci-cd.md`](.github/ci-cd.md).
 
-   ```bash
-   npm install
-   ```
+## API and contracts
 
-   Create `backend/.env` (see `backend/README.md`). Then:
-
-   ```bash
-   npm run prisma:migrate:dev
-   npm run dev
-   ```
-
-   The API listens on **`http://localhost:8080`** unless you set `PORT`.
-
-3. **Frontend** (`frontend/`):
-
-   ```bash
-   npm install
-   cp .env.example .env
-   ```
-
-   Set `VITE_API_URL` to your backend origin (no trailing slash), e.g. `http://localhost:8080`. Then:
-
-   ```bash
-   npm run dev
-   ```
-
-   Vite serves the app (by default `http://localhost:5173`).
-
-Details: `backend/README.md`, `frontend/README.md`.
-
-## Quick start (Docker full stack)
-
-MySQL + backend + nginx serving the production build of the frontend.
-
-1. From the repo root:
-
-   ```bash
-   cp .env.docker.example .env
-   ```
-
-2. Adjust `.env` (JWT secret, origins, Ollama host/models, optional Firebase, Qdrant settings). If you change `PUBLIC_ORIGIN`, `CORS_ORIGIN`, or any `VITE_*` build args, rebuild images.
-
-   Pull the embedding model on your host before first run:
-
-   ```bash
-   ollama pull all-minilm
-   ```
-
-3. Run:
-
-   ```bash
-   docker compose -f docker-compose.dev.yml up -d --build
-   ```
-
-4. Open **`http://localhost:8080`** (or the host/port matching `PUBLIC_ORIGIN` / `HTTP_PORT`).
-
-Full deployment and troubleshooting: `deploy/README.md`.
-
-Production CD currently publishes ARM64 images and uses serialized deploy execution to improve reliability on M1-based production hosts. See `.github/ci-cd.md` for operational details.
-
-## API and WebSocket reference
-
-- REST and Socket.IO contracts: `documents/API_DOCUMENTATION.md`
-
-Common Socket.IO events:
-
-- Client → server: `joinRoom`, `leaveRoom`
-- Server → client: `ai_typing_state`, `ai_message_chunk`, `ai_message_complete`
+REST, Socket.IO payloads, and auth behavior are documented in [`documents/API_DOCUMENTATION.md`](documents/API_DOCUMENTATION.md). The database model is in [`documents/SCHEMA.md`](documents/SCHEMA.md) (generated schema and migrations live under `backend/prisma/`).
 
 ## Documentation index
 
-- Product proposal: `documents/PROJECT_PROPOSAL.md`
-- API contract: `documents/API_DOCUMENTATION.md`
-- Data model: `documents/SCHEMA.md`
-- Backend: `backend/README.md`
-- Frontend: `frontend/README.md`
-- Docker / deploy: `deploy/README.md`
-- CI/CD operations: `.github/ci-cd.md`
+- Product proposal: [`documents/PROJECT_PROPOSAL.md`](documents/PROJECT_PROPOSAL.md)
+- API contract: [`documents/API_DOCUMENTATION.md`](documents/API_DOCUMENTATION.md)
+- Data model: [`documents/SCHEMA.md`](documents/SCHEMA.md)
+- Backend: [`backend/README.md`](backend/README.md)
+- Frontend: [`frontend/README.md`](frontend/README.md)
+- Docker / deploy: [`deploy/README.md`](deploy/README.md)
+- CI/CD operations: [`.github/ci-cd.md`](.github/ci-cd.md)

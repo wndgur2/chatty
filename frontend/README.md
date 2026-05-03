@@ -2,6 +2,8 @@
 
 Vite + React 19 SPA for multi-room chat, Socket.IO streaming, optional web push (FCM), and chatroom management (create, edit, clone, branch).
 
+**Also read:** repository overview [`../README.md`](../README.md); API and WebSocket contract [`../documents/API_DOCUMENTATION.md`](../documents/API_DOCUMENTATION.md).
+
 ## Purpose
 
 Chatty supports both user-initiated messages and **proactive** AI messages: the backend runs evaluations on a schedule; the UI reflects streaming replies and can surface push notifications when Firebase is configured.
@@ -40,8 +42,7 @@ npm run dev
 
 ## Local HTTPS for mobile PWA testing
 
-If you open the app from your phone via `http://<LAN-IP>:5173`, browsers treat it as insecure and block PWA installability.
-Use local HTTPS instead:
+If you open the app from your phone via `http://<LAN-IP>:5173`, browsers treat it as insecure and block PWA installability. Use local HTTPS instead:
 
 1. Install `mkcert` and its local CA on your Mac:
 
