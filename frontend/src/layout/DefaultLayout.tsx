@@ -10,6 +10,7 @@ import ForegroundNotificationPopup from '../features/notifications/components/Fo
 import { useFcmForeground } from '../features/notifications/hooks/useFcmForeground'
 import { useUIStore } from '../shared/stores/uiStore'
 import GithubLink from '../shared/ui/GithubLink'
+import { useStableBackNavigation } from '../shared/hooks/useStableBackNavigation'
 
 const releaseSha = import.meta.env.VITE_RELEASE_SHA?.slice(0, 7)
 const releaseBuiltAtValue = import.meta.env.VITE_RELEASE_BUILT_AT
@@ -29,6 +30,10 @@ export default function DefaultLayout() {
   const isSidebarOpen = useUIStore((state) => state.isSidebarOpen)
   const toggleSidebar = useUIStore((state) => state.toggleSidebar)
   const setSidebarOpen = useUIStore((state) => state.setSidebarOpen)
+  const { showExitHint, handlePopNavigation } = useStableBackNavigation({
+    isSidebarOpen,
+    setSidebarOpen,
+  })
   const formattedBuiltAt = releaseBuiltAtValue ? formatReleaseBuiltAt(releaseBuiltAtValue) : null
   const releaseLabel = releaseSha && formattedBuiltAt ? `${releaseSha} • ${formattedBuiltAt}` : null
 
@@ -48,11 +53,16 @@ export default function DefaultLayout() {
   }
 
   useBlocker(({ historyAction }) => {
-    if (historyAction === 'PUSH' || historyAction === 'REPLACE') {
-      setSidebarOpen(false)
-      return false
+    switch (historyAction) {
+      case 'PUSH':
+      case 'REPLACE':
+        setSidebarOpen(false)
+        return false
+      case 'POP':
+        return handlePopNavigation()
+      default:
+        return false
     }
-    return true
   })
 
   return (
@@ -67,6 +77,13 @@ export default function DefaultLayout() {
         onClick={handlePopupClick}
         onClose={clearPopup}
       />
+      {showExitHint ? (
+        <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-[60] pointer-events-none" aria-live="polite">
+          <div className="rounded-full bg-gray-900/95 text-white text-sm px-4 py-2 shadow-lg">
+            Press back again to exit
+          </div>
+        </div>
+      ) : null}
 
       {/* Sidebar */}
       <div

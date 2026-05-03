@@ -4,7 +4,8 @@ import { io, Socket } from 'socket.io-client'
 import { getMessagesQueryKey } from '../queryKeys'
 import type { Message } from '../../../types/api'
 
-const WS_URL = import.meta.env.VITE_API_URL
+const useDevProxy = import.meta.env.DEV && (import.meta.env.VITE_DEV_PROXY_TARGET?.trim()?.length ?? 0) > 0
+const WS_URL = useDevProxy ? undefined : import.meta.env.VITE_API_URL?.trim()
 
 export const STREAMING_MESSAGE_ID = Number.MAX_SAFE_INTEGER
 
@@ -54,6 +55,7 @@ export const useWebSocketStream = (chatroomId: number) => {
     if (!chatroomId || socketRef.current?.connected) return
 
     const socket = io(WS_URL, {
+      path: '/socket.io',
       transports: ['websocket'],
     })
     const handleAnySocketEvent = (eventName: string, ...args: unknown[]) => {
