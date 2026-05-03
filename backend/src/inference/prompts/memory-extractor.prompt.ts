@@ -18,7 +18,7 @@ export type MemoryExtractorResult = {
 };
 
 export const MEMORY_EXTRACTOR_SYSTEM = [
-  'You update a per-chatroom "Core State" memory.',
+  'You update a "Core State" memory.',
   'Output strict JSON that follows the schema.',
   'Only include stable facts that are useful in future turns.',
   'Use op="set" to add or update facts and op="delete" to remove facts that are no longer true.',
