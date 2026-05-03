@@ -31,6 +31,7 @@ cp .env.example .env
 Edit `.env`:
 
 - **`VITE_API_URL`** — backend origin, **no trailing slash** (e.g. `http://localhost:8080` for local Nest with default `PORT`).
+- **`VITE_DEV_PROXY_TARGET`** — optional dev-only proxy target to avoid CORS (e.g. `http://127.0.0.1:8081`).
 - **Firebase / `VITE_FCM_VAPID_KEY`** — optional; omit for local UI flows without push.
 
 ```bash
@@ -76,6 +77,14 @@ VITE_HTTPS_CERT=./path/to/cert.pem
 VITE_HTTPS_KEY=./path/to/key.pem
 ```
 
+For Cloudflare tunnel + mobile testing, you can also route API and Socket.IO through Vite to avoid backend CORS:
+
+```bash
+VITE_DEV_PROXY_TARGET=http://127.0.0.1:8081
+```
+
+When this is set in dev mode, frontend uses same-origin `/api` and `/socket.io`, and Vite proxies to the backend target.
+
 Production build and preview:
 
 ```bash
@@ -88,6 +97,7 @@ npm run preview
 | Variable                                    | Purpose                                                                   |
 | ------------------------------------------- | ------------------------------------------------------------------------- |
 | `VITE_API_URL`                              | REST + Socket.IO base (same host/path the browser uses to reach the API). |
+| `VITE_DEV_PROXY_TARGET`                     | Optional dev-only backend proxy target for `/api` and `/socket.io` to avoid CORS. |
 | `VITE_FIREBASE_*`                           | Firebase web app config for FCM.                                          |
 | `VITE_FCM_VAPID_KEY`                        | Web Push VAPID key from Firebase Console.                                 |
 | `VITE_HTTPS`                                | Set `true` to enable local HTTPS in Vite dev server.                      |

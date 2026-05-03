@@ -11,19 +11,41 @@ import { resolve } from 'node:path'
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '')
   const httpsEnabled = env.VITE_HTTPS === 'true'
+  const devProxyTarget = env.VITE_DEV_PROXY_TARGET?.trim()
+  const useDevProxy = mode === 'development' && Boolean(devProxyTarget)
   const certPath = resolve(process.cwd(), env.VITE_HTTPS_CERT ?? './certs/localhost.pem')
   const keyPath = resolve(process.cwd(), env.VITE_HTTPS_KEY ?? './certs/localhost-key.pem')
   const canUseHttps = httpsEnabled && existsSync(certPath) && existsSync(keyPath)
-
-  return {
-    server: canUseHttps
+  const server = {
+    // Allow Cloudflare tunnel URLs for mobile-device testing.
+    allowedHosts: ['.trycloudflare.com'],
+    ...(useDevProxy
+      ? {
+          proxy: {
+            '/api': {
+              target: devProxyTarget,
+              changeOrigin: true,
+            },
+            '/socket.io': {
+              target: devProxyTarget,
+              changeOrigin: true,
+              ws: true,
+            },
+          },
+        }
+      : {}),
+    ...(canUseHttps
       ? {
           https: {
             cert: readFileSync(certPath),
             key: readFileSync(keyPath),
           },
         }
-      : undefined,
+      : {}),
+  }
+
+  return {
+    server,
     plugins: [
       react({
         babel: {

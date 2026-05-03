@@ -3,6 +3,7 @@
 
 interface ImportMetaEnv {
   readonly VITE_API_URL: string
+  readonly VITE_DEV_PROXY_TARGET?: string
   readonly VITE_RELEASE_SHA?: string
   readonly VITE_RELEASE_BUILT_AT?: string
   readonly VITE_FIREBASE_API_KEY?: string
