@@ -11,9 +11,9 @@ Apply this skill for backend implementation and refactors in `backend/` that use
 
 ## Source of truth
 
-- Use `../api-development/references/API_DOCUMENTATION.md` for API and Socket.IO contracts.
-- Use `../../references/PROJECT_PROPOSAL.md` for feature intent and scope.
-- Use `../../references/SCHEMA.md` for data model constraints and storage behavior.
+- Use `/documents/API_DOCUMENTATION.md` for API and Socket.IO contracts.
+- Use `/documents/PROJECT_PROPOSAL.md` for feature intent and scope.
+- Use `/documents/SCHEMA.md` for data model constraints and storage behavior.
 
 ## Engineering defaults
 

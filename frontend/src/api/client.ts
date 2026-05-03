@@ -3,7 +3,9 @@ import { queryClient } from '../app/providers/queryClient'
 import { clearAuth, getAccessToken } from '../shared/lib/auth'
 import { notifySessionExpired } from '../shared/lib/sessionExpired'
 
-const baseURL = import.meta.env.VITE_API_URL + '/api'
+const useDevProxy = import.meta.env.DEV && (import.meta.env.VITE_DEV_PROXY_TARGET?.trim()?.length ?? 0) > 0
+const apiOrigin = import.meta.env.VITE_API_URL?.trim()
+const baseURL = useDevProxy ? '/api' : `${apiOrigin}/api`
 const DEV_API_DELAY_MS = 1500
 
 function isAuthLoginRequest(config: InternalAxiosRequestConfig | undefined): boolean {

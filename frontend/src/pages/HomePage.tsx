@@ -16,7 +16,7 @@ export default function HomePage() {
     useCreateChatroomFlow()
 
   if (fromLogin && !isLoading && !isError && sortedChatrooms.length > 0) {
-    return <Navigate to={ROUTES.CHATROOM(String(sortedChatrooms[0].id))} replace />
+    return <Navigate to={ROUTES.CHATROOM(String(sortedChatrooms[0].id))} />
   }
 
   return (
