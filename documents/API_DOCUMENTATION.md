@@ -295,7 +295,7 @@ Triggers a test push for the **owner** of the given chatroom (used for integrati
 ### 5.1 Connection
 
 - **Transport:** Socket.IO (same origin as the API in production; dev may proxy via Vite).
-- **Gateway:** `MessagesGateway` (`backend/src/messages/messages.gateway.ts`)
+- **Gateway:** `MessagesGateway` (`backend/src/messages/gateways/messages.gateway.ts`)
 - **Auth:** No JWT guard on `joinRoom` / `leaveRoom` (see §0).
 
 ### 5.2 Client → Server Events

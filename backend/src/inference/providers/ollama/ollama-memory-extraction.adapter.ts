@@ -1,6 +1,7 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import {
   ExtractedMemory,
+  MEMORY_EXTRACTION_SCHEMA,
   MEMORY_KINDS,
   MemoryExtractionPort,
   MemoryExtractionRequest,
@@ -14,31 +15,6 @@ import {
   STRUCTURED_OUTPUT_PORT,
   type StructuredOutputPort,
 } from '../../shared/structured-output.port';
-
-const MEMORY_EXTRACTION_SCHEMA = {
-  type: 'object',
-  properties: {
-    memories: {
-      type: 'array',
-      items: {
-        type: 'object',
-        properties: {
-          kind: {
-            type: 'string',
-            enum: [...MEMORY_KINDS],
-          },
-          key: { type: 'string' },
-          value: { type: 'string' },
-          confidence: { type: 'number' },
-        },
-        required: ['kind', 'key', 'value', 'confidence'],
-        additionalProperties: false,
-      },
-    },
-  },
-  required: ['memories'],
-  additionalProperties: false,
-} as const;
 
 const KIND_SET = new Set<MemoryKind>(MEMORY_KINDS);
 

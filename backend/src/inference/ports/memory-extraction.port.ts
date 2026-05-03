@@ -11,6 +11,31 @@ export const MEMORY_KINDS = [
 
 export type MemoryKind = (typeof MEMORY_KINDS)[number];
 
+export const MEMORY_EXTRACTION_SCHEMA = {
+  type: 'object',
+  properties: {
+    memories: {
+      type: 'array',
+      items: {
+        type: 'object',
+        properties: {
+          kind: {
+            type: 'string',
+            enum: [...MEMORY_KINDS],
+          },
+          key: { type: 'string' },
+          value: { type: 'string' },
+          confidence: { type: 'number' },
+        },
+        required: ['kind', 'key', 'value', 'confidence'],
+        additionalProperties: false,
+      },
+    },
+  },
+  required: ['memories'],
+  additionalProperties: false,
+} as const;
+
 export interface ExtractedMemory {
   kind: MemoryKind;
   key: string;
