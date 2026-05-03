@@ -1,14 +1,14 @@
 import { Module } from '@nestjs/common';
-import { MessagesService } from './messages.service';
-import { MessagesController } from './messages.controller';
-import { MessagesGateway } from './messages.gateway';
+import { MessagesService } from './services/messages.service';
+import { MessagesController } from './controllers/messages.controller';
+import { MessagesGateway } from './gateways/messages.gateway';
 import { PrismaModule } from '../prisma/prisma.module';
 import { NotificationsModule } from '../notifications/notifications.module';
-import { MessageHistoryService } from './message-history.service';
-import { MessageSendService } from './message-send.service';
-import { MessageStreamService } from './message-stream.service';
-import { MessagesRepository } from './messages.repository';
-import { ChatroomStateRepository } from './chatroom-state.repository';
+import { MessageHistoryService } from './services/message-history.service';
+import { MessageSendService } from './services/message-send.service';
+import { MessageStreamService } from './services/message-stream.service';
+import { MessagesRepository } from './repositories/messages.repository';
+import { ChatroomStateRepository } from './repositories/chatroom-state.repository';
 import { InferenceModule } from '../inference/inference.module';
 import { MemoryModule } from './memory/memory.module';
 

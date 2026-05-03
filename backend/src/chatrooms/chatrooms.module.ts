@@ -1,8 +1,8 @@
 import { Module } from '@nestjs/common';
-import { ChatroomsService } from './chatrooms.service';
-import { ChatroomsController } from './chatrooms.controller';
+import { ChatroomsService } from './services/chatrooms.service';
+import { ChatroomsController } from './controllers/chatrooms.controller';
 import { PrismaModule } from '../prisma/prisma.module';
-import { ChatroomsRepository } from './chatrooms.repository';
+import { ChatroomsRepository } from './repositories/chatrooms.repository';
 import { StorageModule } from '../infrastructure/storage/storage.module';
 
 @Module({
