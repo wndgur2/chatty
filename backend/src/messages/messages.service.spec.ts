@@ -8,8 +8,11 @@ import { MessagesRepository } from './messages.repository';
 import { ChatroomStateRepository } from './chatroom-state.repository';
 import { FcmPushService } from '../notifications/fcm-push.service';
 import { MemoryService } from './memory/memory.service';
+import { MemoryExtractorService } from './memory/memory-extractor.service';
+import { MemoryRetrieverService } from './memory/memory-retriever.service';
 import { ConfigService } from '@nestjs/config';
 import {
+  CANONICAL_MEMORY_PROMPT,
   MEMORY_SNIPPETS_PROMPT,
   NORMAL_CHAT_BASE_SYSTEM,
   STABLE_VOLUNTARY_ALIGNMENT,
@@ -41,6 +44,12 @@ const mockMemoryService = {
   indexOlderMessage: jest.fn().mockResolvedValue(undefined),
   retrieveContext: jest.fn().mockResolvedValue([]),
 };
+const mockMemoryExtractorService = {
+  extractOlderMessage: jest.fn().mockResolvedValue(undefined),
+};
+const mockMemoryRetrieverService = {
+  retrieve: jest.fn().mockResolvedValue({ canonical: [], snippets: [] }),
+};
 const mockConfigService = {
   get: jest.fn((key: string, fallback: number) => fallback),
 };
@@ -66,6 +75,14 @@ describe('MessagesService', () => {
         },
         { provide: FcmPushService, useValue: mockFcmPushService },
         { provide: MemoryService, useValue: mockMemoryService },
+        {
+          provide: MemoryExtractorService,
+          useValue: mockMemoryExtractorService,
+        },
+        {
+          provide: MemoryRetrieverService,
+          useValue: mockMemoryRetrieverService,
+        },
         { provide: ConfigService, useValue: mockConfigService },
       ],
     }).compile();
@@ -78,6 +95,11 @@ describe('MessagesService', () => {
     mockFcmPushService.notifyProactiveAiMessage.mockResolvedValue(undefined);
     mockMemoryService.retrieveContext.mockResolvedValue([]);
     mockMemoryService.indexOlderMessage.mockResolvedValue(undefined);
+    mockMemoryExtractorService.extractOlderMessage.mockResolvedValue(undefined);
+    mockMemoryRetrieverService.retrieve.mockResolvedValue({
+      canonical: [],
+      snippets: [],
+    });
     mockConfigService.get.mockImplementation(
       (key: string, fallback: number) => fallback,
     );
@@ -145,6 +167,9 @@ describe('MessagesService', () => {
       mockChatroomStateRepository.clearNextEvaluationTime,
     ).toHaveBeenCalledWith(1n);
     expect(mockMemoryService.indexOlderMessage).toHaveBeenCalledWith(1);
+    expect(mockMemoryExtractorService.extractOlderMessage).toHaveBeenCalledWith(
+      1,
+    );
     expect(processMock).toHaveBeenCalledWith(1);
 
     processMock.mockRestore();
@@ -327,7 +352,7 @@ describe('MessagesService', () => {
     );
   });
 
-  it('adds retrieved memory block into system prompt before generation', async () => {
+  it('adds canonical memories and semantic snippets into system prompt before generation', async () => {
     mockConfigService.get.mockImplementation(
       (key: string, fallback: number) => {
         if (key === 'RAG_TOP_K') {
@@ -351,21 +376,30 @@ describe('MessagesService', () => {
         createdAt: new Date('2026-04-12T10:00:00.000Z'),
       },
     ]);
-    mockMemoryService.retrieveContext.mockResolvedValue([
-      {
-        messageId: '7',
-        content: 'You previously said to run prisma migrate deploy in CI.',
-        createdAt: '2026-04-12T00:00:00.000Z',
-        score: 0.91,
-      },
-    ]);
+    mockMemoryRetrieverService.retrieve.mockResolvedValue({
+      canonical: [
+        {
+          kind: 'project_state',
+          key: 'current_project',
+          value: 'Chatty backend refactor',
+        },
+      ],
+      snippets: [
+        {
+          messageId: '7',
+          content: 'You previously said to run prisma migrate deploy in CI.',
+          createdAt: '2026-04-12T00:00:00.000Z',
+          score: 0.91,
+        },
+      ],
+    });
     mockChatGenerationService.generate.mockResolvedValue('reply');
     mockMessagesRepository.createMessage.mockResolvedValue({ id: 1n });
     mockChatroomStateRepository.resetDelay.mockResolvedValue(undefined);
 
     await service.processBackgroundMessage(1, false);
 
-    expect(mockMemoryService.retrieveContext).toHaveBeenCalledWith(
+    expect(mockMemoryRetrieverService.retrieve).toHaveBeenCalledWith(
       1,
       'remind me about postgres migration',
       { k: 5, recentMessageIds: ['11'] },
@@ -374,6 +408,10 @@ describe('MessagesService', () => {
       mockChatGenerationService.generate.mock.calls[0] as [unknown, string]
     )[1];
     expect(systemPrompt).toContain(NORMAL_CHAT_BASE_SYSTEM);
+    expect(systemPrompt).toContain(CANONICAL_MEMORY_PROMPT);
+    expect(systemPrompt).toContain(
+      'current_project = "Chatty backend refactor"',
+    );
     expect(systemPrompt).toContain(MEMORY_SNIPPETS_PROMPT);
     expect(systemPrompt).toContain('prisma migrate deploy');
   });

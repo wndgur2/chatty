@@ -1,17 +1,19 @@
 import { Inject, Injectable } from '@nestjs/common';
 import {
-  CLASSIFICATION_PORT,
-  type ClassificationPort,
-} from '../ports/classification.port';
-import { buildProactiveEvaluationPrompt } from '../prompts/proactive-evaluator.prompt';
+  PROACTIVE_MESSAGE_EVALUATION_PORT,
+  type ProactiveMessageEvaluationPort,
+} from '../ports/proactive-message-evaluation.port';
+import {
+  buildProactiveEvaluationPrompt,
+  ProactiveEvaluationContext,
+} from '../prompts/proactive-evaluator.prompt';
 import { ChatMessage } from '../shared/chat-message';
-import { ProactiveEvaluationContext } from '../prompts/proactive-evaluator.prompt';
 
 @Injectable()
 export class ProactiveEvaluatorService {
   constructor(
-    @Inject(CLASSIFICATION_PORT)
-    private readonly classificationPort: ClassificationPort,
+    @Inject(PROACTIVE_MESSAGE_EVALUATION_PORT)
+    private readonly proactiveEvaluationPort: ProactiveMessageEvaluationPort,
   ) {}
 
   async shouldAnswer(
@@ -29,11 +31,8 @@ export class ProactiveEvaluatorService {
       ctx,
     );
 
-    const result = await this.classificationPort.classify({
-      systemPrompt: evaluationPrompt,
-      labels: ['YES', 'NO'] as const,
-      fallback: 'NO',
-    });
+    const result =
+      await this.proactiveEvaluationPort.evaluateShouldAnswer(evaluationPrompt);
     return result === 'YES';
   }
 }
