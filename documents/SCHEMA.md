@@ -1,6 +1,7 @@
 # Database Schema: Chatty
 
-This document defines the MySQL database schema for the Chatty application. It is optimized for agentic coding, providing a declarative Mermaid Entity-Relationship (ER) diagram for conceptual understanding, followed by explicit MySQL Data Definition Language (DDL) statements for direct execution and migration generation.
+This document is the database contract for Chatty and mirrors `backend/prisma/schema.prisma`.
+MySQL stores relational application data. Qdrant stores derived vector-memory points for older user messages and is documented separately below because it is not managed by Prisma migrations.
 
 ## 1. Entity-Relationship Diagram
 
@@ -31,7 +32,7 @@ erDiagram
         varchar name
         text base_prompt
         varchar profile_image_url
-        int current_delay_seconds "Default 60 in DB, reset to 4 in app flow"
+        int current_delay_seconds "Default 60 in DB"
         timestamp next_evaluation_time "Scheduled AI trigger"
         timestamp created_at
         timestamp updated_at
@@ -58,9 +59,9 @@ erDiagram
 
 ---
 
-## 2. MySQL DDL Statements
+## 2. MySQL DDL statements
 
-The following SQL script contains the exact table definitions, constraints, and relationships. Agents can parse and use these blocks directly to perform database migrations or generate ORM entities.
+The following SQL script represents the Prisma schema contract in MySQL form. Prisma migrations remain the source used by the application.
 
 ```sql
 -- -----------------------------------------------------
@@ -142,10 +143,31 @@ CREATE TABLE IF NOT EXISTS ai_message_metadata (
 );
 ```
 
-## 3. Agentic Implementation Notes
+## 3. Qdrant vector-memory contract
 
-- **Primary Keys:** Standardized as auto-incrementing `BIGINT`. Adjust to UUID/ULID if the architecture demands decentralization, but `BIGINT` provides better indexing performance for MySQL.
-- **Proactive AI Messaging Logic:** The `chatrooms` table holds `current_delay_seconds` and `next_evaluation_time`. DB default is `60`, and app logic resets it to `4` after a user message, then computes `next_evaluation_time`. If the scheduled evaluation fails (decides not to send), multiply `current_delay_seconds` by 2 and recalculate `next_evaluation_time`.
-- **AI Message Metadata Invariant:** `ai_message_metadata` rows are created only when `messages.sender = 'ai'` and are always 1:1 keyed by `message_id`.
-- **Image Uploads:** `profile_image_url` on `chatrooms` holds the CDN/S3 URL indicating the reference after the Blob upload is resolved by the backend.
-- **Constraints:** Foreign key cascading removes orphaned tokens, chatrooms, and messages when a parent entity is deleted.
+The backend indexes older user messages into Qdrant through `messages/memory/` and `infrastructure/vector-store/`.
+
+- Collection name: `QDRANT_COLLECTION` (default `chat_memory`).
+- Vector dimension: inferred from the configured Ollama embedding model.
+- Point ID format: `<messageId>#<chunkIndex>`.
+- Payload fields:
+  - `chatroomId` (number)
+  - `userId` (string)
+  - `messageId` (string)
+  - `chunkIndex` (number)
+  - `chunkCount` (number)
+  - `createdAt` (ISO 8601 string)
+  - `sender` (`user`)
+  - `content` (chunk text)
+
+Only older user messages are indexed. Recent messages remain in the normal chat history window and are excluded from retrieval by message ID.
+
+## 4. Implementation notes
+
+- **Primary keys:** MySQL primary keys are auto-incrementing `BIGINT`; REST serializes them as strings for backend responses, while the frontend currently models some resource IDs as numbers.
+- **Auth users:** `users.username` is unique. Login creates the user when missing and returns a JWT subject containing the user ID.
+- **Proactive scheduling:** `chatrooms.current_delay_seconds` defaults to `60`; app constants set the initial evaluation delay to `4` seconds after user activity. `next_evaluation_time` is nullable and is used by the scheduled evaluator.
+- **AI message metadata invariant:** `ai_message_metadata` rows are created only for `messages.sender = 'ai'` and are 1:1 keyed by `message_id`.
+- **Branching behavior:** Branching copies messages into a new chatroom with the original sender, content, and `created_at` values. It does not copy `ai_message_metadata` rows.
+- **Image uploads:** `chatrooms.profile_image_url` stores the URL served by the backend `/assets` static route, normally built from `PUBLIC_ORIGIN` or the incoming request host.
+- **Cascades:** Deleting a user removes user devices and chatrooms; deleting a chatroom removes messages; deleting an AI message removes its metadata.

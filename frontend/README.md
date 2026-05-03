@@ -1,10 +1,12 @@
 # Chatty frontend
 
-Vite + React 19 SPA for multi-room chat, Socket.IO streaming, optional web push (FCM), and chatroom management (create, edit, clone, branch).
+Vite + React 19 SPA for Chatty. The app provides username login, multi-room chat, cumulative Socket.IO AI streaming, chatroom create/edit/clone/branch flows, markdown/math rendering, PWA metadata, and optional Firebase Cloud Messaging (FCM).
 
-## Purpose
+For source contracts, use:
 
-Chatty supports both user-initiated messages and **proactive** AI messages: the backend runs evaluations on a schedule; the UI reflects streaming replies and can surface push notifications when Firebase is configured.
+- REST and Socket.IO: `../documents/API_DOCUMENTATION.md`
+- Backend/runtime setup: `../backend/README.md`
+- Docker/deploy setup: `../deploy/README.md`
 
 ## Tech stack
 
@@ -13,7 +15,9 @@ Chatty supports both user-initiated messages and **proactive** AI messages: the 
 - **TanStack Query** for server state
 - **Socket.IO client** for realtime chunks and typing state
 - **React Router 7** for routing
-- **Firebase** (optional) for FCM / web push; **vite-plugin-pwa** for the service worker shell
+- **Firebase** (optional) for FCM / web push; **vite-plugin-pwa** for PWA manifest/workbox support
+- **react-markdown**, GFM, and KaTeX for AI message rendering
+- **Zustand** for lightweight UI/auth state where local state is appropriate
 - **Vitest** + Testing Library for tests
 
 ## Prerequisites
@@ -123,9 +127,12 @@ npm run test:coverage:enforce  # Coverage with enforcement flag
 
 ## Architecture notes
 
-- **Hooks** — data and side effects are grouped in hooks such as chatrooms, messages, notifications, and websocket streaming (deltas for partial AI text).
-- **Types** — REST shapes and enums are centralized (e.g. `src/types/api.ts`) to stay aligned with the backend contract.
-- **State** — TanStack Query for remote data; lightweight client state where appropriate (e.g. Zustand where used).
+- **API clients** - `src/api/` centralizes REST calls. All calls are relative to `/api`; the client prepends the configured API origin unless the dev proxy is enabled.
+- **Types** - `src/types/api.ts` mirrors the REST response/request shapes from `../documents/API_DOCUMENTATION.md`.
+- **Realtime** - `src/features/chatroom/hooks/useWebSocketStream.ts` connects to `/socket.io`, joins the active room, treats `ai_message_chunk.chunk` as cumulative content, and handles `ai_message_complete`.
+- **Server state** - TanStack Query manages chatrooms, messages, notification registration, and mutations.
+- **Local state** - small Zustand stores handle auth/session and UI modal state.
+- **Notifications** - Firebase config is optional; when unset, core chat flows still work without push.
 
 ## Testing layout
 
@@ -134,3 +141,7 @@ npm run test:coverage:enforce  # Coverage with enforcement flag
 - **Integration flows** — `tests/integration/*.integration.test.tsx`.
 - **Shared helpers** — `src/test/` (fixtures, render helpers).
 - **Shared mocks** — `src/test/mocks/` (see `src/test/mocks/README.md`).
+
+## Deployment notes
+
+The production build is served by nginx in the root Docker Compose flow. Build-time `VITE_*` values are passed from the root `.env`; rebuild the nginx/frontend image after changing them. See `../deploy/README.md` for the current Compose services and proxy paths.

@@ -1,6 +1,6 @@
-# RESTful API Documentation: Chatty
+# API Documentation: Chatty
 
-This document outlines the RESTful API endpoints for the "Chatty" application based on the given core features and system overview.
+This document is the source contract for Chatty REST endpoints and Socket.IO events. It reflects the current NestJS controllers, DTO validation, serializers, and gateway behavior.
 
 ---
 
@@ -13,6 +13,15 @@ All `/api/**` endpoints require a bearer token except:
 
 WebSocket events are handled separately from `/api/**` routes. Current gateway behavior does not enforce JWT at join/leave event level.
 
+### 0.0 Common conventions
+
+- **Base URL:** backend origin, for example `http://localhost:8080`.
+- **API prefix:** controllers include `/api` in their route path.
+- **Auth header:** `Authorization: Bearer <accessToken>`.
+- **IDs in REST responses:** backend serializers convert database `BigInt` identifiers to JSON strings (`"1"`, not `1`). Frontend code may coerce these values into number-like application types.
+- **Validation:** request bodies and query/path parameters are validated by Nest's global `ValidationPipe` with transform, whitelist, and `forbidNonWhitelisted` enabled.
+- **Errors:** an HTTP exception filter returns structured Nest error responses for validation, auth, forbidden, and not-found failures.
+
 ### 0.1 Login (Issue JWT)
 
 - **Method:** `POST`
@@ -24,6 +33,7 @@ WebSocket events are handled separately from `/api/**` routes. Current gateway b
     "username": "my-username"
   }
   ```
+  - `username` is required, non-empty, and max 255 characters.
 - **Response:** `201 Created`
 - **Example:**
   ```json
@@ -66,7 +76,10 @@ Retrieve a list of chatrooms for the authenticated user.
       "name": "General Chat",
       "basePrompt": "You are a helpful assistant.",
       "profileImageUrl": "https://example.com/ai-1.png",
-      "createdAt": "2026-04-05T10:00:00Z"
+      "currentDelaySeconds": 60,
+      "nextEvaluationTime": null,
+      "createdAt": "2026-04-05T10:00:00.000Z",
+      "updatedAt": "2026-04-05T10:00:00.000Z"
     }
   ]
   ```
@@ -80,9 +93,11 @@ Create a new chatroom.
 - **Headers:** `Authorization: Bearer <accessToken>`
 - **Parameters:** None
 - **Request Body:** `multipart/form-data`
-  - `name` (string): The name of the chatroom.
-  - `basePrompt` (string): The base prompt for the AI.
+  - `name` (string, required, non-empty): The name of the chatroom.
+  - `basePrompt` (string, required, non-empty): The base prompt for the AI.
   - `profileImage` (file/blob, optional): The profile image file for the AI.
+    - Stored under backend assets and exposed as `/assets/<generated-file-name>`.
+    - Absolute URLs are built from `PUBLIC_ORIGIN` when configured; otherwise request protocol/host are used.
 - **Response:** `201 Created`
 - **Example:**
   ```json
@@ -92,7 +107,10 @@ Create a new chatroom.
     "name": "Project Discussion",
     "basePrompt": "You are a strict project manager AI.",
     "profileImageUrl": "https://example.com/manager.png",
-    "createdAt": "2026-04-05T10:05:00Z"
+    "currentDelaySeconds": 60,
+    "nextEvaluationTime": null,
+    "createdAt": "2026-04-05T10:05:00.000Z",
+    "updatedAt": "2026-04-05T10:05:00.000Z"
   }
   ```
 
@@ -115,7 +133,10 @@ Retrieve details of a specific chatroom by ID.
     "name": "Project Discussion",
     "basePrompt": "You are a strict project manager AI.",
     "profileImageUrl": "https://example.com/manager.png",
-    "createdAt": "2026-04-05T10:05:00Z"
+    "currentDelaySeconds": 60,
+    "nextEvaluationTime": null,
+    "createdAt": "2026-04-05T10:05:00.000Z",
+    "updatedAt": "2026-04-05T10:05:00.000Z"
   }
   ```
 
@@ -132,6 +153,7 @@ Update a chatroom's configuration such as its base prompt or AI profile image.
   - `name` (string, optional): The update name for the AI.
   - `basePrompt` (string, optional): The updated base prompt for the AI.
   - `profileImage` (file/blob, optional): The updated profile image file for the AI.
+- **Implementation note:** empty `name` or `basePrompt` values are ignored by the current update service because only truthy values are applied.
 - **Response:** `200 OK`
 - **Example:**
   ```json
@@ -141,7 +163,10 @@ Update a chatroom's configuration such as its base prompt or AI profile image.
     "name": "Project Discussion",
     "basePrompt": "You are a friendly project manager AI.",
     "profileImageUrl": "https://example.com/friendly-manager.png",
-    "updatedAt": "2026-04-05T10:10:00Z"
+    "currentDelaySeconds": 60,
+    "nextEvaluationTime": null,
+    "createdAt": "2026-04-05T10:05:00.000Z",
+    "updatedAt": "2026-04-05T10:10:00.000Z"
   }
   ```
 
@@ -156,7 +181,7 @@ Delete an existing chatroom.
   - `chatroomId` (path parameter): The ID of the chatroom.
 - **Request Body:** None
 - **Response:** `200 OK`
-- **Example:** _(Empty Response)_
+- **Example:** empty body
 
 ---
 
@@ -181,13 +206,18 @@ Create a new chatroom from an existing one, copying ONLY the configuration (prom
     "name": "General Chat (Clone)",
     "basePrompt": "You are a helpful assistant.",
     "profileImageUrl": "https://example.com/ai-1.png",
-    "createdAt": "2026-04-05T10:15:00Z"
+    "currentDelaySeconds": 60,
+    "nextEvaluationTime": null,
+    "createdAt": "2026-04-05T10:15:00.000Z",
+    "updatedAt": "2026-04-05T10:15:00.000Z"
   }
   ```
 
 ### 2.2 Branch Chatroom
 
 Create a new chatroom from an existing one, copying BOTH the configuration and the chat history.
+
+Branching copies message sender/content/createdAt into the new room. AI metadata rows are not copied by the current implementation.
 
 - **Method:** `POST`
 - **URL:** `/api/chatrooms/{chatroomId}/branch`
@@ -204,7 +234,10 @@ Create a new chatroom from an existing one, copying BOTH the configuration and t
     "name": "General Chat (Branch)",
     "basePrompt": "You are a helpful assistant.",
     "profileImageUrl": "https://example.com/ai-1.png",
-    "createdAt": "2026-04-05T10:20:00Z"
+    "currentDelaySeconds": 60,
+    "nextEvaluationTime": null,
+    "createdAt": "2026-04-05T10:20:00.000Z",
+    "updatedAt": "2026-04-05T10:20:00.000Z"
   }
   ```
 
@@ -227,8 +260,8 @@ Retrieve the message history for a specific chatroom.
 - **Headers:** `Authorization: Bearer <accessToken>`
 - **Parameters:**
   - `chatroomId` (path parameter): The ID of the chatroom.
-  - `limit` (query parameter, optional): Number of messages to retrieve.
-  - `offset` (query parameter, optional): Offset for pagination.
+  - `limit` (query parameter, optional): integer from 1 to 100. Defaults to `50`.
+  - `offset` (query parameter, optional): integer >= 0. Defaults to `0`.
 - **Request Body:** None
 - **Response:** `200 OK`
 - **Example:**
@@ -239,14 +272,14 @@ Retrieve the message history for a specific chatroom.
       "chatroomId": "2",
       "sender": "user",
       "content": "Hello, AI!",
-      "createdAt": "2026-04-05T10:25:00Z"
+      "createdAt": "2026-04-05T10:25:00.000Z"
     },
     {
       "id": "102",
       "chatroomId": "2",
       "sender": "ai",
       "content": "Hello! How can I help you today?",
-      "createdAt": "2026-04-05T10:25:05Z"
+      "createdAt": "2026-04-05T10:25:05.000Z"
     }
   ]
   ```
@@ -266,6 +299,7 @@ Send a message from the user to the AI. _(Note: Responses are streamed via WebSo
     "content": "Tell me a joke."
   }
   ```
+  - `content` is required and non-empty.
 - **Response:** `202 Accepted` (Indicates message received, response will stream elsewhere)
 - **Example:**
   ```json
@@ -277,7 +311,7 @@ Send a message from the user to the AI. _(Note: Responses are streamed via WebSo
       "chatroomId": "2",
       "sender": "user",
       "content": "Tell me a joke.",
-      "createdAt": "2026-04-05T10:30:00Z"
+      "createdAt": "2026-04-05T10:30:00.000Z"
     }
   }
   ```
@@ -300,12 +334,37 @@ Register a user's device for receiving FCM push notifications (for proactive AI 
     "deviceToken": "dpXm_..._example_token_from_fcm"
   }
   ```
+  - `deviceToken` is required and non-empty.
 - **Response:** `200 OK`
 - **Example:**
   ```json
   {
     "status": "success",
     "message": "FCM token registered successfully."
+  }
+  ```
+
+### 4.2 Send Test Notification
+
+Send a test FCM notification to the owner of a chatroom. This endpoint is useful for verifying Firebase credentials and registered device tokens.
+
+- **Method:** `POST`
+- **URL:** `/api/notifications/test`
+- **Headers:** `Authorization: Bearer <accessToken>`
+- **Parameters:** None
+- **Request Body:**
+  ```json
+  {
+    "chatroomId": "2"
+  }
+  ```
+  - `chatroomId` is required and non-empty. It is accepted as a string in the current DTO.
+- **Response:** `200 OK`
+- **Example:**
+  ```json
+  {
+    "status": "success",
+    "message": "Test notification sent."
   }
   ```
 
@@ -317,6 +376,7 @@ Register a user's device for receiving FCM push notifications (for proactive AI 
 
 - **Transport:** Socket.IO
 - **Gateway:** backend `MessagesGateway`
+- **Path:** `/socket.io`
 - **Auth:** Currently no JWT guard enforced at gateway event level.
 
 ### 5.2 Client -> Server Events
@@ -365,5 +425,7 @@ Register a user's device for receiving FCM push notifications (for proactive AI 
 
 - **Payload:**
   ```json
-  { "chatroomId": 2, "content": "final message", "messageId": 123 }
+  { "chatroomId": 2, "content": "final message", "messageId": "123" }
   ```
+
+Current backend code passes the persisted AI message ID as a string to the gateway. Clients should accept either numeric or string IDs if they need compatibility with older event assumptions.

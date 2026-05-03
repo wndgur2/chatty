@@ -1,26 +1,29 @@
 # Chatty backend
 
-NestJS API, Socket.IO streaming gateway, Prisma/MySQL persistence, Ollama integration, Qdrant-backed long-term memory retrieval (RAG), optional FCM, and scheduled evaluation for proactive AI message.
+NestJS API for Chatty: REST endpoints, Socket.IO streaming, Prisma/MySQL persistence, Ollama inference, Qdrant-backed memory retrieval, static profile image uploads, scheduled proactive AI evaluation, and optional FCM delivery.
 
-## Tech stack
+For the public contracts, use:
 
-- [NestJS](https://nestjs.com/) 11, TypeScript
-- [Prisma](https://www.prisma.io/) + MySQL 8
-- [Qdrant](https://qdrant.tech/) vector store for long-term memory search
-- [Jest](https://jestjs.io/) + Supertest (unit + e2e)
-- Static uploads via `@nestjs/serve-static` and Multer (`@nestjs/platform-express`)
-- [Socket.IO](https://socket.io/) (`@nestjs/platform-socket.io`)
+- API and Socket.IO: `../documents/API_DOCUMENTATION.md`
+- Database schema: `../documents/SCHEMA.md`
+- Deployment/runtime: `../deploy/README.md`
 
-## Git workflow
+## Stack
 
-Shared branching, commits, and PR conventions:
-
-- `.cursor/skills/git/SKILL.md`
+- NestJS 11 + TypeScript
+- Prisma 6 + MySQL 8
+- Socket.IO gateway for AI stream events
+- Ollama chat/evaluator/embedding adapters
+- Qdrant vector store for long-term memory snippets
+- Firebase Admin SDK for optional push notifications
+- Jest and Supertest for unit/e2e tests
 
 ## Prerequisites
 
 - Node.js 18+ (repo targets current LTS-style versions)
-- MySQL 8 (local install or Docker from root `docker-compose.dev.yml`)
+- MySQL 8
+- Qdrant
+- Ollama with the configured chat, evaluator, and embedding models
 
 ## Getting started
 
@@ -30,7 +33,7 @@ Shared branching, commits, and PR conventions:
    npm install
    ```
 
-2. **Environment** — create `backend/.env`:
+2. **Environment** - create `backend/.env`:
 
    ```env
    DATABASE_URL="mysql://root:chatty_root@127.0.0.1:3306/chatty"
@@ -52,6 +55,9 @@ Shared branching, commits, and PR conventions:
    RAG_CHUNK_BREAKPOINT_PERCENTILE="95"
    RAG_CHUNK_MAX_CHARS="1200"
    RAG_CHUNK_OVERLAP_CHARS="200"
+   PUBLIC_ORIGIN="http://localhost:8080"
+   CORS_ORIGIN="http://localhost:5173"
+   ASSETS_DIR="./assets"
    ```
 
    Pull the local embedding model once:
@@ -60,7 +66,7 @@ Shared branching, commits, and PR conventions:
    ollama pull all-minilm
    ```
 
-   Memory indexing now uses semantic chunking before embedding for older user messages. Existing vectors remain valid and are not automatically backfilled.
+   Memory indexing uses semantic chunking before embedding older user messages. Existing vectors remain valid and are not automatically backfilled.
 
    Optional (push notifications; leave empty to disable FCM sends):
 
@@ -87,26 +93,41 @@ Shared branching, commits, and PR conventions:
    npm run start:prod   # production (compiled dist)
    ```
 
+## Main modules
+
+| Module | Responsibility |
+| --- | --- |
+| `auth/` | Public username login, JWT issuing, global API guard support |
+| `chatrooms/` | User-owned chatroom CRUD, image uploads, clone, branch |
+| `messages/` | Message history, user send trigger, background AI generation, Socket.IO stream events |
+| `messages/memory/` | Older-message chunking, embedding, vector indexing, retrieval formatting |
+| `inference/` | Ports and Ollama adapters for chat completion, classification, and embeddings |
+| `notifications/` | Device token registration, test notifications, proactive FCM sends |
+| `tasks/` | Cron-based proactive evaluation and slow-start backoff |
+| `infrastructure/storage/` | Local asset persistence under `/assets` |
+| `infrastructure/vector-store/` | Qdrant client and vector-store adapter |
+
 ## WebSocket streaming
 
-Streaming lives on the **messages** gateway: `src/messages/messages.gateway.ts`.
+Streaming lives in `src/messages/messages.gateway.ts`.
 
 - **Client → server**
   - `joinRoom` — `{ chatroomId: number }`
   - `leaveRoom` — `{ chatroomId: number }`
-- **Server → client**
+- **Server -> client**
   - `ai_typing_state` — `{ chatroomId, isTyping }`
   - `ai_message_chunk` — `{ chatroomId, chunk }`
   - `ai_message_complete` — `{ chatroomId, content, messageId }`
 
-Join/leave handlers do not validate JWT at the gateway today; treat the socket surface accordingly for your threat model.
+The `chunk` payload is cumulative current content. Join/leave handlers do not enforce JWT at the gateway event level today; protected REST routes still use the global JWT guard. See `../documents/API_DOCUMENTATION.md` for the complete event contract.
 
 ## Features (high level)
 
-- **Auth** — `POST /api/auth/login` creates or loads a user and returns a JWT for Bearer-protected routes.
-- **Chatrooms** — CRUD, optional profile image upload, clone/branch flows.
-- **Messages** — history, user sends, streamed AI replies, background proactive sends coordinated with tasks/cron.
-- **Notifications** — device registration and FCM when credentials are configured.
+- **Auth** - `POST /api/auth/login` creates or loads a user and returns a JWT for Bearer-protected routes.
+- **Chatrooms** - CRUD, optional profile image upload, clone/branch flows.
+- **Messages** - history, user sends, streamed AI replies, memory retrieval, and proactive background sends.
+- **Notifications** - device registration, test notification endpoint, and FCM sends when credentials are configured.
+- **Static assets** - uploaded profile images are stored under `ASSETS_DIR` and served from `/assets`.
 
 ## Scripts
 
@@ -128,57 +149,19 @@ backend/
 │   ├── auth/
 │   ├── chatrooms/
 │   ├── messages/           # REST + MessagesGateway (Socket.IO)
+│   │   └── memory/         # RAG indexing/retrieval helpers
 │   ├── notifications/
 │   ├── tasks/              # scheduled evaluation / proactive AI
-│   ├── ollama/
+│   ├── inference/          # ports, prompts, Ollama providers
 │   ├── infrastructure/
 │   ├── common/
 │   └── ...
 └── test/                   # e2e specs (e.g. app, chatrooms, messages)
 ```
 
-## Entity overview
+## Data model
 
-```mermaid
-erDiagram
-  User ||--o{ UserDevice : has
-  User ||--o{ Chatroom : owns
-  Chatroom ||--o{ Message : contains
-
-  User {
-    bigint id PK
-    string username UK
-    datetime createdAt
-    datetime updatedAt
-  }
-
-  UserDevice {
-    bigint id PK
-    bigint userId FK
-    string deviceToken UK
-    datetime registeredAt
-  }
-
-  Chatroom {
-    bigint id PK
-    bigint userId FK
-    string name
-    string basePrompt
-    string profileImageUrl
-    int currentDelaySeconds
-    datetime nextEvaluationTime
-    datetime createdAt
-    datetime updatedAt
-  }
-
-  Message {
-    bigint id PK
-    bigint chatroomId FK
-    enum sender
-    string content
-    datetime createdAt
-  }
-```
+Do not duplicate entity definitions here. The Prisma-backed database contract is maintained in `../documents/SCHEMA.md`.
 
 ## Request flow (simplified)
 
@@ -203,7 +186,7 @@ sequenceDiagram
   Chatrooms->>DB: insert chatroom
   Chatrooms-->>Client: chatroom
 
-  Client->>Messages: POST /api/messages
+  Client->>Messages: POST /api/chatrooms/:chatroomId/messages
   Messages->>DB: user message
   Messages->>AI: stream generation
   AI-->>Gateway: chunks / complete
