@@ -9,6 +9,12 @@ export const MEMORY_SNIPPETS_PROMPT = [
   'If they conflict with the recent conversation, trust the recent conversation. Snippets may be truncated, so do not invent details beyond what is shown.',
 ].join('\n');
 
+export const CANONICAL_MEMORY_PROMPT = [
+  '## Known user/project state',
+  'Treat this as authoritative canonical memory.',
+  'Prefer this state over older snippets when they conflict.',
+].join('\n');
+
 export function buildProactiveLastInstruction(
   lastMessageContent: string,
 ): string {

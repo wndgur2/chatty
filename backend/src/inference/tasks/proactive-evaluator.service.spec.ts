@@ -1,23 +1,28 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { ProactiveEvaluatorService } from './proactive-evaluator.service';
 import {
-  CLASSIFICATION_PORT,
-  ClassificationPort,
-} from '../ports/classification.port';
+  PROACTIVE_MESSAGE_EVALUATION_PORT,
+  ProactiveMessageEvaluationPort,
+} from '../ports/proactive-message-evaluation.port';
 
 describe('ProactiveEvaluatorService', () => {
   let service: ProactiveEvaluatorService;
-  const classifyMock: jest.MockedFunction<ClassificationPort['classify']> =
+  const evaluateMock: jest.MockedFunction<
+    ProactiveMessageEvaluationPort['evaluate']
+  > =
     jest.fn();
-  const mockClassificationPort: ClassificationPort = {
-    classify: classifyMock,
+  const mockProactiveMessageEvaluationPort: ProactiveMessageEvaluationPort = {
+    evaluate: evaluateMock,
   };
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         ProactiveEvaluatorService,
-        { provide: CLASSIFICATION_PORT, useValue: mockClassificationPort },
+        {
+          provide: PROACTIVE_MESSAGE_EVALUATION_PORT,
+          useValue: mockProactiveMessageEvaluationPort,
+        },
       ],
     }).compile();
 
@@ -29,7 +34,7 @@ describe('ProactiveEvaluatorService', () => {
   });
 
   it('returns true for YES classification', async () => {
-    classifyMock.mockResolvedValue('YES');
+    evaluateMock.mockResolvedValue('YES');
 
     const result = await service.shouldAnswer(
       [{ role: 'user', content: 'hello where is AI?' }],
@@ -38,16 +43,17 @@ describe('ProactiveEvaluatorService', () => {
     );
 
     expect(result).toBe(true);
-    expect(classifyMock).toHaveBeenCalledWith(
+    expect(evaluateMock).toHaveBeenCalledWith(
       expect.objectContaining({
-        labels: ['YES', 'NO'],
-        fallback: 'NO',
+        systemPrompt: expect.stringContaining(
+          'should the assistant send additional message?',
+        ),
       }),
     );
   });
 
   it('returns false for NO classification', async () => {
-    classifyMock.mockResolvedValue('NO');
+    evaluateMock.mockResolvedValue('NO');
 
     const result = await service.shouldAnswer(
       [{ role: 'user', content: 'just chatting with a friend.' }],

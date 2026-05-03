@@ -1,5 +1,12 @@
-import { formatMemorySnippets, MemorySnippet } from './memory.formatter';
-import { MEMORY_SNIPPETS_PROMPT } from '../../inference/prompts/chat-system.prompt';
+import {
+  formatCanonicalMemories,
+  formatMemorySnippets,
+  MemorySnippet,
+} from './memory.formatter';
+import {
+  MEMORY_SNIPPETS_PROMPT,
+} from '../../inference/prompts/chat-system.prompt';
+import { MemoryKind } from '@prisma/client';
 
 describe('formatMemorySnippets', () => {
   it('returns an empty string when there are no snippets', () => {
@@ -57,5 +64,32 @@ describe('formatMemorySnippets', () => {
 
     expect(firstIdx).toBeGreaterThan(-1);
     expect(secondIdx).toBeGreaterThan(firstIdx);
+  });
+
+  it('renders grouped canonical memories by kind', () => {
+    const output = formatCanonicalMemories([
+      {
+        kind: MemoryKind.preference,
+        key: 'tone',
+        value: 'casual',
+      },
+      {
+        kind: MemoryKind.project_state,
+        key: 'current_project',
+        value: 'Chatty backend refactor',
+      },
+      {
+        kind: MemoryKind.preference,
+        key: 'timezone',
+        value: 'UTC+7',
+      },
+    ]);
+
+    expect(output).toContain('## Known user/project state');
+    expect(output).toContain('- preference: tone = "casual"');
+    expect(output).toContain('- preference: timezone = "UTC+7"');
+    expect(output).toContain(
+      '- project_state: current_project = "Chatty backend refactor"',
+    );
   });
 });

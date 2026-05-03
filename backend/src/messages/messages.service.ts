@@ -8,14 +8,20 @@ import { MessagesRepository } from './messages.repository';
 import { ChatroomStateRepository } from './chatroom-state.repository';
 import {
   buildProactiveLastInstruction,
+  CANONICAL_MEMORY_PROMPT,
   NORMAL_CHAT_BASE_SYSTEM,
   STABLE_VOLUNTARY_ALIGNMENT,
 } from '../inference/prompts/chat-system.prompt';
 import { toChatHistory } from '../inference/shared/chat-history.util';
 import { ChatGenerationService } from '../inference/tasks/chat-generation.service';
 import { MemoryService } from './memory/memory.service';
-import { formatMemorySnippets } from './memory/memory.formatter';
+import {
+  formatCanonicalMemories,
+  formatMemorySnippets,
+} from './memory/memory.formatter';
 import { ConfigService } from '@nestjs/config';
+import { MemoryExtractorService } from './memory/memory-extractor.service';
+import { MemoryRetrieverService } from './memory/memory-retriever.service';
 
 const PROACTIVE_HISTORY_WINDOW_SIZE = 5;
 const DEFAULT_HISTORY_WINDOW_SIZE = 8;
@@ -33,6 +39,8 @@ export class MessagesService {
     private readonly chatroomStateRepository: ChatroomStateRepository,
     private readonly fcmPushService: FcmPushService,
     private readonly memoryService: MemoryService,
+    private readonly memoryExtractorService: MemoryExtractorService,
+    private readonly memoryRetrieverService: MemoryRetrieverService,
     private readonly configService: ConfigService,
   ) {}
 
@@ -57,6 +65,9 @@ export class MessagesService {
     );
     this.memoryService.indexOlderMessage(chatroomId).catch((err) => {
       this.logger.warn('Memory indexing failed', err);
+    });
+    this.memoryExtractorService.extractOlderMessage(chatroomId).catch((err) => {
+      this.logger.warn('Memory extraction failed', err);
     });
 
     this.processBackgroundMessage(chatroomId).catch((err) => {
@@ -104,8 +115,8 @@ export class MessagesService {
       const queryMessage = [...history]
         .reverse()
         .find((message) => message.role === 'user');
-      const memorySnippets = queryMessage
-        ? await this.memoryService.retrieveContext(
+      const memoryResult = queryMessage
+        ? await this.memoryRetrieverService.retrieve(
             chatroomId,
             queryMessage.content,
             {
@@ -113,14 +124,21 @@ export class MessagesService {
               recentMessageIds,
             },
           )
-        : [];
+        : { canonical: [], snippets: [] };
+      const memorySnippets = memoryResult.snippets;
       this.logger.debug(
         `Retrieved ${memorySnippets.length} memory snippets for chatroom=${chatroomId}`,
       );
+      const canonicalMemoryBlock = formatCanonicalMemories(memoryResult.canonical);
       const memoryBlock = formatMemorySnippets(memorySnippets);
-      const resolvedSystemPrompt = memoryBlock
-        ? `${systemPrompt}\n\n${memoryBlock}`
-        : systemPrompt;
+      const promptBlocks = [systemPrompt];
+      if (canonicalMemoryBlock) {
+        promptBlocks.push(`${CANONICAL_MEMORY_PROMPT}\n\n${canonicalMemoryBlock}`);
+      }
+      if (memoryBlock) {
+        promptBlocks.push(memoryBlock);
+      }
+      const resolvedSystemPrompt = promptBlocks.join('\n\n');
 
       if (proactive) {
         const lastContent = history[history.length - 1]?.content ?? '';
