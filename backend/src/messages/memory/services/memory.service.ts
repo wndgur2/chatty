@@ -1,5 +1,9 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import {
+  parseConfigFloat,
+  parseConfigInt,
+} from '../../../common/utils/parse-config-number.util';
 import { PrismaService } from '../../../prisma/prisma.service';
 import {
   EMBEDDING_PORT,
@@ -32,10 +36,20 @@ export class MemoryService {
     private readonly semanticChunkerService: SemanticChunkerService,
     private readonly configService: ConfigService,
   ) {
-    this.recentWindow = Number(this.configService.get('RAG_RECENT_WINDOW', 8));
-    this.minScore = Number(this.configService.get('RAG_MIN_SCORE', 0.4));
-    this.snippetChars = Number(
+    this.recentWindow = parseConfigInt(
+      this.configService.get('RAG_RECENT_WINDOW', 8),
+      8,
+      { min: 0, max: 100_000 },
+    );
+    this.minScore = parseConfigFloat(
+      this.configService.get('RAG_MIN_SCORE', 0.4),
+      0.4,
+      { min: 0, max: 1 },
+    );
+    this.snippetChars = parseConfigInt(
       this.configService.get('RAG_SNIPPET_CHARS', 200),
+      200,
+      { min: 1, max: 100_000 },
     );
   }
 

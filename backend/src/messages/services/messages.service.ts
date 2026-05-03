@@ -21,6 +21,7 @@ import {
   formatMemorySnippets,
 } from '../memory/formatters/memory.formatter';
 import { ConfigService } from '@nestjs/config';
+import { parseConfigInt } from '../../common/utils/parse-config-number.util';
 
 const PROACTIVE_HISTORY_WINDOW_SIZE = 5;
 const DEFAULT_HISTORY_WINDOW_SIZE = 8;
@@ -82,7 +83,11 @@ export class MessagesService {
 
   public async processBackgroundMessage(chatroomId: number, proactive = false) {
     try {
-      const ragTopK = Number(this.configService.get('RAG_TOP_K', 5));
+      const ragTopK = parseConfigInt(
+        this.configService.get('RAG_TOP_K', 5),
+        5,
+        { min: 1, max: 100 },
+      );
       const chatRoomIdBigInt = BigInt(chatroomId);
       const room =
         await this.chatroomStateRepository.findById(chatRoomIdBigInt);

@@ -1,5 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { parseConfigInt } from '../../../common/utils/parse-config-number.util';
 import {
   EMBEDDING_PORT,
   type EmbeddingPort,
@@ -29,24 +30,37 @@ export class SemanticChunkerService {
     @Inject(EMBEDDING_PORT) private readonly embeddingPort: EmbeddingPort,
     private readonly configService: ConfigService,
   ) {
-    this.minChars = Number(this.configService.get('RAG_CHUNK_MIN_CHARS', 200));
-    this.minSentences = Number(
+    this.minChars = parseConfigInt(
+      this.configService.get('RAG_CHUNK_MIN_CHARS', 200),
+      200,
+      { min: 50, max: 100_000 },
+    );
+    this.minSentences = parseConfigInt(
       this.configService.get('RAG_CHUNK_MIN_SENTENCES', 3),
+      3,
+      { min: 1, max: 500 },
     );
-    this.bufferSize = Number(
+    this.bufferSize = parseConfigInt(
       this.configService.get('RAG_CHUNK_BUFFER_SIZE', 1),
+      1,
+      { min: 1, max: 50 },
     );
-    this.breakpointPercentile = Number(
+    this.breakpointPercentile = parseConfigInt(
       this.configService.get('RAG_CHUNK_BREAKPOINT_PERCENTILE', 95),
+      95,
+      { min: 1, max: 99 },
     );
-    this.maxChars = Number(this.configService.get('RAG_CHUNK_MAX_CHARS', 1200));
-    this.overlapChars = Math.min(
-      Math.max(
-        0,
-        Number(this.configService.get('RAG_CHUNK_OVERLAP_CHARS', 200)),
-      ),
-      Math.max(0, this.maxChars - 1),
+    this.maxChars = parseConfigInt(
+      this.configService.get('RAG_CHUNK_MAX_CHARS', 1200),
+      1200,
+      { min: 50, max: 100_000 },
     );
+    const overlapRaw = parseConfigInt(
+      this.configService.get('RAG_CHUNK_OVERLAP_CHARS', 200),
+      200,
+      { min: 0, max: Math.max(0, this.maxChars - 1) },
+    );
+    this.overlapChars = overlapRaw;
   }
 
   async chunk(text: string): Promise<SemanticChunk[]> {

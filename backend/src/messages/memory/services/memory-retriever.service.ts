@@ -1,9 +1,9 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { parseConfigInt } from '../../../common/utils/parse-config-number.util';
 import { PrismaService } from '../../../prisma/prisma.service';
 import { MemoryService } from './memory.service';
 import { CanonicalMemory, MemorySnippet } from '../formatters/memory.formatter';
-import { MemoryKind } from '../../../inference/ports/memory-extraction.port';
 
 export type MemoryRetrievalInput = {
   k: number;
@@ -25,8 +25,10 @@ export class MemoryRetrieverService {
     private readonly memoryService: MemoryService,
     private readonly configService: ConfigService,
   ) {
-    this.canonicalLimit = Number(
+    this.canonicalLimit = parseConfigInt(
       this.configService.get('MEMORY_CANONICAL_LIMIT', 20),
+      20,
+      { min: 1, max: 10_000 },
     );
   }
 
@@ -45,7 +47,7 @@ export class MemoryRetrieverService {
     );
 
     const canonical: CanonicalMemory[] = canonicalRows.map((row) => ({
-      kind: row.kind as MemoryKind,
+      kind: row.kind,
       key: row.key,
       value: row.value,
     }));

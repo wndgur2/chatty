@@ -1,6 +1,10 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import {
+  parseConfigFloat,
+  parseConfigInt,
+} from '../../../common/utils/parse-config-number.util';
+import {
   ExtractedMemory,
   MEMORY_EXTRACTION_PORT,
   type MemoryExtractionPort,
@@ -21,9 +25,15 @@ export class MemoryExtractorService {
     private readonly prisma: PrismaService,
     private readonly configService: ConfigService,
   ) {
-    this.recentWindow = Number(this.configService.get('RAG_RECENT_WINDOW', 8));
-    this.minConfidence = Number(
+    this.recentWindow = parseConfigInt(
+      this.configService.get('RAG_RECENT_WINDOW', 8),
+      8,
+      { min: 0, max: 100_000 },
+    );
+    this.minConfidence = parseConfigFloat(
       this.configService.get('MEMORY_EXTRACTION_MIN_CONFIDENCE', 0.6),
+      0.6,
+      { min: 0, max: 1 },
     );
   }
 
