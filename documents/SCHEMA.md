@@ -2,7 +2,7 @@
 
 **Source of truth:** [`backend/prisma/schema.prisma`](../backend/prisma/schema.prisma) and SQL migrations under [`backend/prisma/migrations/`](../backend/prisma/migrations/).
 
-This document summarizes the MySQL layout for agents and readers. Prisma maps JavaScript `Date`/`BigInt` to MySQL `DATETIME(3)` and `BIGINT` as generated in migrations.
+This document summarizes the MySQL layout for agents and readers. Prisma maps JavaScript `Date`/`BigInt` to MySQL `DATETIME(3)` and `BIGINT` as generated in migrations. API serialization details live in [`API_DOCUMENTATION.md`](API_DOCUMENTATION.md).
 
 ## 1. Entity-Relationship Diagram
 
@@ -62,7 +62,7 @@ erDiagram
 
 ## 2. MySQL DDL (aligned with Prisma migrations)
 
-The snippets below mirror the checked-in migrations (`20260408000000_init`, `20260408120000_widen_user_device_token`, `20260424000100_add_ai_message_metadata`). Prefer re-running migrations or introspecting Prisma for greenfield setups.
+The snippets below mirror the checked-in migrations (`20260408000000_init`, `20260408120000_widen_user_device_token`, `20260424000100_add_ai_message_metadata`). Prefer running Prisma migrations or inspecting [`backend/prisma/schema.prisma`](../backend/prisma/schema.prisma) for greenfield setups.
 
 ```sql
 -- -----------------------------------------------------
@@ -149,6 +149,8 @@ CREATE TABLE `ai_message_metadata` (
 ## 3. Implementation notes
 
 - **Primary keys:** Auto-increment `BIGINT`, matching Prisma `BigInt` and JSON string serialization for IDs in API responses.
-- **Proactive scheduling:** `chatrooms.current_delay_seconds` defaults to **60** in the database; application flow resets toward **4 seconds** after user activity and applies doubling on evaluator “no send” (see `documents/PROJECT_PROPOSAL.md` and `backend/src/tasks/`).
+- **Proactive scheduling:** `chatrooms.current_delay_seconds` defaults to **60** in the database; application flow resets toward **4 seconds** after user activity and applies doubling on evaluator "no send" (see [`PROJECT_PROPOSAL.md`](PROJECT_PROPOSAL.md), `backend/src/tasks/`, and `backend/src/messages/chatroom-state.repository.ts`).
 - **AI metadata invariant:** `ai_message_metadata` rows should exist only for `messages.sender = 'ai'`; Prisma models this as an optional 1:1 from `Message` to `AiMessageMetadata`.
+- **Known AI metadata values:** application code currently writes `delivery_mode = 'reply'` with `trigger_reason = 'user_request'` for HTTP-triggered replies, and `delivery_mode = 'proactive'` with `trigger_reason = 'scheduler_evaluation_yes'` plus `trigger_context = {"source":"scheduler"}` for scheduled sends.
+- **Branching:** branch creation copies message rows into a new chatroom, preserving `sender`, `content`, and `created_at`; AI metadata is not copied in the current implementation.
 - **Profile images:** `profile_image_url` stores the public URL after upload handling in the backend (see storage/infrastructure modules).

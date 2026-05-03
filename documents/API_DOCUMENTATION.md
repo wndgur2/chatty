@@ -1,6 +1,6 @@
 # RESTful API Documentation: Chatty
 
-Contracts below match the NestJS backend (`backend/src`). **Numeric identifiers** (`id`, `userId`, `chatroomId`, `messageId`, etc.) are serialized as **strings** in JSON because responses pass through a BigInt-safe serializer.
+Contracts below match the NestJS backend (`backend/src`). **Numeric identifiers** stored as Prisma `BigInt` (`id`, `userId`, `chatroomId`, `messageId`, etc.) are serialized as **strings** in REST JSON because responses pass through a BigInt-safe serializer. Socket.IO payloads use the gateway's native number/string values as noted in section 5.
 
 ---
 
@@ -22,6 +22,7 @@ WebSocket `joinRoom` / `leaveRoom` handlers do **not** enforce JWT at the gatewa
 - **Method:** `POST`
 - **URL:** `/api/auth/login`
 - **Parameters:** None
+- **Validation:** `username` is required, non-empty, string, and max 255 characters.
 - **Request Body:**
   ```json
   {
@@ -51,7 +52,7 @@ WebSocket `joinRoom` / `leaveRoom` handlers do **not** enforce JWT at the gatewa
 
 ## 1. Chatroom Management
 
-Chatroom JSON includes scheduling fields used by proactive AI (`currentDelaySeconds`, `nextEvaluationTime`). Shapes are produced by `serializeChatroom` from Prisma rows.
+Chatroom JSON includes scheduling fields used by proactive AI (`currentDelaySeconds`, `nextEvaluationTime`). Shapes are produced by `serializeChatroom` from Prisma rows. Chatroom route parameters are parsed as integers and each operation is scoped to the authenticated owner.
 
 ### 1.1 Retrieve All Chatrooms
 
@@ -85,8 +86,8 @@ Chatroom JSON includes scheduling fields used by proactive AI (`currentDelaySeco
 - **Headers:** `Authorization: Bearer <accessToken>`
 - **Parameters:** None
 - **Request Body:** `multipart/form-data`
-  - `name` (string): The name of the chatroom.
-  - `basePrompt` (string, optional): The base prompt for the AI.
+  - `name` (string, required, non-empty): The name of the chatroom.
+  - `basePrompt` (string, required, non-empty): The base prompt for the AI.
   - `profileImage` (file/blob, optional): The profile image file for the AI.
 - **Response:** `201 Created`
 - **Example:**
@@ -123,7 +124,7 @@ Chatroom JSON includes scheduling fields used by proactive AI (`currentDelaySeco
 - **Parameters:**
   - `chatroomId` (path parameter): The ID of the chatroom.
 - **Request Body:** `multipart/form-data`
-  - `name` (string, optional): The update name for the AI.
+  - `name` (string, optional): The updated name for the AI.
   - `basePrompt` (string, optional): The updated base prompt for the AI.
   - `profileImage` (file/blob, optional): The updated profile image file for the AI.
 - **Response:** `200 OK`
@@ -158,7 +159,7 @@ Create a new chatroom from an existing one, copying **only** configuration (name
 
 ### 2.2 Branch Chatroom
 
-Create a new chatroom from an existing one, copying **both** configuration (name suffix `(Branch)`) and message history.
+Create a new chatroom from an existing one, copying **both** configuration (name suffix `(Branch)`) and message history. Branching copies message sender/content/timestamps; AI metadata rows are not copied into the branched room today.
 
 - **Method:** `POST`
 - **URL:** `/api/chatrooms/{chatroomId}/branch`
@@ -186,6 +187,7 @@ AI-authored messages may have a 1:1 row in `ai_message_metadata` (`read_at`, `de
   - `chatroomId` (path parameter): The ID of the chatroom.
   - `limit` (query, optional): Page size. Valid range **1–100** when provided. Default **50** when omitted.
   - `offset` (query, optional): Offset for pagination. Minimum **0**. Default **0** when omitted.
+- **Validation:** `limit` and `offset` are transformed to numbers by the global validation pipe.
 - **Request Body:** None
 - **Response:** `200 OK` — array ordered **oldest → newest** within the window.
 - **Example:**
@@ -225,6 +227,7 @@ Send a message from the user to the AI. The assistant reply is **streamed over S
     "content": "Tell me a joke."
   }
   ```
+- **Validation:** `content` is required, non-empty, and string.
 - **Response:** `202 Accepted`
 - **Example:**
   ```json
@@ -346,4 +349,4 @@ Triggers a test push for the **owner** of the given chatroom (used for integrati
   { "chatroomId": 2, "content": "final message", "messageId": 123 }
   ```
 
-`messageId` is emitted as a **number** from the gateway (see `messages.gateway.ts`).
+`messageId` is emitted as a **number** from the gateway (see `message-stream.service.ts` / `messages.gateway.ts`). REST responses still serialize BigInt identifiers as strings.

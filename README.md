@@ -1,6 +1,6 @@
 # Chatty
 
-Chatty is an AI chat application with real-time streamed replies and scheduled, proactive AI messages. The repo is a monorepo: React frontend, NestJS backend, MySQL (Prisma), Ollama for local LLM calls/embeddings, and Qdrant for long-term memory retrieval.
+Chatty is an AI chat application with real-time streamed replies and scheduled, proactive AI messages. This monorepo contains the React frontend, NestJS backend, MySQL/Prisma persistence, Ollama integration, and Qdrant-backed long-term memory retrieval.
 
 ## Core capabilities
 
@@ -14,7 +14,7 @@ Chatty is an AI chat application with real-time streamed replies and scheduled, 
 
 | Layer           | Technology                                                                   |
 | --------------- | ---------------------------------------------------------------------------- |
-| Frontend        | React 19, TypeScript, Vite, Tailwind CSS 4, TanStack Query, Socket.IO client |
+| Frontend        | React 19, TypeScript, Vite 7, Tailwind CSS 4, TanStack Query, Socket.IO client |
 | Backend         | NestJS 11, TypeScript, Prisma                                                |
 | Database        | MySQL 8                                                                      |
 | LLM             | Ollama (HTTP API)                                                            |
@@ -27,7 +27,7 @@ Chatty is an AI chat application with real-time streamed replies and scheduled, 
 - `frontend/` — Vite SPA (details: [`frontend/README.md`](frontend/README.md)).
 - `backend/` — REST API, WebSocket gateway, scheduling, file uploads (details: [`backend/README.md`](backend/README.md)).
 - `deploy/` — nginx image, production Compose, deploy scripts (details: [`deploy/README.md`](deploy/README.md)).
-- `docker-compose.dev.yml` — local full stack: MySQL, backend, nginx (built frontend).
+- `docker-compose.dev.yml` — local full stack: MySQL, Qdrant, backend, nginx (built frontend).
 - `.cursor/skills/` — agent skills and runbooks.
 - `.cursor/rules/` — editor/agent rules for this codebase.
 
@@ -35,17 +35,17 @@ Chatty is an AI chat application with real-time streamed replies and scheduled, 
 
 ### Split local dev (hot reload)
 
-Use a local MySQL (or publish `3306` from Compose if the DB runs in Docker while the app runs on the host). Configure env files and run backend and frontend separately — step-by-step commands, ports, and MySQL notes are in [`backend/README.md`](backend/README.md) and [`frontend/README.md`](frontend/README.md).
+Use a local MySQL/Qdrant/Ollama setup (or run shared services through Compose) and start backend/frontend separately for hot reload. Step-by-step commands, ports, and env variables are in [`backend/README.md`](backend/README.md) and [`frontend/README.md`](frontend/README.md).
 
 ### Docker full stack
 
-MySQL + backend + nginx serving the production build of the frontend: configure `.env` from `.env.docker.example`, pull Ollama models as needed, then `docker compose -f docker-compose.dev.yml up -d --build`. Full prerequisites, env variables, smoke checks, and troubleshooting are in [`deploy/README.md`](deploy/README.md).
+MySQL + Qdrant + backend + nginx serving the production build of the frontend: configure `.env` from `.env.docker.example`, pull Ollama models as needed, then `docker compose -f docker-compose.dev.yml up -d --build`. Full prerequisites, env variables, smoke checks, and troubleshooting are in [`deploy/README.md`](deploy/README.md).
 
 Production CD (ARM64 images, serialized deploys) is summarized in [`.github/ci-cd.md`](.github/ci-cd.md).
 
 ## API and contracts
 
-REST, Socket.IO payloads, and auth behavior are documented in [`documents/API_DOCUMENTATION.md`](documents/API_DOCUMENTATION.md). The database model is in [`documents/SCHEMA.md`](documents/SCHEMA.md) (generated schema and migrations live under `backend/prisma/`).
+REST, Socket.IO payloads, auth behavior, and response shapes are documented in [`documents/API_DOCUMENTATION.md`](documents/API_DOCUMENTATION.md). The database model is in [`documents/SCHEMA.md`](documents/SCHEMA.md) (generated schema and migrations live under `backend/prisma/`). Product scope and scheduling behavior are summarized in [`documents/PROJECT_PROPOSAL.md`](documents/PROJECT_PROPOSAL.md).
 
 ## Documentation index
 

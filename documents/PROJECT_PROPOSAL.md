@@ -1,9 +1,10 @@
 # Proposal Document: AI Chat app "Chatty"
 
+For implementation-level contracts, use [`API_DOCUMENTATION.md`](API_DOCUMENTATION.md) for REST/Socket.IO behavior and [`SCHEMA.md`](SCHEMA.md) for the MySQL/Prisma model. This document keeps the product and system scope concise.
+
 ## 1. Introduction
 
-AI Chatting application "Chatty" is a web-based chat application using an LLM.  
-The system allows AI to send messages to users without waiting for user input, based on scheduled triggers.
+Chatty is a web-based AI chat application. It supports normal user-initiated conversations and proactive AI messages that are generated after scheduled backend evaluations.
 
 ---
 
@@ -12,7 +13,8 @@ The system allows AI to send messages to users without waiting for user input, b
 - Provide a chat system powered by an LLM.
 - Enable AI to initiate messages based on schedules.
 - Support multiple chatrooms with separate contexts.
-- Deliver real-time messaging with websocket.
+- Deliver real-time streamed messaging with Socket.IO.
+- Preserve long-term conversational memory through vector retrieval.
 
 ---
 
@@ -22,7 +24,7 @@ The system allows AI to send messages to users without waiting for user input, b
 
 #### 3.1.1 Streamed LLM Responses
 
-- Stream AI responses in real time.
+- Stream AI responses in real time over Socket.IO.
 - Maintain continuous message flow during generation.
 
 #### 3.1.2 Proactive AI Messaging
@@ -31,6 +33,7 @@ The system allows AI to send messages to users without waiting for user input, b
   - Initializes a 4-second delay after the last message.
   - At the scheduled time, a lightweight "Evaluator" model decides whether to initiate a message.
   - If yes, initiates a proactive message. If no, the delay time is doubled for the next check.
+  - The scheduler runs on a cron cadence and caps consecutive "no send" growth in backend scheduling constants.
 - Use chatroom context for message generation.
 
 #### 3.1.3 Chatrooms
@@ -40,7 +43,10 @@ The system allows AI to send messages to users without waiting for user input, b
 
 #### 3.1.4 Long-term memory (implementation)
 
-- Vector retrieval augments prompts with relevant past snippets (RAG). Configuration and behavior live in the backend env and inference/memory modules; see repository docs for operators.
+- Vector retrieval augments prompts with relevant past snippets (RAG).
+- Qdrant stores embeddings; Ollama provides chat, evaluator, and embedding models.
+- Recent messages are excluded from retrieval by ID and older messages are semantically chunked before embedding.
+- Operator-facing configuration is summarized in [`../backend/README.md`](../backend/README.md).
 
 ---
 
@@ -58,7 +64,7 @@ The system allows AI to send messages to users without waiting for user input, b
 #### 3.2.3 Messaging
 
 - Send messages to AI.
-- Receive streamed responses with websocket.
+- Receive streamed responses with Socket.IO events.
 
 #### 3.2.4 Notifications
 
@@ -86,10 +92,11 @@ The system allows AI to send messages to users without waiting for user input, b
 - Frontend: Web interface for chat interaction.
 - Backend: API, websocket server for chat logic and data handling.
 - LLM: Local models via Ollama to generate responses based on context and act as an evaluator.
-- Vector store for retrieved memory snippets.
+- Vector store: Qdrant for retrieved memory snippets.
+- Database: MySQL accessed through Prisma.
 - Notification Service: Sends push notifications via Firebase Cloud Messaging (FCM).
 
-Authoritative technical contracts: `documents/API_DOCUMENTATION.md`, `documents/SCHEMA.md`.
+The deployed/local stack is documented in [`../README.md`](../README.md) and [`../deploy/README.md`](../deploy/README.md).
 
 ---
 

@@ -2,21 +2,23 @@
 
 Vite + React 19 SPA for multi-room chat, Socket.IO streaming, optional web push (FCM), and chatroom management (create, edit, clone, branch).
 
-**Also read:** repository overview [`../README.md`](../README.md); API and WebSocket contract [`../documents/API_DOCUMENTATION.md`](../documents/API_DOCUMENTATION.md).
+**Also read:** repository overview [`../README.md`](../README.md), API and WebSocket contract [`../documents/API_DOCUMENTATION.md`](../documents/API_DOCUMENTATION.md), and Docker/deploy guide [`../deploy/README.md`](../deploy/README.md).
 
 ## Purpose
 
-Chatty supports both user-initiated messages and **proactive** AI messages: the backend runs evaluations on a schedule; the UI reflects streaming replies and can surface push notifications when Firebase is configured.
+Chatty supports both user-initiated messages and **proactive** AI messages: the backend runs evaluations on a schedule; the UI reflects cumulative streamed replies and can surface push notifications when Firebase is configured.
 
 ## Tech stack
 
 - **React 19**, **TypeScript**, **Vite 7**
 - **Tailwind CSS 4** (`@tailwindcss/vite`), `clsx`, `tailwind-merge`
-- **TanStack Query** for server state
+- **TanStack Query** for server state; **Zustand** for lightweight persisted client state
 - **Socket.IO client** for realtime chunks and typing state
 - **React Router 7** for routing
 - **Firebase** (optional) for FCM / web push; **vite-plugin-pwa** for the service worker shell
 - **Vitest** + Testing Library for tests
+
+The frontend API types live in `src/types/api.ts`; keep user-visible contract changes synchronized with [`../documents/API_DOCUMENTATION.md`](../documents/API_DOCUMENTATION.md).
 
 ## Prerequisites
 
@@ -124,7 +126,7 @@ npm run test:coverage:enforce  # Coverage with enforcement flag
 
 ## Architecture notes
 
-- **Hooks** — data and side effects are grouped in hooks such as chatrooms, messages, notifications, and websocket streaming (deltas for partial AI text).
+- **Hooks** — data and side effects are grouped in hooks such as chatrooms, messages, notifications, and websocket streaming (cumulative partial AI text).
 - **Types** — REST shapes and enums are centralized (e.g. `src/types/api.ts`) to stay aligned with the backend contract.
 - **State** — TanStack Query for remote data; lightweight client state where appropriate (e.g. Zustand where used).
 

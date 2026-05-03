@@ -2,7 +2,7 @@
 
 NestJS API, Socket.IO streaming gateway, Prisma/MySQL persistence, Ollama integration, Qdrant-backed long-term memory retrieval (RAG), optional FCM, and scheduled evaluation for proactive AI messages.
 
-Monorepo context: [`../README.md`](../README.md). REST and Socket.IO contracts: [`../documents/API_DOCUMENTATION.md`](../documents/API_DOCUMENTATION.md). Database model: [`../documents/SCHEMA.md`](../documents/SCHEMA.md).
+Monorepo context: [`../README.md`](../README.md). REST and Socket.IO contracts: [`../documents/API_DOCUMENTATION.md`](../documents/API_DOCUMENTATION.md). Database model: [`../documents/SCHEMA.md`](../documents/SCHEMA.md). Product/scheduling notes: [`../documents/PROJECT_PROPOSAL.md`](../documents/PROJECT_PROPOSAL.md).
 
 ## Tech stack
 
@@ -20,7 +20,7 @@ Shared branching, commits, and PR conventions: [`.cursor/skills/git/SKILL.md`](.
 ## Prerequisites
 
 - Node.js 18+ (repo targets current LTS-style versions)
-- MySQL 8 (local install or Docker from root `docker-compose.dev.yml`)
+- MySQL 8, Qdrant, and Ollama (local installs or shared services from root `docker-compose.dev.yml`)
 
 ## Getting started
 
@@ -53,6 +53,8 @@ Shared branching, commits, and PR conventions: [`.cursor/skills/git/SKILL.md`](.
    DATABASE_URL="mysql://root:chatty_root@127.0.0.1:3306/chatty"
    JWT_SECRET="replace-with-a-strong-secret"
    JWT_EXPIRES_IN="7d"
+   PUBLIC_ORIGIN="http://localhost:5173"
+   CORS_ORIGIN="http://localhost:5173"
    OLLAMA_HOST="http://127.0.0.1:11434"
    OLLAMA_CHAT_MODEL="qwen2.5:1.5b"
    OLLAMA_EVAL_MODEL="qwen2.5:1.5b"
@@ -69,6 +71,7 @@ Shared branching, commits, and PR conventions: [`.cursor/skills/git/SKILL.md`](.
    RAG_CHUNK_BREAKPOINT_PERCENTILE="95"
    RAG_CHUNK_MAX_CHARS="1200"
    RAG_CHUNK_OVERLAP_CHARS="200"
+   ASSETS_DIR="src/assets"
    ```
 
 3. **Database**
@@ -89,7 +92,7 @@ Shared branching, commits, and PR conventions: [`.cursor/skills/git/SKILL.md`](.
 
 ## WebSocket streaming
 
-Implementation: `src/messages/messages.gateway.ts`. Event names and payload shapes (including cumulative `ai_message_chunk` semantics and JWT behavior at the gateway) are documented in [`../documents/API_DOCUMENTATION.md`](../documents/API_DOCUMENTATION.md).
+Implementation: `src/messages/messages.gateway.ts`. Event names and payload shapes (including cumulative `ai_message_chunk` semantics and JWT behavior at the gateway) are documented in [`../documents/API_DOCUMENTATION.md`](../documents/API_DOCUMENTATION.md). The HTTP send endpoint returns `202 Accepted`; the generated AI reply is delivered asynchronously over Socket.IO.
 
 ## Features (high level)
 

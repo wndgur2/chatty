@@ -5,12 +5,14 @@ Repository overview and documentation index: [`../README.md`](../README.md).
 This guide runs the **development-oriented** full stack from the repository root using **`docker-compose.dev.yml`**:
 
 - **mysql** — MySQL 8
+- **qdrant** — vector store for long-term memory retrieval
 - **backend** — NestJS (API + Socket.IO) on port 8080 inside the network
 - **nginx** — serves the built SPA and proxies `/api`, `/socket.io`, and `/assets` to the backend
 
 Compose file path matters: there is no default `compose.yml` in the repo root, so always pass `-f docker-compose.dev.yml`.
 
 API and WebSocket contracts: [`../documents/API_DOCUMENTATION.md`](../documents/API_DOCUMENTATION.md).
+Database schema: [`../documents/SCHEMA.md`](../documents/SCHEMA.md). Backend/frontend runtime details are referenced from [`../backend/README.md`](../backend/README.md) and [`../frontend/README.md`](../frontend/README.md).
 
 ## Prerequisites
 
@@ -19,6 +21,7 @@ API and WebSocket contracts: [`../documents/API_DOCUMENTATION.md`](../documents/
   - Default `OLLAMA_HOST` is `http://host.docker.internal:11434`.
   - The Compose file sets `extra_hosts: host.docker.internal:host-gateway` so **Linux** hosts resolve `host.docker.internal` like Docker Desktop on macOS/Windows.
 - Models pulled on the machine that runs Ollama, matching `OLLAMA_CHAT_MODEL` and `OLLAMA_EVAL_MODEL` in `.env`.
+- Qdrant is started by `docker-compose.dev.yml`; override `QDRANT_HTTP_PORT` / `QDRANT_GRPC_PORT` only if the defaults conflict on the host.
 
 ## Configure environment
 
@@ -34,6 +37,7 @@ Review and adjust:
 - **`PUBLIC_ORIGIN`** and **`CORS_ORIGIN`** — must match the URL you open in the browser (scheme + host + port).
 - **`HTTP_PORT`** — host port mapped to nginx (default **8080**).
 - **`OLLAMA_HOST`** — where the backend container reaches Ollama (host gateway vs. LAN IP vs. remote URL).
+- **`QDRANT_URL`** / **`QDRANT_COLLECTION`** — vector store endpoint and collection used by backend memory retrieval.
 
 **Rebuild when build-time inputs change:** `PUBLIC_ORIGIN`, `CORS_ORIGIN`, any `VITE_*` variable, or nginx/Dockerfile changes require a new image build, for example:
 
