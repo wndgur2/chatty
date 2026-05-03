@@ -294,7 +294,7 @@ Triggers a test push for the **owner** of the given chatroom (used for integrati
 
 ### 5.1 Connection
 
-- **Transport:** Socket.IO (same origin as the API in production; dev may proxy via Vite).
+- **Transport:** Socket.IO (CORS origin controlled by `CORS_ORIGIN` env var — same as the HTTP API; defaults to `*` when unset).
 - **Gateway:** `MessagesGateway` (`backend/src/messages/gateways/messages.gateway.ts`)
 - **Auth:** No JWT guard on `joinRoom` / `leaveRoom` (see §0).
 
