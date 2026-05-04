@@ -35,10 +35,20 @@ describe('ChatroomStateRepository', () => {
     });
   });
 
-  it('findByIdAndUser queries id and userId', async () => {
-    await repository.findByIdAndUser(1n, 2n);
+  it('findByIdAndOwner queries id and userId for user scope', async () => {
+    await repository.findByIdAndOwner(1n, { kind: 'user', userId: 2n });
     expect(mockPrisma.chatroom.findFirst).toHaveBeenCalledWith({
       where: { id: 1n, userId: 2n },
+    });
+  });
+
+  it('findByIdAndOwner queries id and guestSessionId for guest scope', async () => {
+    await repository.findByIdAndOwner(1n, {
+      kind: 'guest',
+      guestSessionId: 'g-1',
+    });
+    expect(mockPrisma.chatroom.findFirst).toHaveBeenCalledWith({
+      where: { id: 1n, guestSessionId: 'g-1' },
     });
   });
 

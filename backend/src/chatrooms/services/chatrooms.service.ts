@@ -4,6 +4,7 @@ import { UpdateChatroomDto } from '../dto/update-chatroom.dto';
 import { StorageService } from '../../infrastructure/storage/storage.service';
 import { ChatroomsRepository } from '../repositories/chatrooms.repository';
 import { serializeChatroom } from '../../common/serializers/chatroom.serializer';
+import type { OwnerScope } from '../../auth/utils/owner-scope.util';
 
 @Injectable()
 export class ChatroomsService {
@@ -12,15 +13,13 @@ export class ChatroomsService {
     private readonly storageService: StorageService,
   ) {}
 
-  async findAll(userId: string) {
-    const chatrooms = await this.chatroomsRepository.findManyByUser(
-      this.toUserId(userId),
-    );
+  async findAll(scope: OwnerScope) {
+    const chatrooms = await this.chatroomsRepository.findManyByOwner(scope);
     return chatrooms.map(serializeChatroom);
   }
 
   async create(
-    userId: string,
+    scope: OwnerScope,
     dto: CreateChatroomDto,
     baseUrl: string,
     file?: Express.Multer.File,
@@ -33,12 +32,13 @@ export class ChatroomsService {
       );
     }
 
+    const ownerConnect =
+      scope.kind === 'user'
+        ? { user: { connect: { id: scope.userId } } }
+        : { guestSession: { connect: { id: scope.guestSessionId } } };
+
     const created = await this.chatroomsRepository.create({
-      user: {
-        connect: {
-          id: this.toUserId(userId),
-        },
-      },
+      ...ownerConnect,
       name: dto.name,
       basePrompt: dto.basePrompt,
       profileImageUrl,
@@ -46,19 +46,19 @@ export class ChatroomsService {
     return serializeChatroom(created);
   }
 
-  async findOne(userId: string, id: number) {
-    const chatroom = await this.getOwnedChatroomOrThrow(userId, id);
+  async findOne(scope: OwnerScope, id: number) {
+    const chatroom = await this.getOwnedChatroomOrThrow(scope, id);
     return serializeChatroom(chatroom);
   }
 
   async update(
-    userId: string,
+    scope: OwnerScope,
     id: number,
     dto: UpdateChatroomDto,
     baseUrl: string,
     file?: Express.Multer.File,
   ) {
-    const chatroom = await this.getOwnedChatroomOrThrow(userId, id);
+    const chatroom = await this.getOwnedChatroomOrThrow(scope, id);
 
     let profileImageUrl = chatroom.profileImageUrl;
     if (file) {
@@ -67,7 +67,6 @@ export class ChatroomsService {
         baseUrl,
       );
     }
-
     const updated = await this.chatroomsRepository.update(chatroom.id, {
       ...(dto.name && { name: dto.name }),
       ...(dto.basePrompt && { basePrompt: dto.basePrompt }),
@@ -76,15 +75,23 @@ export class ChatroomsService {
     return serializeChatroom(updated);
   }
 
-  async remove(userId: string, id: number) {
-    const chatroom = await this.getOwnedChatroomOrThrow(userId, id);
+  async remove(scope: OwnerScope, id: number) {
+    const chatroom = await this.getOwnedChatroomOrThrow(scope, id);
     await this.chatroomsRepository.delete(chatroom.id);
   }
 
-  async clone(userId: string, id: number) {
-    const source = await this.getOwnedChatroomOrThrow(userId, id);
+  async clone(scope: OwnerScope, id: number) {
+    const source = await this.getOwnedChatroomOrThrow(scope, id);
+    const ownerData =
+      source.userId !== null
+        ? { user: { connect: { id: source.userId } } }
+        : {
+            guestSession: {
+              connect: { id: source.guestSessionId as string },
+            },
+          };
     const cloned = await this.chatroomsRepository.create({
-      user: { connect: { id: source.userId } },
+      ...ownerData,
       name: `${source.name} (Clone)`,
       basePrompt: source.basePrompt,
       profileImageUrl: source.profileImageUrl,
@@ -92,13 +99,14 @@ export class ChatroomsService {
     return serializeChatroom(cloned);
   }
 
-  async branch(userId: string, id: number) {
-    const source = await this.getOwnedChatroomOrThrow(userId, id);
+  async branch(scope: OwnerScope, id: number) {
+    const source = await this.getOwnedChatroomOrThrow(scope, id);
 
     const branched = await this.chatroomsRepository.transaction(async (tx) => {
       const newChatroom = await tx.chatroom.create({
         data: {
           userId: source.userId,
+          guestSessionId: source.guestSessionId,
           name: `${source.name} (Branch)`,
           basePrompt: source.basePrompt,
           profileImageUrl: source.profileImageUrl,
@@ -125,18 +133,14 @@ export class ChatroomsService {
     return serializeChatroom(branched);
   }
 
-  private async getOwnedChatroomOrThrow(userId: string, id: number) {
-    const chatroom = await this.chatroomsRepository.findByIdAndUser(
+  private async getOwnedChatroomOrThrow(scope: OwnerScope, id: number) {
+    const chatroom = await this.chatroomsRepository.findByIdAndOwner(
       BigInt(id),
-      this.toUserId(userId),
+      scope,
     );
     if (!chatroom) {
       throw new NotFoundException('Chatroom not found');
     }
     return chatroom;
-  }
-
-  private toUserId(userId: string): bigint {
-    return BigInt(userId);
   }
 }

@@ -69,17 +69,17 @@ Apply branch protection rules:
 
 ## 5) Rollout sequence
 
-1. Enable `ci.yml` and verify runtime/caching on a feature branch PR.
+1. Enable `../.github/workflows/ci.yml` and verify runtime/caching on a feature branch PR.
 2. Enable branch protection required checks.
 3. Add production environment secrets and protections.
-4. Run first deploy with `cd.yml` and confirm health check succeeds.
+4. Run first deploy with `../.github/workflows/cd.yml` and confirm health check succeeds.
 5. Observe 1-2 weeks, then tune path filters or split tests to reduce CI time.
 
 ## 6) CD reliability model
 
 Production CD is tuned for safe, deterministic deploys on ARM infrastructure.
 
-- **Build scope**: `cd.yml` builds and publishes ARM64 images for production.
+- **Build scope**: `../.github/workflows/cd.yml` builds and publishes ARM64 images for production.
 - **Build concurrency**: `build-and-push` uses cancel-in-progress behavior so older queued builds are dropped when newer commits arrive.
 - **Deploy concurrency**: `deploy-production` is serialized and non-cancelable to avoid interrupted in-flight deploys.
 - **Stale-run guard**: deploy steps run only when the workflow SHA still matches the latest `main` head, so outdated runs do not deploy.

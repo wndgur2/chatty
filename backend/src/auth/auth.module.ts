@@ -7,6 +7,7 @@ import { AuthController } from './controllers/auth.controller';
 import { AuthService } from './services/auth.service';
 import { DEV_JWT_SECRET_FALLBACK } from './constants/auth.constants';
 import { JwtStrategy } from './strategies/jwt.strategy';
+import { UserOnlyGuard } from './guards/user-only.guard';
 
 @Module({
   imports: [
@@ -20,6 +21,7 @@ import { JwtStrategy } from './strategies/jwt.strategy';
     }),
   ],
   controllers: [AuthController],
-  providers: [AuthService, JwtStrategy],
+  providers: [AuthService, JwtStrategy, UserOnlyGuard],
+  exports: [UserOnlyGuard],
 })
 export class AuthModule {}

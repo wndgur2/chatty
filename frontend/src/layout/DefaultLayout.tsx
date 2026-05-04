@@ -1,7 +1,7 @@
-import { useEffect } from 'react'
-import { Outlet, Link, useBlocker, useNavigate } from 'react-router'
+import { useEffect, useState } from 'react'
+import { Link, Outlet, useBlocker, useNavigate } from 'react-router'
+import { useQueryClient } from '@tanstack/react-query'
 import { Menu } from 'lucide-react'
-import { ROUTES } from '../routes/paths'
 import Button from '../shared/ui/Button'
 import SideBar from '../features/chatrooms/components/SideBar'
 import PushNotificationButton from '../features/notifications/components/PushNotificationButton'
@@ -9,23 +9,18 @@ import SendTestNotificationButton from '../features/notifications/components/Sen
 import ForegroundNotificationPopup from '../features/notifications/components/ForegroundNotificationPopup'
 import { useFcmForeground } from '../features/notifications/hooks/useFcmForeground'
 import { useUIStore } from '../shared/stores/uiStore'
-import GithubLink from '../shared/ui/GithubLink'
 import { useStableBackNavigation } from '../shared/hooks/useStableBackNavigation'
-
-const releaseSha = import.meta.env.VITE_RELEASE_SHA?.slice(0, 7)
-const releaseBuiltAtValue = import.meta.env.VITE_RELEASE_BUILT_AT
-
-function formatReleaseBuiltAt(value: string): string {
-  const parsed = new Date(value)
-  if (Number.isNaN(parsed.getTime())) {
-    return value
-  }
-
-  return parsed.toISOString().replace('T', ' ').replace('.000Z', '')
-}
+import LoginModal from '../features/auth/components/LoginModal'
+import { useAuthStore } from '../shared/stores/authStore'
+import { chatroomKeys } from '../features/chatrooms/queryKeys'
+import { ROUTES } from '../routes/paths'
 
 export default function DefaultLayout() {
   const navigate = useNavigate()
+  const queryClient = useQueryClient()
+  const accessToken = useAuthStore((s) => s.accessToken)
+  const currentUser = useAuthStore((s) => s.user)
+  const [loginModalOpen, setLoginModalOpen] = useState(false)
   const { popup, clearPopup, getPopupChatroomPath } = useFcmForeground()
   const isSidebarOpen = useUIStore((state) => state.isSidebarOpen)
   const toggleSidebar = useUIStore((state) => state.toggleSidebar)
@@ -34,9 +29,6 @@ export default function DefaultLayout() {
     isSidebarOpen,
     setSidebarOpen,
   })
-  const formattedBuiltAt = releaseBuiltAtValue ? formatReleaseBuiltAt(releaseBuiltAtValue) : null
-  const releaseLabel = releaseSha && formattedBuiltAt ? `${releaseSha} • ${formattedBuiltAt}` : null
-
   useEffect(() => {
     if (!popup) return
     const timeoutId = window.setTimeout(() => {
@@ -78,7 +70,10 @@ export default function DefaultLayout() {
         onClose={clearPopup}
       />
       {showExitHint ? (
-        <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-[60] pointer-events-none" aria-live="polite">
+        <div
+          className="fixed bottom-4 left-1/2 -translate-x-1/2 z-[60] pointer-events-none"
+          aria-live="polite"
+        >
           <div className="rounded-full bg-gray-900/95 text-white text-sm px-4 py-2 shadow-lg">
             Press back again to exit
           </div>
@@ -94,16 +89,16 @@ export default function DefaultLayout() {
         }`}
         style={{ borderColor: 'var(--border-color)' }}
       >
-        <div className="h-16 flex items-center shrink-0 w-full justify-between px-3 md:px-3 px-4">
+        <div className="h-14 md:h-16 flex items-center shrink-0 w-full justify-between px-3 sm:px-4 md:px-3">
           <Button variant="ghost" size="icon" onClick={toggleSidebar} className="hidden md:flex">
             <Menu className="h-6 w-6" />
           </Button>
           <div className="md:hidden flex flex-1 justify-start">
-            <Button variant="ghost" size="icon" onClick={toggleSidebar}>
+            <Button variant="ghost" size="icon" onClick={toggleSidebar} className="h-9 w-9">
               <Menu className="h-6 w-6" />
             </Button>
           </div>
-          {isSidebarOpen ? (
+          {isSidebarOpen && accessToken ? (
             <div className="flex items-center gap-2">
               <PushNotificationButton />
               <SendTestNotificationButton />
@@ -147,18 +142,28 @@ export default function DefaultLayout() {
                 <h1 className="font-bold tracking-tight text-lg md:text-xl text-gray-900 leading-tight truncate">
                   Chatty
                 </h1>
-                {releaseLabel ? (
-                  <span className="text-[10px] text-gray-500 leading-tight truncate" title={releaseLabel}>
-                    <span className="sm:hidden">{releaseSha}</span>
-                    <span className="hidden sm:inline">{releaseLabel}</span>
-                  </span>
-                ) : null}
               </div>
             </Link>
           </div>
 
           <div className="flex items-center gap-2 shrink-0">
-            <GithubLink size="medium" className="h-9" />
+            {accessToken ? (
+              <span
+                className="text-sm text-gray-600 max-w-[140px] truncate"
+                title={currentUser?.username}
+              >
+                {currentUser?.username}
+              </span>
+            ) : (
+              <Button
+                variant="secondary"
+                size="sm"
+                className="h-9"
+                onClick={() => setLoginModalOpen(true)}
+              >
+                Sign in
+              </Button>
+            )}
           </div>
         </header>
 
@@ -169,6 +174,14 @@ export default function DefaultLayout() {
           <Outlet />
         </main>
       </div>
+
+      <LoginModal
+        isOpen={loginModalOpen}
+        onClose={() => setLoginModalOpen(false)}
+        onSuccess={() => {
+          void queryClient.invalidateQueries({ queryKey: chatroomKeys.list() })
+        }}
+      />
     </div>
   )
 }

@@ -1,6 +1,6 @@
 ---
 name: run-local-dev
-description: Starts and validates Chatty local development with docker compose using .env.test, prioritizing frontend and backend quality gates (test, typecheck, lint, build) before runtime checks. Use when the user asks to run local dev, validate frontend/backend, bring up docker-compose.dev.yml, verify .env.test, or confirm Ollama is running.
+description: Starts and validates Chatty local development with docker compose using .env.test, prioritizing frontend and backend quality gates (test, typecheck, lint, build) before runtime checks. Use when the user asks to run local dev, validate frontend/backend, bring up deploy/docker-compose.dev.yml, verify .env.test, or confirm Ollama is running.
 ---
 
 # Running Local Development Environment
@@ -13,7 +13,7 @@ Use this skill when the task is to start or validate the local Chatty stack with
 
 Always use this command from the repository root:
 
-`docker compose -f docker-compose.dev.yml --env-file .env.test up -d --build`
+`docker compose -f deploy/docker-compose.dev.yml --env-file .env.test up -d --build`
 
 ## Validation workflow (priority-first)
 
@@ -57,13 +57,13 @@ If a dedicated typecheck script does not exist, `npm run build` is treated as th
 
 Run:
 
-`docker compose -f docker-compose.dev.yml --env-file .env.test up -d --build`
+`docker compose -f deploy/docker-compose.dev.yml --env-file .env.test up -d --build`
 
 ### 5) Verify containers
 
 Run:
 
-`docker compose -f docker-compose.dev.yml --env-file .env.test ps`
+`docker compose -f deploy/docker-compose.dev.yml --env-file .env.test ps`
 
 Expected:
 
@@ -72,7 +72,7 @@ Expected:
 
 If not healthy, inspect:
 
-`docker compose -f docker-compose.dev.yml --env-file .env.test logs --tail=200 backend nginx mysql qdrant`
+`docker compose -f deploy/docker-compose.dev.yml --env-file .env.test logs --tail=200 backend nginx mysql qdrant`
 
 ### 6) Validate Ollama
 
@@ -86,7 +86,7 @@ Expected:
 
 Container-path check (matches backend path via `host.docker.internal`):
 
-`docker compose -f docker-compose.dev.yml --env-file .env.test exec backend sh -lc 'curl -sS ${OLLAMA_HOST}/api/tags'`
+`docker compose -f deploy/docker-compose.dev.yml --env-file .env.test exec backend sh -lc 'curl -sS ${OLLAMA_HOST}/api/tags'`
 
 If the configured chat/eval/embed models are missing, pull them on host:
 

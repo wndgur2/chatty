@@ -1,4 +1,5 @@
 import { ForbiddenException, Injectable, Logger } from '@nestjs/common';
+import type { OwnerScope } from '../../auth/utils/owner-scope.util';
 import { FcmPushService } from '../../notifications/services/fcm-push.service';
 import { SendMessageDto } from '../dto/send-message.dto';
 import { MessageHistoryService } from './message-history.service';
@@ -45,17 +46,17 @@ export class MessagesService {
   ) {}
 
   async findHistory(
-    userId: string,
+    scope: OwnerScope,
     chatroomId: number,
     limit = 50,
     offset = 0,
   ) {
-    await this.ensureRoomOwnership(userId, chatroomId);
+    await this.ensureRoomOwnership(scope, chatroomId);
     return this.messageHistoryService.findHistory(chatroomId, limit, offset);
   }
 
-  async sendToAI(userId: string, chatroomId: number, dto: SendMessageDto) {
-    await this.ensureRoomOwnership(userId, chatroomId);
+  async sendToAI(scope: OwnerScope, chatroomId: number, dto: SendMessageDto) {
+    await this.ensureRoomOwnership(scope, chatroomId);
     const message = await this.messageSendService.saveUserMessage(
       chatroomId,
       dto,
@@ -174,7 +175,7 @@ export class MessagesService {
         aiDbMessage.id.toString(),
       );
 
-      if (proactive) {
+      if (proactive && room.userId !== null) {
         await this.fcmPushService
           .notifyProactiveAiMessage(room.userId, {
             chatroomId: chatroomId.toString(),
@@ -195,10 +196,10 @@ export class MessagesService {
     }
   }
 
-  private async ensureRoomOwnership(userId: string, chatroomId: number) {
-    const room = await this.chatroomStateRepository.findByIdAndUser(
+  private async ensureRoomOwnership(scope: OwnerScope, chatroomId: number) {
+    const room = await this.chatroomStateRepository.findByIdAndOwner(
       BigInt(chatroomId),
-      BigInt(userId),
+      scope,
     );
     if (!room) {
       throw new ForbiddenException('You do not own this chatroom.');

@@ -113,4 +113,19 @@ describe('NotificationsService', () => {
       mockFcmPushService.sendTestNotificationToUser,
     ).not.toHaveBeenCalled();
   });
+
+  it('should throw NotFoundException when chatroom has no user owner', async () => {
+    mockNotificationsRepository.findChatroomOwnerInfoById.mockResolvedValue({
+      id: 7n,
+      name: 'Guest room',
+      user: null,
+    });
+
+    await expect(
+      service.sendTestNotificationByChatroomId('7'),
+    ).rejects.toBeInstanceOf(NotFoundException);
+    expect(
+      mockFcmPushService.sendTestNotificationToUser,
+    ).not.toHaveBeenCalled();
+  });
 });

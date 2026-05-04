@@ -8,6 +8,7 @@ describe('sessionExpired handlers', () => {
 
     notifySessionExpired()
     expect(handler).toHaveBeenCalledTimes(1)
+    expect(handler).toHaveBeenCalledWith('member')
   })
 
   it('does not throw when handler is cleared', () => {
