@@ -1,5 +1,7 @@
 # Chatty Docker deployment (Compose)
 
+Repository overview and documentation index: [`../README.md`](../README.md).
+
 This guide runs the **development-oriented** full stack from the repository root using **`docker-compose.dev.yml`**:
 
 - **mysql** — MySQL 8
@@ -7,6 +9,8 @@ This guide runs the **development-oriented** full stack from the repository root
 - **nginx** — serves the built SPA and proxies `/api`, `/socket.io`, and `/assets` to the backend
 
 Compose file path matters: there is no default `compose.yml` in the repo root, so always pass `-f docker-compose.dev.yml`.
+
+API and WebSocket contracts: [`../documents/API_DOCUMENTATION.md`](../documents/API_DOCUMENTATION.md).
 
 ## Prerequisites
 

@@ -3,10 +3,10 @@ import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
 import type { StringValue } from 'ms';
 import { PrismaModule } from '../prisma/prisma.module';
-import { AuthController } from './auth.controller';
-import { AuthService } from './auth.service';
-import { DEV_JWT_SECRET_FALLBACK } from './auth.constants';
-import { JwtStrategy } from './jwt.strategy';
+import { AuthController } from './controllers/auth.controller';
+import { AuthService } from './services/auth.service';
+import { DEV_JWT_SECRET_FALLBACK } from './constants/auth.constants';
+import { JwtStrategy } from './strategies/jwt.strategy';
 
 @Module({
   imports: [

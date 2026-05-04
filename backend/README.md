@@ -1,6 +1,8 @@
 # Chatty backend
 
-NestJS API, Socket.IO streaming gateway, Prisma/MySQL persistence, Ollama integration, Qdrant-backed long-term memory retrieval (RAG), optional FCM, and scheduled evaluation for proactive AI message.
+NestJS API, Socket.IO streaming gateway, Prisma/MySQL persistence, Ollama integration, Qdrant-backed long-term memory retrieval (RAG), optional FCM, and scheduled evaluation for proactive AI messages.
+
+Monorepo context: [`../README.md`](../README.md). REST and Socket.IO contracts: [`../documents/API_DOCUMENTATION.md`](../documents/API_DOCUMENTATION.md). Database model: [`../documents/SCHEMA.md`](../documents/SCHEMA.md).
 
 ## Tech stack
 
@@ -13,9 +15,7 @@ NestJS API, Socket.IO streaming gateway, Prisma/MySQL persistence, Ollama integr
 
 ## Git workflow
 
-Shared branching, commits, and PR conventions:
-
-- `.cursor/skills/git/SKILL.md`
+Shared branching, commits, and PR conventions: [`.cursor/skills/git/SKILL.md`](../.cursor/skills/git/SKILL.md).
 
 ## Prerequisites
 
@@ -30,7 +30,24 @@ Shared branching, commits, and PR conventions:
    npm install
    ```
 
-2. **Environment** — create `backend/.env`:
+2. **Environment** — create `backend/.env` (see variables below). Pull the local embedding model once:
+
+   ```bash
+   ollama pull all-minilm
+   ```
+
+   Memory indexing uses semantic chunking before embedding for older user messages. Existing vectors remain valid and are not automatically backfilled.
+
+   Optional (push notifications; leave empty to disable FCM sends):
+
+   ```env
+   FIREBASE_SERVICE_ACCOUNT_JSON=
+   GOOGLE_APPLICATION_CREDENTIALS=
+   ```
+
+   **Port:** `PORT` defaults to **8080** in `main.ts` if unset.
+
+   Example baseline (adjust credentials and hosts):
 
    ```env
    DATABASE_URL="mysql://root:chatty_root@127.0.0.1:3306/chatty"
@@ -54,23 +71,6 @@ Shared branching, commits, and PR conventions:
    RAG_CHUNK_OVERLAP_CHARS="200"
    ```
 
-   Pull the local embedding model once:
-
-   ```bash
-   ollama pull all-minilm
-   ```
-
-   Memory indexing now uses semantic chunking before embedding for older user messages. Existing vectors remain valid and are not automatically backfilled.
-
-   Optional (push notifications; leave empty to disable FCM sends):
-
-   ```env
-   FIREBASE_SERVICE_ACCOUNT_JSON=
-   GOOGLE_APPLICATION_CREDENTIALS=
-   ```
-
-   **Port:** `PORT` defaults to **8080** in `main.ts` if unset.
-
 3. **Database**
 
    ```bash
@@ -89,17 +89,7 @@ Shared branching, commits, and PR conventions:
 
 ## WebSocket streaming
 
-Streaming lives on the **messages** gateway: `src/messages/messages.gateway.ts`.
-
-- **Client → server**
-  - `joinRoom` — `{ chatroomId: number }`
-  - `leaveRoom` — `{ chatroomId: number }`
-- **Server → client**
-  - `ai_typing_state` — `{ chatroomId, isTyping }`
-  - `ai_message_chunk` — `{ chatroomId, chunk }`
-  - `ai_message_complete` — `{ chatroomId, content, messageId }`
-
-Join/leave handlers do not validate JWT at the gateway today; treat the socket surface accordingly for your threat model.
+Implementation: `src/messages/gateways/messages.gateway.ts`. Event names and payload shapes (including cumulative `ai_message_chunk` semantics and JWT behavior at the gateway) are documented in [`../documents/API_DOCUMENTATION.md`](../documents/API_DOCUMENTATION.md).
 
 ## Features (high level)
 
@@ -123,104 +113,21 @@ npm run prisma:migrate:deploy # Deploy migrations (CI/prod)
 
 ```text
 backend/
-├── prisma/                 # schema, migrations
+├── prisma/                 # schema, migrations (source of truth for DDL)
 ├── src/
+│   ├── main.ts             # bootstrap (CORS, pipes, filters, listen)
+│   ├── app.module.ts       # root module: imports feature modules + global guard
+│   ├── health-check/       # root GET / health / hello
 │   ├── auth/
 │   ├── chatrooms/
 │   ├── messages/           # REST + MessagesGateway (Socket.IO)
 │   ├── notifications/
 │   ├── tasks/              # scheduled evaluation / proactive AI
-│   ├── ollama/
+│   ├── inference/
 │   ├── infrastructure/
 │   ├── common/
 │   └── ...
 └── test/                   # e2e specs (e.g. app, chatrooms, messages)
 ```
 
-## Entity overview
-
-```mermaid
-erDiagram
-  User ||--o{ UserDevice : has
-  User ||--o{ Chatroom : owns
-  Chatroom ||--o{ Message : contains
-
-  User {
-    bigint id PK
-    string username UK
-    datetime createdAt
-    datetime updatedAt
-  }
-
-  UserDevice {
-    bigint id PK
-    bigint userId FK
-    string deviceToken UK
-    datetime registeredAt
-  }
-
-  Chatroom {
-    bigint id PK
-    bigint userId FK
-    string name
-    string basePrompt
-    string profileImageUrl
-    int currentDelaySeconds
-    datetime nextEvaluationTime
-    datetime createdAt
-    datetime updatedAt
-  }
-
-  Message {
-    bigint id PK
-    bigint chatroomId FK
-    enum sender
-    string content
-    datetime createdAt
-  }
-```
-
-## Request flow (simplified)
-
-```mermaid
-sequenceDiagram
-  participant Client as Client
-  participant Auth as AuthController
-  participant Chatrooms as ChatroomsController
-  participant Messages as MessagesController
-  participant Tasks as TasksService
-  participant Eval as Ollama
-  participant Push as FcmPushService
-  participant Gateway as MessagesGateway
-  participant AI as AI streaming path
-  participant DB as Prisma
-
-  Client->>Auth: POST /api/auth/login
-  Auth->>DB: user upsert / load
-  Auth-->>Client: JWT
-
-  Client->>Chatrooms: POST /api/chatrooms (Bearer)
-  Chatrooms->>DB: insert chatroom
-  Chatrooms-->>Client: chatroom
-
-  Client->>Messages: POST /api/messages
-  Messages->>DB: user message
-  Messages->>AI: stream generation
-  AI-->>Gateway: chunks / complete
-  Gateway-->>Client: ai_message_chunk / ai_message_complete
-  Messages->>DB: persist assistant message
-
-  opt Proactive evaluation
-    Tasks->>DB: rooms due for evaluation
-    Tasks->>Eval: should answer?
-    Eval-->>Tasks: decision
-    alt send proactive message
-      Tasks->>Messages: background send
-      Messages->>AI: stream
-      Gateway-->>Client: stream events
-      Messages->>Push: optional FCM
-    else defer
-      Tasks->>DB: backoff / nextEvaluationTime
-    end
-  end
-```
+Scheduling constants for proactive AI (initial delay, cron cadence, streak cap) live in `src/tasks/constants/scheduling.constants.ts` and are summarized in [`../documents/PROJECT_PROPOSAL.md`](../documents/PROJECT_PROPOSAL.md).

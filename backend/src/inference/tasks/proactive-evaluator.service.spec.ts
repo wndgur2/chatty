@@ -1,23 +1,27 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { ProactiveEvaluatorService } from './proactive-evaluator.service';
 import {
-  CLASSIFICATION_PORT,
-  ClassificationPort,
-} from '../ports/classification.port';
+  PROACTIVE_MESSAGE_EVALUATION_PORT,
+  ProactiveMessageEvaluationPort,
+} from '../ports/proactive-message-evaluation.port';
 
 describe('ProactiveEvaluatorService', () => {
   let service: ProactiveEvaluatorService;
-  const classifyMock: jest.MockedFunction<ClassificationPort['classify']> =
-    jest.fn();
-  const mockClassificationPort: ClassificationPort = {
-    classify: classifyMock,
+  const evaluateMock: jest.MockedFunction<
+    ProactiveMessageEvaluationPort['evaluateShouldAnswer']
+  > = jest.fn();
+  const mockProactiveEvaluationPort: ProactiveMessageEvaluationPort = {
+    evaluateShouldAnswer: evaluateMock,
   };
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         ProactiveEvaluatorService,
-        { provide: CLASSIFICATION_PORT, useValue: mockClassificationPort },
+        {
+          provide: PROACTIVE_MESSAGE_EVALUATION_PORT,
+          useValue: mockProactiveEvaluationPort,
+        },
       ],
     }).compile();
 
@@ -28,8 +32,8 @@ describe('ProactiveEvaluatorService', () => {
     jest.clearAllMocks();
   });
 
-  it('returns true for YES classification', async () => {
-    classifyMock.mockResolvedValue('YES');
+  it('returns true for YES decision', async () => {
+    evaluateMock.mockResolvedValue('YES');
 
     const result = await service.shouldAnswer(
       [{ role: 'user', content: 'hello where is AI?' }],
@@ -38,16 +42,14 @@ describe('ProactiveEvaluatorService', () => {
     );
 
     expect(result).toBe(true);
-    expect(classifyMock).toHaveBeenCalledWith(
-      expect.objectContaining({
-        labels: ['YES', 'NO'],
-        fallback: 'NO',
-      }),
-    );
+    expect(evaluateMock).toHaveBeenCalledTimes(1);
+    const [systemPromptArg] = evaluateMock.mock.calls[0];
+    expect(systemPromptArg).toContain('You are an AI.');
+    expect(systemPromptArg).toContain('USER: hello where is AI?');
   });
 
-  it('returns false for NO classification', async () => {
-    classifyMock.mockResolvedValue('NO');
+  it('returns false for NO decision', async () => {
+    evaluateMock.mockResolvedValue('NO');
 
     const result = await service.shouldAnswer(
       [{ role: 'user', content: 'just chatting with a friend.' }],
