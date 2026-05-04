@@ -5,15 +5,14 @@ on:
     branches:
       - main
       - develop
-      - 'release/**'
-      - 'hotfix/**'
+      - "release/**"
+      - "hotfix/**"
   push:
     branches:
-      - main
       - develop
-      - 'feature/**'
-      - 'release/**'
-      - 'hotfix/**'
+      - "feature/**"
+      - "release/**"
+      - "hotfix/**"
 
 concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
