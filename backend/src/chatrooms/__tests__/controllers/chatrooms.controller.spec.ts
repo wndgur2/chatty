@@ -146,9 +146,9 @@ describe('ChatroomsController', () => {
     const result = { id: 1, ...dto };
     mockChatroomsService.update.mockResolvedValue(result);
 
-    expect(await controller.update(authPrincipal, 1, dto, file, mockRequest)).toBe(
-      result,
-    );
+    expect(
+      await controller.update(authPrincipal, 1, dto, file, mockRequest),
+    ).toBe(result);
     expect(mockChatroomsService.update).toHaveBeenCalledWith(
       userScope,
       1,

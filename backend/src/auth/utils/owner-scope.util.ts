@@ -1,5 +1,8 @@
 import type { AuthPrincipal } from '../types/auth-principal.type';
-import { isGuestPrincipal, isUserPrincipal } from '../types/auth-principal.type';
+import {
+  isGuestPrincipal,
+  isUserPrincipal,
+} from '../types/auth-principal.type';
 
 export type OwnerScope =
   | { kind: 'user'; userId: bigint }

@@ -92,15 +92,19 @@ describe('AuthService', () => {
   });
 
   it('should create guest session and return guest token', async () => {
-    mockPrisma.guestSession.create.mockImplementation(({ data }) =>
-      Promise.resolve({ id: data.id }),
+    type GuestSessionCreateArgs = { data: { id: string } };
+    mockPrisma.guestSession.create.mockImplementation(
+      (args: GuestSessionCreateArgs) => Promise.resolve({ id: args.data.id }),
     );
     mockJwtService.signAsync.mockResolvedValue('guest-jwt');
 
     const result = await service.createGuestSession();
 
-    const createdId = mockPrisma.guestSession.create.mock.calls[0][0].data
-      .id as string;
+    const calls = mockPrisma.guestSession.create.mock.calls as unknown as [
+      GuestSessionCreateArgs,
+    ][];
+    const createArg = calls[0][0];
+    const createdId = createArg.data.id;
     expect(createdId).toMatch(
       /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i,
     );
