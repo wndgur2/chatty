@@ -11,6 +11,7 @@ erDiagram
     users ||--o{ user_devices : "has"
     users ||--o{ chatrooms : "owns"
     chatrooms ||--o{ messages : "contains"
+    chatrooms ||--o{ memories : "has"
     messages ||--o| ai_message_metadata : "optional metadata"
 
     users {
@@ -39,6 +40,20 @@ erDiagram
         datetime updated_at
     }
 
+    memories {
+        bigint id PK
+        bigint chatroom_id FK
+        bigint user_id
+        enum kind "'fact', 'preference', 'task', 'project_state', 'relationship', 'other'"
+        varchar key
+        text value
+        double confidence
+        bigint source_message_id
+        datetime superseded_at
+        datetime created_at
+        datetime updated_at
+    }
+
     messages {
         bigint id PK
         bigint chatroom_id FK
@@ -62,7 +77,7 @@ erDiagram
 
 ## 2. MySQL DDL (aligned with Prisma migrations)
 
-The snippets below mirror the checked-in migrations (`20260408000000_init`, `20260408120000_widen_user_device_token`, `20260424000100_add_ai_message_metadata`). Prefer re-running migrations or introspecting Prisma for greenfield setups.
+The snippets below mirror the checked-in migrations (`20260408000000_init`, `20260408120000_widen_user_device_token`, `20260424000100_add_ai_message_metadata`, `20260503000000_add_memories`). Prefer re-running migrations or introspecting Prisma for greenfield setups.
 
 ```sql
 -- -----------------------------------------------------
@@ -109,6 +124,28 @@ CREATE TABLE `chatrooms` (
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- -----------------------------------------------------
+-- Table `memories` (per-chatroom durable facts/preferences, etc.)
+-- -----------------------------------------------------
+CREATE TABLE `memories` (
+    `id` BIGINT NOT NULL AUTO_INCREMENT,
+    `chatroom_id` BIGINT NOT NULL,
+    `user_id` BIGINT NOT NULL,
+    `kind` ENUM('fact', 'preference', 'task', 'project_state', 'relationship', 'other') NOT NULL,
+    `key` VARCHAR(255) NOT NULL,
+    `value` TEXT NOT NULL,
+    `confidence` DOUBLE NOT NULL DEFAULT 0.8,
+    `source_message_id` BIGINT NULL,
+    `superseded_at` DATETIME(3) NULL,
+    `created_at` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+    `updated_at` DATETIME(3) NOT NULL,
+
+    INDEX `memories_chatroom_id_user_id_idx`(`chatroom_id`, `user_id`),
+    INDEX `memories_source_message_id_idx`(`source_message_id`),
+    UNIQUE INDEX `memories_chatroom_id_kind_key_key`(`chatroom_id`, `kind`, `key`),
+    PRIMARY KEY (`id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- -----------------------------------------------------
 -- Table `messages`
 -- -----------------------------------------------------
 CREATE TABLE `messages` (
@@ -141,6 +178,7 @@ CREATE TABLE `ai_message_metadata` (
 -- user_devices.user_id -> users.id ON DELETE CASCADE
 -- chatrooms.user_id -> users.id ON DELETE CASCADE
 -- messages.chatroom_id -> chatrooms.id ON DELETE CASCADE
+-- memories.chatroom_id -> chatrooms.id ON DELETE CASCADE
 -- ai_message_metadata.message_id -> messages.id ON DELETE CASCADE
 ```
 
@@ -151,4 +189,5 @@ CREATE TABLE `ai_message_metadata` (
 - **Primary keys:** Auto-increment `BIGINT`, matching Prisma `BigInt` and JSON string serialization for IDs in API responses.
 - **Proactive scheduling:** `chatrooms.current_delay_seconds` defaults to **60** in the database; application flow resets toward **4 seconds** after user activity and applies doubling on evaluator “no send” (see `documents/PROJECT_PROPOSAL.md` and `backend/src/tasks/`).
 - **AI metadata invariant:** `ai_message_metadata` rows should exist only for `messages.sender = 'ai'`; Prisma models this as an optional 1:1 from `Message` to `AiMessageMetadata`.
+- **Memories:** One row per `(chatroom_id, kind, key)` (unique constraint). `MemoryKind` in Prisma maps to the MySQL `kind` enum. `confidence` defaults to **0.8**. `source_message_id` is optional and indexed but has **no** Prisma relation to `messages` (application-level linkage only). `user_id` is required on the row and indexed with `chatroom_id`, but there is **no** foreign key to `users`—use it for ownership scoping in app logic. `superseded_at` marks soft-invalidated rows without deleting history.
 - **Profile images:** `profile_image_url` stores the public URL after upload handling in the backend (see storage/infrastructure modules).
