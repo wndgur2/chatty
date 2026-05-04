@@ -18,7 +18,13 @@ const mockQdrantClient = {
 describe('MemoryModule', () => {
   it('compiles with the same global config pattern as AppModule (DI smoke)', async () => {
     const moduleRef = await Test.createTestingModule({
-      imports: [ConfigModule.forRoot({ isGlobal: true }), MemoryModule],
+      imports: [
+        ConfigModule.forRoot({
+          isGlobal: true,
+          ignoreEnvFile: true, // smoke test: avoid reading `.env` (CI/sandbox may block)
+        }),
+        MemoryModule,
+      ],
     })
       .overrideProvider(QDRANT_CLIENT)
       .useValue(mockQdrantClient)
