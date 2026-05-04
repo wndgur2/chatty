@@ -35,7 +35,7 @@ Chatty is an AI chat application with real-time streamed replies and scheduled, 
 
 ### Split local dev (hot reload)
 
-Use a local MySQL (or publish `3306` from Compose if the DB runs in Docker while the app runs on the host). Configure env files and run backend and frontend separately — step-by-step commands, ports, and MySQL notes are in [`backend/README.md`](backend/README.md) and [`frontend/README.md`](frontend/README.md).
+Use a local MySQL (or publish the default host port `3336` from Compose if the DB runs in Docker while the app runs on the host; set `MYSQL_PORT=3306` if you want to use `3306` on the host instead). Configure env files and run backend and frontend separately — step-by-step commands, ports, and MySQL notes are in [`backend/README.md`](backend/README.md) and [`frontend/README.md`](frontend/README.md).
 
 ### Docker full stack
 
