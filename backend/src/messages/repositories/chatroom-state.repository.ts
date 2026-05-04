@@ -1,6 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { INITIAL_AI_EVALUATION_DELAY_SECONDS } from '../../tasks/constants/scheduling.constants';
 import { PrismaService } from '../../prisma/prisma.service';
+import type { OwnerScope } from '../../auth/utils/owner-scope.util';
+import { Prisma } from '@prisma/client';
 
 @Injectable()
 export class ChatroomStateRepository {
@@ -12,9 +14,16 @@ export class ChatroomStateRepository {
     });
   }
 
-  findByIdAndUser(chatroomId: bigint, userId: bigint) {
+  private ownerWhere(scope: OwnerScope): Prisma.ChatroomWhereInput {
+    if (scope.kind === 'user') {
+      return { userId: scope.userId };
+    }
+    return { guestSessionId: scope.guestSessionId };
+  }
+
+  findByIdAndOwner(chatroomId: bigint, scope: OwnerScope) {
     return this.prisma.chatroom.findFirst({
-      where: { id: chatroomId, userId },
+      where: { id: chatroomId, ...this.ownerWhere(scope) },
     });
   }
 

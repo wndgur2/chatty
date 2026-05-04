@@ -13,10 +13,25 @@ model User {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  devices   UserDevice[]
-  chatrooms Chatroom[]
+  devices                UserDevice[]
+  chatrooms              Chatroom[]
+  mergedGuestSessions    GuestSession[] @relation("GuestSessionMerge")
 
   @@map("users")
+}
+
+model GuestSession {
+  id               String    @id @db.Char(36)
+  createdAt        DateTime  @default(now()) @map("created_at")
+  mergedAt         DateTime? @map("merged_at")
+  mergedIntoUserId BigInt?   @map("merged_into_user_id")
+
+  mergedIntoUser User?     @relation("GuestSessionMerge", fields: [mergedIntoUserId], references: [id], onDelete: SetNull)
+  chatrooms      Chatroom[]
+  memories       Memory[]
+
+  @@index([mergedIntoUserId])
+  @@map("guest_sessions")
 }
 
 model UserDevice {
@@ -32,7 +47,8 @@ model UserDevice {
 
 model Chatroom {
   id                  BigInt    @id @default(autoincrement())
-  userId              BigInt    @map("user_id")
+  userId              BigInt?   @map("user_id")
+  guestSessionId      String?   @map("guest_session_id") @db.Char(36)
   name                String    @db.VarChar(255)
   basePrompt          String?   @map("base_prompt") @db.Text
   profileImageUrl     String?   @map("profile_image_url") @db.VarChar(255)
@@ -41,9 +57,10 @@ model Chatroom {
   createdAt           DateTime  @default(now()) @map("created_at")
   updatedAt           DateTime  @updatedAt @map("updated_at")
 
-  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  messages Message[]
-  memories Memory[]
+  user         User?         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  guestSession GuestSession? @relation(fields: [guestSessionId], references: [id], onDelete: Restrict)
+  messages     Message[]
+  memories     Memory[]
 
   @@map("chatrooms")
 }
@@ -97,7 +114,8 @@ enum MemoryKind {
 model Memory {
   id              BigInt     @id @default(autoincrement())
   chatroomId      BigInt     @map("chatroom_id")
-  userId          BigInt     @map("user_id")
+  userId          BigInt?    @map("user_id")
+  guestSessionId  String?    @map("guest_session_id") @db.Char(36)
   kind            MemoryKind
   key             String     @db.VarChar(255)
   value           String     @db.Text
@@ -107,7 +125,8 @@ model Memory {
   createdAt       DateTime   @default(now()) @map("created_at")
   updatedAt       DateTime   @updatedAt @map("updated_at")
 
-  chatroom Chatroom @relation(fields: [chatroomId], references: [id], onDelete: Cascade)
+  chatroom     Chatroom     @relation(fields: [chatroomId], references: [id], onDelete: Cascade)
+  guestSession GuestSession? @relation(fields: [guestSessionId], references: [id], onDelete: Restrict)
 
   @@unique([chatroomId, kind, key])
   @@index([chatroomId, userId])

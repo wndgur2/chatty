@@ -1,17 +1,27 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { Prisma } from '@prisma/client';
+import type { OwnerScope } from '../../auth/utils/owner-scope.util';
 
 @Injectable()
 export class ChatroomsRepository {
   constructor(private readonly prisma: PrismaService) {}
 
-  findManyByUser(userId: bigint) {
-    return this.prisma.chatroom.findMany({ where: { userId } });
+  private ownerWhere(scope: OwnerScope): Prisma.ChatroomWhereInput {
+    if (scope.kind === 'user') {
+      return { userId: scope.userId };
+    }
+    return { guestSessionId: scope.guestSessionId };
   }
 
-  findByIdAndUser(id: bigint, userId: bigint) {
-    return this.prisma.chatroom.findFirst({ where: { id, userId } });
+  findManyByOwner(scope: OwnerScope) {
+    return this.prisma.chatroom.findMany({ where: this.ownerWhere(scope) });
+  }
+
+  findByIdAndOwner(id: bigint, scope: OwnerScope) {
+    return this.prisma.chatroom.findFirst({
+      where: { id, ...this.ownerWhere(scope) },
+    });
   }
 
   create(data: Prisma.ChatroomCreateInput) {

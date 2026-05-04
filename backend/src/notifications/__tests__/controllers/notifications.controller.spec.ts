@@ -8,7 +8,7 @@ const mockNotificationsService = {
 
 describe('NotificationsController', () => {
   let controller: NotificationsController;
-  const authUser = { userId: '1' };
+  const authPrincipal = { mode: 'user' as const, userId: '1' };
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -37,9 +37,9 @@ describe('NotificationsController', () => {
     };
     mockNotificationsService.registerDevice.mockResolvedValue(result);
 
-    expect(await controller.registerDevice(authUser, dto)).toBe(result);
+    expect(await controller.registerDevice(authPrincipal, dto)).toBe(result);
     expect(mockNotificationsService.registerDevice).toHaveBeenCalledWith(
-      authUser.userId,
+      authPrincipal.userId,
       dto,
     );
   });

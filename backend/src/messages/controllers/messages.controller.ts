@@ -13,7 +13,8 @@ import { MessagesService } from '../services/messages.service';
 import { SendMessageDto } from '../dto/send-message.dto';
 import { FindHistoryQueryDto } from '../dto/find-history-query.dto';
 import { CurrentUser } from '../../auth/decorators/current-user.decorator';
-import type { AuthUser } from '../../auth/types/auth-user.type';
+import type { AuthPrincipal } from '../../auth/types/auth-principal.type';
+import { ownerScopeFromPrincipal } from '../../auth/utils/owner-scope.util';
 
 @Controller('api/chatrooms/:chatroomId/messages')
 export class MessagesController {
@@ -21,12 +22,12 @@ export class MessagesController {
 
   @Get()
   async findHistory(
-    @CurrentUser() user: AuthUser,
+    @CurrentUser() user: AuthPrincipal,
     @Param('chatroomId', ParseIntPipe) chatroomId: number,
     @Query() query: FindHistoryQueryDto,
   ) {
     return this.messagesService.findHistory(
-      user.userId,
+      ownerScopeFromPrincipal(user),
       chatroomId,
       query.limit,
       query.offset,
@@ -36,12 +37,12 @@ export class MessagesController {
   @Post()
   @HttpCode(HttpStatus.ACCEPTED)
   async sendToAI(
-    @CurrentUser() user: AuthUser,
+    @CurrentUser() user: AuthPrincipal,
     @Param('chatroomId', ParseIntPipe) chatroomId: number,
     @Body() sendMessageDto: SendMessageDto,
   ) {
     return this.messagesService.sendToAI(
-      user.userId,
+      ownerScopeFromPrincipal(user),
       chatroomId,
       sendMessageDto,
     );
