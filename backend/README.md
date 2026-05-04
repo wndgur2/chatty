@@ -20,7 +20,7 @@ Shared branching, commits, and PR conventions: [`.cursor/skills/git/SKILL.md`](.
 ## Prerequisites
 
 - Node.js 18+ (repo targets current LTS-style versions)
-- MySQL 8 (local install or Docker from root `docker-compose.dev.yml`)
+- MySQL 8 (local install or Docker via `deploy/docker-compose.dev.yml` from the repo root)
 
 ## Getting started
 
