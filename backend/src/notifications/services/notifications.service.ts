@@ -41,6 +41,11 @@ export class NotificationsService {
     if (!info) {
       throw new NotFoundException('Chatroom not found');
     }
+    if (!info.user) {
+      throw new NotFoundException(
+        'Chatroom has no user owner; test notifications require a signed-in owner.',
+      );
+    }
 
     return {
       chatroomId: info.id,

@@ -12,6 +12,7 @@ import {
   getFirebaseConfigFromEnv,
   getFcmVapidKeyFromEnv,
 } from '../../../shared/notifications/firebaseConfig'
+import { useAuthStore } from '../../../shared/stores/authStore'
 
 const STORAGE_KEY = 'chatty:fcm-registered'
 let hasAutoRequestedPushPermission = false
@@ -35,9 +36,17 @@ async function registerGrantedPermission(registerDeviceToken: RegisterDeviceToke
 }
 
 export function useAutoPushNotifications() {
+  const accessToken = useAuthStore((s) => s.accessToken)
   const { mutateAsync: registerDeviceToken } = useRegisterNotification()
 
   useEffect(() => {
+    if (!accessToken) {
+      hasAutoRequestedPushPermission = false
+    }
+  }, [accessToken])
+
+  useEffect(() => {
+    if (!accessToken) return
     if (hasAutoRequestedPushPermission) return
     hasAutoRequestedPushPermission = true
 
@@ -62,9 +71,11 @@ export function useAutoPushNotifications() {
     return () => {
       cancelled = true
     }
-  }, [registerDeviceToken])
+  }, [accessToken, registerDeviceToken])
 
   useEffect(() => {
+    if (!accessToken) return
+
     let cancelled = false
 
     const run = async () => {
@@ -93,5 +104,5 @@ export function useAutoPushNotifications() {
     return () => {
       cancelled = true
     }
-  }, [registerDeviceToken])
+  }, [accessToken, registerDeviceToken])
 }

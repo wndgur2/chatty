@@ -34,6 +34,11 @@ vi.mock('../../../shared/notifications/firebase', () => ({
   getFcmDeviceToken: getFcmDeviceTokenSpy,
 }))
 
+vi.mock('../../../shared/stores/authStore', () => ({
+  useAuthStore: <T,>(selector: (state: { accessToken: string | null }) => T) =>
+    selector({ accessToken: 'test-member-token' }),
+}))
+
 function wrapper({ children }: { children: ReactNode }) {
   const client = new QueryClient({
     defaultOptions: { queries: { retry: false }, mutations: { retry: false } },

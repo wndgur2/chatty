@@ -18,7 +18,8 @@ import { CreateChatroomDto } from '../dto/create-chatroom.dto';
 import { UpdateChatroomDto } from '../dto/update-chatroom.dto';
 import { ChatroomsService } from '../services/chatrooms.service';
 import { CurrentUser } from '../../auth/decorators/current-user.decorator';
-import type { AuthUser } from '../../auth/types/auth-user.type';
+import type { AuthPrincipal } from '../../auth/types/auth-principal.type';
+import { ownerScopeFromPrincipal } from '../../auth/utils/owner-scope.util';
 
 @Controller('api/chatrooms')
 export class ChatroomsController {
@@ -28,21 +29,21 @@ export class ChatroomsController {
   ) {}
 
   @Get()
-  async findAll(@CurrentUser() user: AuthUser) {
-    return this.chatroomsService.findAll(user.userId);
+  async findAll(@CurrentUser() user: AuthPrincipal) {
+    return this.chatroomsService.findAll(ownerScopeFromPrincipal(user));
   }
 
   @Post()
   @UseInterceptors(FileInterceptor('profileImage'))
   async create(
-    @CurrentUser() user: AuthUser,
+    @CurrentUser() user: AuthPrincipal,
     @Body() createChatroomDto: CreateChatroomDto,
     @UploadedFile() file: Express.Multer.File,
     @Req() req: Request,
   ) {
     const baseUrl = this.resolveBaseUrl(req);
     return this.chatroomsService.create(
-      user.userId,
+      ownerScopeFromPrincipal(user),
       createChatroomDto,
       baseUrl,
       file,
@@ -51,16 +52,19 @@ export class ChatroomsController {
 
   @Get(':chatroomId')
   async findOne(
-    @CurrentUser() user: AuthUser,
+    @CurrentUser() user: AuthPrincipal,
     @Param('chatroomId', ParseIntPipe) chatroomId: number,
   ) {
-    return this.chatroomsService.findOne(user.userId, chatroomId);
+    return this.chatroomsService.findOne(
+      ownerScopeFromPrincipal(user),
+      chatroomId,
+    );
   }
 
   @Patch(':chatroomId')
   @UseInterceptors(FileInterceptor('profileImage'))
   async update(
-    @CurrentUser() user: AuthUser,
+    @CurrentUser() user: AuthPrincipal,
     @Param('chatroomId', ParseIntPipe) chatroomId: number,
     @Body() updateChatroomDto: UpdateChatroomDto,
     @UploadedFile() file: Express.Multer.File,
@@ -68,7 +72,7 @@ export class ChatroomsController {
   ) {
     const baseUrl = this.resolveBaseUrl(req);
     return this.chatroomsService.update(
-      user.userId,
+      ownerScopeFromPrincipal(user),
       chatroomId,
       updateChatroomDto,
       baseUrl,
@@ -86,25 +90,34 @@ export class ChatroomsController {
 
   @Delete(':chatroomId')
   async remove(
-    @CurrentUser() user: AuthUser,
+    @CurrentUser() user: AuthPrincipal,
     @Param('chatroomId', ParseIntPipe) chatroomId: number,
   ) {
-    return this.chatroomsService.remove(user.userId, chatroomId);
+    return this.chatroomsService.remove(
+      ownerScopeFromPrincipal(user),
+      chatroomId,
+    );
   }
 
   @Post(':chatroomId/clone')
   async clone(
-    @CurrentUser() user: AuthUser,
+    @CurrentUser() user: AuthPrincipal,
     @Param('chatroomId', ParseIntPipe) chatroomId: number,
   ) {
-    return this.chatroomsService.clone(user.userId, chatroomId);
+    return this.chatroomsService.clone(
+      ownerScopeFromPrincipal(user),
+      chatroomId,
+    );
   }
 
   @Post(':chatroomId/branch')
   async branch(
-    @CurrentUser() user: AuthUser,
+    @CurrentUser() user: AuthPrincipal,
     @Param('chatroomId', ParseIntPipe) chatroomId: number,
   ) {
-    return this.chatroomsService.branch(user.userId, chatroomId);
+    return this.chatroomsService.branch(
+      ownerScopeFromPrincipal(user),
+      chatroomId,
+    );
   }
 }

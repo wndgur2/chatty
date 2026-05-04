@@ -51,7 +51,7 @@ export class MemoryExtractorService {
         content: true,
         createdAt: true,
         chatroom: {
-          select: { userId: true },
+          select: { userId: true, guestSessionId: true },
         },
       },
     });
@@ -109,6 +109,7 @@ export class MemoryExtractorService {
       await this.upsertMemory(
         BigInt(chatroomId),
         olderMessage.chatroom.userId,
+        olderMessage.chatroom.guestSessionId,
         olderMessage.id,
         memory,
       );
@@ -137,7 +138,8 @@ export class MemoryExtractorService {
 
   private async upsertMemory(
     chatroomId: bigint,
-    userId: bigint,
+    userId: bigint | null,
+    guestSessionId: string | null,
     sourceMessageId: bigint,
     memory: ExtractedMemory,
   ): Promise<void> {
@@ -154,10 +156,13 @@ export class MemoryExtractorService {
         confidence: memory.confidence,
         sourceMessageId,
         supersededAt: null,
+        userId,
+        guestSessionId,
       },
       create: {
         chatroomId,
         userId,
+        guestSessionId,
         kind: memory.kind,
         key: memory.key,
         value: memory.value,

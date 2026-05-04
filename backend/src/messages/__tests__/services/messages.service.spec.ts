@@ -34,7 +34,7 @@ const mockMessagesRepository = {
 const mockChatroomStateRepository = {
   clearNextEvaluationTime: jest.fn(),
   resetDelay: jest.fn(),
-  findByIdAndUser: jest.fn(),
+  findByIdAndOwner: jest.fn(),
   findById: jest.fn(),
 };
 const mockFcmPushService = {
@@ -53,6 +53,8 @@ const mockMemoryRetrieverService = {
 const mockConfigService = {
   get: jest.fn((key: string, fallback: number) => fallback),
 };
+
+const userScope = { kind: 'user' as const, userId: 1n };
 
 describe('MessagesService', () => {
   let service: MessagesService;
@@ -112,9 +114,9 @@ describe('MessagesService', () => {
   it('should find message history', async () => {
     const mockResult = [{ id: 1n, content: 'Hello' }];
     mockMessageHistoryService.findHistory.mockResolvedValue(mockResult);
-    mockChatroomStateRepository.findByIdAndUser.mockResolvedValue({ id: 1n });
+    mockChatroomStateRepository.findByIdAndOwner.mockResolvedValue({ id: 1n });
 
-    const result = await service.findHistory('1', 1, 10, 0);
+    const result = await service.findHistory(userScope, 1, 10, 0);
     expect(result).toEqual(mockResult);
     expect(mockMessageHistoryService.findHistory).toHaveBeenCalledWith(
       1,
@@ -124,9 +126,9 @@ describe('MessagesService', () => {
   });
 
   it('should reject findHistory when user does not own chatroom', async () => {
-    mockChatroomStateRepository.findByIdAndUser.mockResolvedValue(null);
+    mockChatroomStateRepository.findByIdAndOwner.mockResolvedValue(null);
 
-    await expect(service.findHistory('1', 1)).rejects.toBeInstanceOf(
+    await expect(service.findHistory(userScope, 1)).rejects.toBeInstanceOf(
       ForbiddenException,
     );
     expect(mockMessageHistoryService.findHistory).not.toHaveBeenCalled();
@@ -143,7 +145,7 @@ describe('MessagesService', () => {
     mockMessageSendService.saveUserMessage.mockResolvedValue(
       mockCreatedMessage,
     );
-    mockChatroomStateRepository.findByIdAndUser.mockResolvedValue({ id: 1n });
+    mockChatroomStateRepository.findByIdAndOwner.mockResolvedValue({ id: 1n });
     mockChatroomStateRepository.clearNextEvaluationTime.mockResolvedValue(
       undefined,
     );
@@ -155,7 +157,7 @@ describe('MessagesService', () => {
       .spyOn(service as any, 'processBackgroundMessage')
       .mockResolvedValue(undefined);
 
-    const result = await service.sendToAI('1', 1, dto);
+    const result = await service.sendToAI(userScope, 1, dto);
 
     expect(result).toEqual({
       messageId: '103',
@@ -177,7 +179,7 @@ describe('MessagesService', () => {
 
   it('should log when background processing rejects after sendToAI', async () => {
     const errSpy = jest.spyOn(Logger.prototype, 'error').mockImplementation();
-    mockChatroomStateRepository.findByIdAndUser.mockResolvedValue({ id: 1n });
+    mockChatroomStateRepository.findByIdAndOwner.mockResolvedValue({ id: 1n });
     mockMessageSendService.saveUserMessage.mockResolvedValue({ id: 1n });
     mockChatroomStateRepository.clearNextEvaluationTime.mockResolvedValue(
       undefined,
@@ -186,7 +188,7 @@ describe('MessagesService', () => {
       .spyOn(service, 'processBackgroundMessage')
       .mockRejectedValue(new Error('bg fail'));
 
-    await service.sendToAI('1', 1, { content: 'x' });
+    await service.sendToAI(userScope, 1, { content: 'x' });
     await new Promise((r) => setImmediate(r));
 
     expect(errSpy).toHaveBeenCalledWith(
@@ -235,6 +237,32 @@ describe('MessagesService', () => {
       expect.any(Error),
     );
     warnSpy.mockRestore();
+  });
+
+  it('should skip proactive FCM when chatroom has no registered user (guest)', async () => {
+    mockChatroomStateRepository.findById.mockResolvedValue({
+      id: 1n,
+      userId: null,
+      guestSessionId: 'guest-session-1',
+      name: 'Guest Room',
+      basePrompt: '',
+    });
+    mockMessagesRepository.findRecent.mockResolvedValue([
+      {
+        id: 1n,
+        chatroomId: 1n,
+        sender: 'user',
+        content: 'hi',
+        createdAt: new Date(),
+      },
+    ]);
+    mockChatGenerationService.generate.mockResolvedValue('AI reply text');
+    mockMessagesRepository.createMessage.mockResolvedValue({ id: 42n });
+    mockChatroomStateRepository.resetDelay.mockResolvedValue(undefined);
+
+    await service.processBackgroundMessage(1, true);
+
+    expect(mockFcmPushService.notifyProactiveAiMessage).not.toHaveBeenCalled();
   });
 
   it('should stop typing and reset delay when AI generation throws', async () => {

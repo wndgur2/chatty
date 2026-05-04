@@ -74,7 +74,7 @@ describe('MemoryService', () => {
       sender: 'ai',
       content: 'ai note',
       createdAt: new Date(),
-      chatroom: { userId: 1n },
+      chatroom: { userId: 1n, guestSessionId: null },
     });
 
     await service.indexOlderMessage(1);
@@ -89,7 +89,7 @@ describe('MemoryService', () => {
       sender: 'user',
       content: 'older user message',
       createdAt: new Date('2026-04-12T00:00:00.000Z'),
-      chatroom: { userId: 7n },
+      chatroom: { userId: 7n, guestSessionId: null },
     });
     mockVectorStorePort.hasPointsForMessage.mockResolvedValue(true);
 
@@ -105,7 +105,7 @@ describe('MemoryService', () => {
       sender: 'user',
       content: 'very long message',
       createdAt: new Date('2026-04-12T00:00:00.000Z'),
-      chatroom: { userId: 7n },
+      chatroom: { userId: 7n, guestSessionId: null },
     });
     mockVectorStorePort.hasPointsForMessage.mockResolvedValue(false);
     mockSemanticChunkerService.chunk.mockResolvedValue([

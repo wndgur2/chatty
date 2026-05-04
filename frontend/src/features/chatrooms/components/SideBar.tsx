@@ -8,13 +8,15 @@ import ConfirmModal from '../../../shared/ui/ConfirmModal'
 import { useChatrooms } from '../hooks/useChatrooms'
 import { useCreateChatroomFlow } from '../hooks/useCreateChatroomFlow'
 import { sortByChatroomActivityDesc } from '../../../shared/lib/chatroom'
-import { clearAuth } from '../../../shared/lib/auth'
+import { clearAuth, clearGuestSession } from '../../../shared/lib/auth'
+import { useAuthStore } from '../../../shared/stores/authStore'
 import { ROUTES } from '../../../routes/paths'
 import { useUIStore } from '../../../shared/stores/uiStore'
 
 export default function SideBar() {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
+  const accessToken = useAuthStore((s) => s.accessToken)
   const { data: chatrooms = [], isLoading, isError } = useChatrooms()
   const sortedChatrooms = [...chatrooms].sort(sortByChatroomActivityDesc)
   const { isCreateModalOpen, openCreateModal, closeCreateModal, handleCreateChatroom, isCreating } =
@@ -23,11 +25,14 @@ export default function SideBar() {
   const [isLogoutConfirmOpen, setIsLogoutConfirmOpen] = useState(false)
 
   const handleLogout = () => {
-    clearAuth()
+    if (accessToken) {
+      clearAuth()
+    }
+    clearGuestSession()
     setSidebarOpen(false)
     queryClient.clear()
     setIsLogoutConfirmOpen(false)
-    navigate(ROUTES.LOGIN, { replace: true })
+    navigate(ROUTES.HOME, { replace: true })
   }
 
   return (
@@ -43,7 +48,9 @@ export default function SideBar() {
         {isLoading && <span className="text-sm text-gray-500 font-normal">Loading...</span>}
       </div>
       <div className="flex-1 overflow-y-auto flex flex-col p-4 shrink-0" style={{ minHeight: 0 }}>
-        {isError && <div className="text-center text-red-500 text-sm mb-4">Failed to load chatrooms.</div>}
+        {isError && (
+          <div className="text-center text-red-500 text-sm mb-4">Failed to load chatrooms.</div>
+        )}
 
         {sortedChatrooms.length > 0 ? (
           <>
@@ -63,7 +70,7 @@ export default function SideBar() {
               onClick={openCreateModal}
               disabled={isCreating}
             >
-              Create Chatroom
+              Create Buddy
             </Button>
           </>
         ) : (
@@ -91,29 +98,29 @@ export default function SideBar() {
         isLoading={isCreating}
       />
 
-      <div
-        className="p-4 border-t"
-        style={{ borderColor: 'var(--border-color)' }}
-      >
-        <Button
-          variant="danger"
-          className="w-full"
-          onClick={() => setIsLogoutConfirmOpen(true)}
-        >
-          Logout
-        </Button>
-      </div>
+      {accessToken && (
+        <>
+          <div className="p-4 border-t" style={{ borderColor: 'var(--border-color)' }}>
+            <Button
+              variant="danger"
+              className="w-full"
+              onClick={() => setIsLogoutConfirmOpen(true)}
+            >
+              Logout
+            </Button>
+          </div>
 
-      <ConfirmModal
-        isOpen={isLogoutConfirmOpen}
-        onClose={() => setIsLogoutConfirmOpen(false)}
-        onConfirm={handleLogout}
-        title="Logout"
-        message="Are you sure you want to logout?"
-        confirmText="Logout"
-        variant="danger"
-      />
+          <ConfirmModal
+            isOpen={isLogoutConfirmOpen}
+            onClose={() => setIsLogoutConfirmOpen(false)}
+            onConfirm={handleLogout}
+            title="Logout"
+            message="Are you sure you want to logout?"
+            confirmText="Logout"
+            variant="danger"
+          />
+        </>
+      )}
     </aside>
   )
 }
-
