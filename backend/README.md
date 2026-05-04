@@ -89,7 +89,7 @@ Shared branching, commits, and PR conventions: [`.cursor/skills/git/SKILL.md`](.
 
 ## WebSocket streaming
 
-Implementation: `src/messages/messages.gateway.ts`. Event names and payload shapes (including cumulative `ai_message_chunk` semantics and JWT behavior at the gateway) are documented in [`../documents/API_DOCUMENTATION.md`](../documents/API_DOCUMENTATION.md).
+Implementation: `src/messages/gateways/messages.gateway.ts`. Event names and payload shapes (including cumulative `ai_message_chunk` semantics and JWT behavior at the gateway) are documented in [`../documents/API_DOCUMENTATION.md`](../documents/API_DOCUMENTATION.md).
 
 ## Features (high level)
 
@@ -115,6 +115,9 @@ npm run prisma:migrate:deploy # Deploy migrations (CI/prod)
 backend/
 ├── prisma/                 # schema, migrations (source of truth for DDL)
 ├── src/
+│   ├── main.ts             # bootstrap (CORS, pipes, filters, listen)
+│   ├── app.module.ts       # root module: imports feature modules + global guard
+│   ├── health-check/       # root GET / health / hello
 │   ├── auth/
 │   ├── chatrooms/
 │   ├── messages/           # REST + MessagesGateway (Socket.IO)
@@ -127,4 +130,4 @@ backend/
 └── test/                   # e2e specs (e.g. app, chatrooms, messages)
 ```
 
-Scheduling constants for proactive AI (initial delay, cron cadence, streak cap) live in `src/tasks/scheduling.constants.ts` and are summarized in [`../documents/PROJECT_PROPOSAL.md`](../documents/PROJECT_PROPOSAL.md).
+Scheduling constants for proactive AI (initial delay, cron cadence, streak cap) live in `src/tasks/constants/scheduling.constants.ts` and are summarized in [`../documents/PROJECT_PROPOSAL.md`](../documents/PROJECT_PROPOSAL.md).

@@ -9,6 +9,12 @@ export const MEMORY_SNIPPETS_PROMPT = [
   'If they conflict with the recent conversation, trust the recent conversation. Snippets may be truncated, so do not invent details beyond what is shown.',
 ].join('\n');
 
+export const CANONICAL_MEMORY_PROMPT = [
+  '## Known user/project state',
+  'These are durable, structured facts you have already learned about this user or project.',
+  'Treat them as authoritative ground truth. Update your understanding from them rather than re-asking. If the recent conversation contradicts them, follow the recent conversation.',
+].join('\n');
+
 export function buildProactiveLastInstruction(
   lastMessageContent: string,
 ): string {
