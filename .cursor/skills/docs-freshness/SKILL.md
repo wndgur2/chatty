@@ -15,14 +15,14 @@ Update the doc on the right **only** when the file on the left changed in a way 
 
 | Changed file (left) | Canonical doc (right) | What counts as structural |
 |---|---|---|
-| `backend/prisma/schema.prisma` | `documents/SCHEMA.md` | Tables, columns, types, nullability, defaults, enums, indexes, unique constraints, FK actions |
-| `backend/prisma/migrations/**` | `documents/SCHEMA.md` | New migration adding/altering any of the above |
-| `backend/src/**/*.controller.ts` | `documents/API_DOCUMENTATION.md` | Route path, HTTP method, status code, guard usage, response shape |
-| `backend/src/**/*.gateway.ts` | `documents/API_DOCUMENTATION.md` | Socket event name, payload shape, ack shape |
-| `backend/src/**/dto/*.ts` | `documents/API_DOCUMENTATION.md` | Required/optional fields, validation that affects 400 behavior |
-| `backend/src/auth/{guards,strategies,decorators}/**` | `documents/API_DOCUMENTATION.md` | Public/member-only/guest-allowed semantics, JWT claim shape |
-| `backend/src/common/serializers/*.ts` | `documents/API_DOCUMENTATION.md` | Fields added/removed/renamed in JSON output |
-| `.github/workflows/**`, `deploy/**` | `documents/ci-cd.md` | New job, renamed check, changed trigger or required-check name |
+| `backend/prisma/schema.prisma` | `contexts/SCHEMA.md` | Tables, columns, types, nullability, defaults, enums, indexes, unique constraints, FK actions |
+| `backend/prisma/migrations/**` | `contexts/SCHEMA.md` | New migration adding/altering any of the above |
+| `backend/src/**/*.controller.ts` | `contexts/API_DOCUMENTATION.md` | Route path, HTTP method, status code, guard usage, response shape |
+| `backend/src/**/*.gateway.ts` | `contexts/API_DOCUMENTATION.md` | Socket event name, payload shape, ack shape |
+| `backend/src/**/dto/*.ts` | `contexts/API_DOCUMENTATION.md` | Required/optional fields, validation that affects 400 behavior |
+| `backend/src/auth/{guards,strategies,decorators}/**` | `contexts/API_DOCUMENTATION.md` | Public/member-only/guest-allowed semantics, JWT claim shape |
+| `backend/src/common/serializers/*.ts` | `contexts/API_DOCUMENTATION.md` | Fields added/removed/renamed in JSON output |
+| `.github/workflows/**`, `deploy/**` | `contexts/ci-cd.md` | New job, renamed check, changed trigger or required-check name |
 
 If a change does not match any row above, the skill ends with **no-op**.
 
@@ -54,7 +54,7 @@ Docs Freshness Checklist
 2. **Mirror the code, not the intent.** Quote the new DTO/route/column verbatim; do not editorialize.
 3. **Preserve existing structure.** Keep section numbering, heading levels, and JSON example formatting consistent with what's already in the file.
 4. **Reflect invariants enforced in app code.** When a constraint lives in TypeScript rather than SQL (for example, the chatroom owner XOR), state that explicitly in the doc note.
-5. **Migrations list.** When adding a Prisma migration, append its directory name to the migration list sentence in `documents/SCHEMA.md` and add/adjust the DDL block.
+5. **Migrations list.** When adding a Prisma migration, append its directory name to the migration list sentence in `contexts/SCHEMA.md` and add/adjust the DDL block.
 
 ## Decision examples
 
@@ -63,7 +63,7 @@ Docs Freshness Checklist
 - Renamed a private helper inside `chatrooms.service.ts` and kept the controller signature identical → **no-op**.
 - Tightened a regex in a DTO so a previously accepted value now returns 400 → **update** `API_DOCUMENTATION.md` (note the new validation).
 - Added a new Jest spec under `backend/src/messages/__tests__/` → **no-op**.
-- Added a new required check to `.github/workflows/ci.yml` → **update** `documents/ci-cd.md`.
+- Added a new required check to `.github/workflows/ci.yml` → **update** `contexts/ci-cd.md`.
 
 ## Output
 

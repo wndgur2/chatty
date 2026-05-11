@@ -10,7 +10,7 @@ This guide runs the **development-oriented** full stack from the repository root
 
 Compose file path matters: there is no default `compose.yml` in the repo root, so always pass `-f deploy/docker-compose.dev.yml`.
 
-API and WebSocket contracts: [`../documents/API_DOCUMENTATION.md`](../documents/API_DOCUMENTATION.md).
+API and WebSocket contracts: [`../contexts/API_DOCUMENTATION.md`](../contexts/API_DOCUMENTATION.md).
 
 ## Prerequisites
 
@@ -89,13 +89,7 @@ Symptoms: API or WebSocket failures, wrong host in image URLs. Align **`PUBLIC_O
 
 - GitHub **CD** builds and pushes images (see `.github/workflows/cd.yml`); images use commit-SHA tags in GHCR.
 - Server deploy uses **`deploy/docker-compose.prod.yml`** and **`deploy/scripts/deploy-prod.sh`** (copied or referenced per your ops runbook).
-- Required secrets, host layout, and health checks are documented in **`documents/ci-cd.md`**.
-
-### CD reliability model
-
-- Production CD currently targets **ARM64** images to match the production host architecture and avoid emulation instability.
-- Build jobs are cancelable so newer commits replace older queued builds.
-- Deploy jobs are serialized and non-cancelable, and include a stale-run guard so only the latest `main` commit proceeds to remote deployment.
+- Required secrets, host layout, health checks, and the CD reliability model (ARM64 builds, build cancellation, serialized deploys with stale-run guard) are documented in **`contexts/ci-cd.md`**.
 
 ## Operations
 

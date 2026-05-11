@@ -2,7 +2,7 @@
 
 Vite + React 19 SPA for multi-room chat, Socket.IO streaming, optional web push (FCM), and chatroom management (create, edit, clone, branch).
 
-**Also read:** repository overview [`../README.md`](../README.md); API and WebSocket contract [`../documents/API_DOCUMENTATION.md`](../documents/API_DOCUMENTATION.md).
+**Also read:** repository overview [`../README.md`](../README.md); API and WebSocket contract [`../contexts/API_DOCUMENTATION.md`](../contexts/API_DOCUMENTATION.md).
 
 ## Purpose
 

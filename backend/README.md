@@ -2,7 +2,7 @@
 
 NestJS API, Socket.IO streaming gateway, Prisma/MySQL persistence, Ollama integration, Qdrant-backed long-term memory retrieval (RAG), optional FCM, and scheduled evaluation for proactive AI messages.
 
-Monorepo context: [`../README.md`](../README.md). REST and Socket.IO contracts: [`../documents/API_DOCUMENTATION.md`](../documents/API_DOCUMENTATION.md). Database model: [`../documents/SCHEMA.md`](../documents/SCHEMA.md).
+Monorepo context: [`../README.md`](../README.md). REST and Socket.IO contracts: [`../contexts/API_DOCUMENTATION.md`](../contexts/API_DOCUMENTATION.md). Database model: [`../contexts/SCHEMA.md`](../contexts/SCHEMA.md).
 
 ## Tech stack
 
@@ -89,7 +89,7 @@ Shared branching, commits, and PR conventions: [`.cursor/skills/git/SKILL.md`](.
 
 ## WebSocket streaming
 
-Implementation: `src/messages/gateways/messages.gateway.ts`. Event names and payload shapes (including cumulative `ai_message_chunk` semantics and JWT behavior at the gateway) are documented in [`../documents/API_DOCUMENTATION.md`](../documents/API_DOCUMENTATION.md).
+Implementation: `src/messages/gateways/messages.gateway.ts`. Event names and payload shapes (including cumulative `ai_message_chunk` semantics and JWT behavior at the gateway) are documented in [`../contexts/API_DOCUMENTATION.md`](../contexts/API_DOCUMENTATION.md).
 
 ## Features (high level)
 
@@ -130,4 +130,4 @@ backend/
 └── test/                   # e2e specs (e.g. app, chatrooms, messages)
 ```
 
-Scheduling constants for proactive AI (initial delay, cron cadence, streak cap) live in `src/tasks/constants/scheduling.constants.ts` and are summarized in [`../documents/PROJECT_PROPOSAL.md`](../documents/PROJECT_PROPOSAL.md).
+Scheduling constants for proactive AI (initial delay, cron cadence, streak cap) live in `src/tasks/constants/scheduling.constants.ts` and are summarized in [`../contexts/PROJECT_PROPOSAL.md`](../contexts/PROJECT_PROPOSAL.md).
