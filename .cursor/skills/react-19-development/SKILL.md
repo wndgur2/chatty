@@ -9,6 +9,12 @@ description: Applies professional React 19 coding standards for components, hook
 
 Apply this skill when working on React components, hooks, context, forms, async data flows, and React code reviews.
 
+## Source of truth
+
+- Use `/documents/PROJECT_STATUS.md` for the canonical frontend module index (API hooks, features, streaming, FCM), common pitfalls, and stack constraints.
+- Use `/documents/API_DOCUMENTATION.md` for REST + Socket.IO contracts the UI must honor.
+- Use `/documents/PROJECT_PROPOSAL.md` for product intent and scope.
+
 ## Operating mode
 
 Use balanced guidance:
@@ -57,6 +63,7 @@ Use this checklist while implementing:
 ```markdown
 React 19 Task Checklist
 
+- [ ] Before creating new symbols, search the canonical index paths for existing implementations (hooks, services, repositories, utilities). Prefer reuse or extension over duplication.
 - [ ] Clarify component responsibility and public API
 - [ ] Model minimal state and derived state
 - [ ] Implement UI with semantic and accessible markup
@@ -65,6 +72,7 @@ React 19 Task Checklist
 - [ ] Verify render behavior and avoid unnecessary re-renders
 - [ ] Add or update tests for user-facing behavior
 - [ ] Run lint/tests and resolve issues
+- [ ] Before declaring done, run lint, typecheck (where defined), test, and build for each changed app.
 ```
 
 ## Review rubric

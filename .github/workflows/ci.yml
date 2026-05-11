@@ -77,6 +77,11 @@ jobs:
         if: needs.changes.outputs.backend == 'true'
         run: npm run build
 
+      - name: Duplication report (advisory)
+        if: needs.changes.outputs.backend == 'true'
+        continue-on-error: true
+        run: npx --yes jscpd@4 --min-lines 25 --min-tokens 80 --reporters console --pattern "**/*.ts" src
+
       - name: Skip backend checks when unchanged
         if: needs.changes.outputs.backend != 'true'
         run: echo "No backend changes detected."
@@ -119,6 +124,11 @@ jobs:
       - name: Build
         if: needs.changes.outputs.frontend == 'true'
         run: npm run build
+
+      - name: Duplication report (advisory)
+        if: needs.changes.outputs.frontend == 'true'
+        continue-on-error: true
+        run: npx --yes jscpd@4 --min-lines 25 --min-tokens 80 --reporters console --pattern "**/*.{ts,tsx}" src
 
       - name: Skip frontend checks when unchanged
         if: needs.changes.outputs.frontend != 'true'

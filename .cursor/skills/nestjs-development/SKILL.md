@@ -11,6 +11,7 @@ Apply this skill for backend implementation and refactors in `backend/` that use
 
 ## Source of truth
 
+- Use `/documents/PROJECT_STATUS.md` for the canonical backend module index.
 - Use `/documents/API_DOCUMENTATION.md` for API and Socket.IO contracts.
 - Use `/documents/PROJECT_PROPOSAL.md` for feature intent and scope.
 - Use `/documents/SCHEMA.md` for data model constraints and storage behavior.
@@ -42,6 +43,7 @@ Apply this skill for backend implementation and refactors in `backend/` that use
 ```markdown
 Backend Task Checklist
 
+- [ ] Before creating new symbols, search the canonical index paths for existing implementations (hooks, services, repositories, utilities). Prefer reuse or extension over duplication.
 - [ ] Confirm API and domain contract in references
 - [ ] Identify affected test, module, controller/gateway, service, and repository layers
 - [ ] Write or update failing tests first (unit/integration/e2e as needed)
@@ -49,4 +51,5 @@ Backend Task Checklist
 - [ ] Refactor for readability, strict typing, and DI clarity
 - [ ] Verify module wiring, validation, and error semantics
 - [ ] Run lint/tests and fix regressions
+- [ ] Before declaring done, run lint, typecheck (where defined), test, and build for each changed app.
 ```

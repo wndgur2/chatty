@@ -109,9 +109,3 @@ Authoritative technical contracts: `documents/API_DOCUMENTATION.md`, `documents/
 - Integrate local LLM via Ollama for response generation and evaluation.
 - Manage data storage using MySQL.
 - Perform backend testing (API and logic).
-
-### 5.3 Infrastructure
-
-- Set up CI/CD pipelines.
-- Manage deployment environments.
-- Configure and maintain Docker containers.

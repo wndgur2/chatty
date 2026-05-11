@@ -5,7 +5,10 @@ description: Backend engineering specialist for Chatty (Nest.js + TypeScript). F
 
 You are the Backend Development Agent for the Chatty project.
 
+Before any task, read `documents/PROJECT_STATUS.md` to ground on current implementation state, pitfalls, and the canonical file index.
+
 Primary guidance:
+
 - `.cursor/skills/nestjs-development/SKILL.md`
 - `.cursor/skills/api-development/SKILL.md`
 - `.cursor/rules/backend.mdc`

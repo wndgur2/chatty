@@ -1,5 +1,7 @@
 # Chatty Project Context for Programming AI Agents (Current State)
 
+**Maintained copy.** Use this file for onboarding.
+
 This document describes the implemented current state of Chatty so coding agents can reason correctly about behavior, constraints, and delivery expectations.
 
 ## 1) Project Snapshot
@@ -16,7 +18,7 @@ Monorepo structure:
 - `deploy/`: Docker Compose definitions, nginx runtime image wiring, deploy scripts.
 - `documents/`: API/schema/proposal/CI-CD reference docs.
 
-Primary source: [../../README.md](../../README.md)
+Primary source: [../README.md](../README.md)
 
 ## 2) Business Logic (Implemented Behavior)
 
@@ -29,10 +31,10 @@ Primary source: [../../README.md](../../README.md)
 
 Primary references:
 
-- [../../documents/API_DOCUMENTATION.md](../../documents/API_DOCUMENTATION.md)
-- [../../backend/src/auth/services/auth.service.ts](../../backend/src/auth/services/auth.service.ts)
-- [../../backend/src/auth/controllers/auth.controller.ts](../../backend/src/auth/controllers/auth.controller.ts)
-- [../../backend/src/app.module.ts](../../backend/src/app.module.ts)
+- [API_DOCUMENTATION.md](API_DOCUMENTATION.md)
+- [../backend/src/auth/services/auth.service.ts](../backend/src/auth/services/auth.service.ts)
+- [../backend/src/auth/controllers/auth.controller.ts](../backend/src/auth/controllers/auth.controller.ts)
+- [../backend/src/app.module.ts](../backend/src/app.module.ts)
 
 ### 2.2 Chatroom ownership and lifecycle
 
@@ -45,9 +47,9 @@ Primary references:
 
 Primary references:
 
-- [../../documents/API_DOCUMENTATION.md](../../documents/API_DOCUMENTATION.md)
-- [../../backend/src/chatrooms/services/chatrooms.service.ts](../../backend/src/chatrooms/services/chatrooms.service.ts)
-- [../../backend/src/chatrooms/repositories/chatrooms.repository.ts](../../backend/src/chatrooms/repositories/chatrooms.repository.ts)
+- [API_DOCUMENTATION.md](API_DOCUMENTATION.md)
+- [../backend/src/chatrooms/services/chatrooms.service.ts](../backend/src/chatrooms/services/chatrooms.service.ts)
+- [../backend/src/chatrooms/repositories/chatrooms.repository.ts](../backend/src/chatrooms/repositories/chatrooms.repository.ts)
 
 ### 2.3 Messaging lifecycle and real-time UX contract
 
@@ -58,10 +60,10 @@ Primary references:
 
 Primary references:
 
-- [../../documents/API_DOCUMENTATION.md](../../documents/API_DOCUMENTATION.md)
-- [../../backend/src/messages/controllers/messages.controller.ts](../../backend/src/messages/controllers/messages.controller.ts)
-- [../../backend/src/messages/services/message-send.service.ts](../../backend/src/messages/services/message-send.service.ts)
-- [../../backend/src/messages/gateways/messages.gateway.ts](../../backend/src/messages/gateways/messages.gateway.ts)
+- [API_DOCUMENTATION.md](API_DOCUMENTATION.md)
+- [../backend/src/messages/controllers/messages.controller.ts](../backend/src/messages/controllers/messages.controller.ts)
+- [../backend/src/messages/services/message-send.service.ts](../backend/src/messages/services/message-send.service.ts)
+- [../backend/src/messages/gateways/messages.gateway.ts](../backend/src/messages/gateways/messages.gateway.ts)
 
 ### 2.4 Proactive AI scheduling behavior
 
@@ -72,10 +74,10 @@ Primary references:
 
 Primary references:
 
-- [../../backend/src/tasks/services/tasks.service.ts](../../backend/src/tasks/services/tasks.service.ts)
-- [../../backend/src/tasks/constants/scheduling.constants.ts](../../backend/src/tasks/constants/scheduling.constants.ts)
-- [../../backend/src/inference/tasks/proactive-evaluator.service.ts](../../backend/src/inference/tasks/proactive-evaluator.service.ts)
-- [../../documents/PROJECT_PROPOSAL.md](../../documents/PROJECT_PROPOSAL.md)
+- [../backend/src/tasks/services/tasks.service.ts](../backend/src/tasks/services/tasks.service.ts)
+- [../backend/src/tasks/constants/scheduling.constants.ts](../backend/src/tasks/constants/scheduling.constants.ts)
+- [../backend/src/inference/tasks/proactive-evaluator.service.ts](../backend/src/inference/tasks/proactive-evaluator.service.ts)
+- [PROJECT_PROPOSAL.md](PROJECT_PROPOSAL.md)
 
 ### 2.5 Memory and retrieval augmentation
 
@@ -85,10 +87,10 @@ Primary references:
 
 Primary references:
 
-- [../../backend/src/inference/tasks/chat-generation.service.ts](../../backend/src/inference/tasks/chat-generation.service.ts)
-- [../../backend/src/inference/providers/ollama/ollama-provider.module.ts](../../backend/src/inference/providers/ollama/ollama-provider.module.ts)
-- [../../backend/prisma/schema.prisma](../../backend/prisma/schema.prisma)
-- [../../documents/SCHEMA.md](../../documents/SCHEMA.md)
+- [../backend/src/inference/tasks/chat-generation.service.ts](../backend/src/inference/tasks/chat-generation.service.ts)
+- [../backend/src/inference/providers/ollama/ollama-provider.module.ts](../backend/src/inference/providers/ollama/ollama-provider.module.ts)
+- [../backend/prisma/schema.prisma](../backend/prisma/schema.prisma)
+- [SCHEMA.md](SCHEMA.md)
 
 ### 2.6 Notifications behavior
 
@@ -98,9 +100,9 @@ Primary references:
 
 Primary references:
 
-- [../../backend/src/notifications/services/notifications.service.ts](../../backend/src/notifications/services/notifications.service.ts)
-- [../../backend/src/notifications/services/fcm-push.service.ts](../../backend/src/notifications/services/fcm-push.service.ts)
-- [../../documents/API_DOCUMENTATION.md](../../documents/API_DOCUMENTATION.md)
+- [../backend/src/notifications/services/notifications.service.ts](../backend/src/notifications/services/notifications.service.ts)
+- [../backend/src/notifications/services/fcm-push.service.ts](../backend/src/notifications/services/fcm-push.service.ts)
+- [API_DOCUMENTATION.md](API_DOCUMENTATION.md)
 
 ### 2.7 Explicitly not implemented as core product modules
 
@@ -116,9 +118,9 @@ No concrete current backend modules for billing/subscription or admin/moderation
 
 Primary references:
 
-- [../../README.md](../../README.md)
-- [../../frontend/README.md](../../frontend/README.md)
-- [../../backend/README.md](../../backend/README.md)
+- [../README.md](../README.md)
+- [../frontend/README.md](../frontend/README.md)
+- [../backend/README.md](../backend/README.md)
 
 ### 3.2 Required vs optional infrastructure
 
@@ -138,9 +140,9 @@ Optional/feature-gated:
 
 Primary references:
 
-- [../../deploy/README.md](../../deploy/README.md)
-- [../../backend/README.md](../../backend/README.md)
-- [../../frontend/README.md](../../frontend/README.md)
+- [../deploy/README.md](../deploy/README.md)
+- [../backend/README.md](../backend/README.md)
+- [../frontend/README.md](../frontend/README.md)
 
 ### 3.3 API and socket contract constraints
 
@@ -151,8 +153,8 @@ Primary references:
 
 Primary references:
 
-- [../../documents/API_DOCUMENTATION.md](../../documents/API_DOCUMENTATION.md)
-- [../../backend/src/messages/gateways/messages.gateway.ts](../../backend/src/messages/gateways/messages.gateway.ts)
+- [API_DOCUMENTATION.md](API_DOCUMENTATION.md)
+- [../backend/src/messages/gateways/messages.gateway.ts](../backend/src/messages/gateways/messages.gateway.ts)
 
 ### 3.4 Data model invariants
 
@@ -163,8 +165,8 @@ Primary references:
 
 Primary references:
 
-- [../../backend/prisma/schema.prisma](../../backend/prisma/schema.prisma)
-- [../../documents/SCHEMA.md](../../documents/SCHEMA.md)
+- [../backend/prisma/schema.prisma](../backend/prisma/schema.prisma)
+- [SCHEMA.md](SCHEMA.md)
 
 ### 3.5 Quality gates and CI expectations
 
@@ -177,9 +179,9 @@ Branch protection expects checks such as `verify-commits`, `backend-checks`, and
 
 Primary references:
 
-- [../../backend/README.md](../../backend/README.md)
-- [../../frontend/README.md](../../frontend/README.md)
-- [../ci-cd.md](../ci-cd.md)
+- [../backend/README.md](../backend/README.md)
+- [../frontend/README.md](../frontend/README.md)
+- [ci-cd.md](ci-cd.md)
 
 ### 3.6 Coding standards and implementation rules
 
@@ -192,10 +194,9 @@ Primary references:
 
 Primary references:
 
-- [../../.cursor/rules/backend.mdc](../../.cursor/rules/backend.mdc)
-- [../../.cursor/rules/frontend.mdc](../../.cursor/rules/frontend.mdc)
-- [/Users/junghyeoklee/.cursor/plugins/cache/cursor-public/cursor-team-kit/7dd9fea1e0e9bb88fcf059f5e77eb5a9d31bef1e/rules/no-inline-imports.mdc](/Users/junghyeoklee/.cursor/plugins/cache/cursor-public/cursor-team-kit/7dd9fea1e0e9bb88fcf059f5e77eb5a9d31bef1e/rules/no-inline-imports.mdc)
-- [/Users/junghyeoklee/.cursor/plugins/cache/cursor-public/cursor-team-kit/7dd9fea1e0e9bb88fcf059f5e77eb5a9d31bef1e/rules/typescript-exhaustive-switch.mdc](/Users/junghyeoklee/.cursor/plugins/cache/cursor-public/cursor-team-kit/7dd9fea1e0e9bb88fcf059f5e77eb5a9d31bef1e/rules/typescript-exhaustive-switch.mdc)
+- [../.cursor/rules/backend.mdc](../.cursor/rules/backend.mdc)
+- [../.cursor/rules/frontend.mdc](../.cursor/rules/frontend.mdc)
+- Cursor **cursor-team-kit** plugin (see [../.cursor/settings.json](../.cursor/settings.json)): `no-inline-imports`, `typescript-exhaustive-switch` rules.
 
 ## 4) Message + Proactive Flow (Architecture View)
 
@@ -212,20 +213,18 @@ flowchart LR
   proactiveEval --> pushService[FCMPushService]
 ```
 
-
-
 ## 5) Agent Operating Playbook
 
 ### 5.1 Suggested read order for onboarding
 
-1. [../../README.md](../../README.md)
-2. [../../backend/README.md](../../backend/README.md)
-3. [../../frontend/README.md](../../frontend/README.md)
-4. [../../documents/API_DOCUMENTATION.md](../../documents/API_DOCUMENTATION.md)
-5. [../../backend/prisma/schema.prisma](../../backend/prisma/schema.prisma)
-6. [../../documents/SCHEMA.md](../../documents/SCHEMA.md)
-7. [../../deploy/README.md](../../deploy/README.md)
-8. [../ci-cd.md](../ci-cd.md)
+1. [../README.md](../README.md)
+2. [../backend/README.md](../backend/README.md)
+3. [../frontend/README.md](../frontend/README.md)
+4. [API_DOCUMENTATION.md](API_DOCUMENTATION.md)
+5. [../backend/prisma/schema.prisma](../backend/prisma/schema.prisma)
+6. [SCHEMA.md](SCHEMA.md)
+7. [../deploy/README.md](../deploy/README.md)
+8. [ci-cd.md](ci-cd.md)
 
 ### 5.2 Safe workflow checklist
 
@@ -245,11 +244,33 @@ flowchart LR
 
 ## 6) Canonical Reference Index
 
-- Root overview: [../../README.md](../../README.md)
-- Backend runbook: [../../backend/README.md](../../backend/README.md)
-- Frontend runbook: [../../frontend/README.md](../../frontend/README.md)
-- API + Socket contract: [../../documents/API_DOCUMENTATION.md](../../documents/API_DOCUMENTATION.md)
-- Data model: [../../backend/prisma/schema.prisma](../../backend/prisma/schema.prisma), [../../documents/SCHEMA.md](../../documents/SCHEMA.md)
-- Deployment/runtime: [../../deploy/README.md](../../deploy/README.md), [../../deploy/docker-compose.dev.yml](../../deploy/docker-compose.dev.yml), [../../deploy/docker-compose.prod.yml](../../deploy/docker-compose.prod.yml)
-- CI/CD operations: [../ci-cd.md](../ci-cd.md)
+### Cross-cutting
 
+- Root overview: [../README.md](../README.md)
+- API + Socket contract: [API_DOCUMENTATION.md](API_DOCUMENTATION.md)
+- Data model: [../backend/prisma/schema.prisma](../backend/prisma/schema.prisma), [SCHEMA.md](SCHEMA.md)
+- Deployment/runtime: [../deploy/README.md](../deploy/README.md), [../deploy/docker-compose.dev.yml](../deploy/docker-compose.dev.yml), [../deploy/docker-compose.prod.yml](../deploy/docker-compose.prod.yml)
+- CI/CD operations: [ci-cd.md](ci-cd.md)
+
+### Backend
+
+- Runbook: [../backend/README.md](../backend/README.md)
+- Auth: [../backend/src/auth/](../backend/src/auth/)
+- Chatrooms: [../backend/src/chatrooms/](../backend/src/chatrooms/)
+- Messages + Socket.IO gateway: [../backend/src/messages/](../backend/src/messages/)
+- Scheduler / tasks: [../backend/src/tasks/](../backend/src/tasks/)
+- Inference + proactive evaluator: [../backend/src/inference/](../backend/src/inference/)
+- Notifications (FCM): [../backend/src/notifications/](../backend/src/notifications/)
+- Prisma schema: [../backend/prisma/schema.prisma](../backend/prisma/schema.prisma)
+
+### Frontend
+
+- Runbook: [../frontend/README.md](../frontend/README.md)
+- REST + types: [../frontend/src/api/](../frontend/src/api/)
+- TanStack Query hooks: [../frontend/src/api/hooks/](../frontend/src/api/hooks/)
+- Domain features (UI + feature hooks): [../frontend/src/features/](../frontend/src/features/)
+- Shared cross-cutting code: [../frontend/src/shared/](../frontend/src/shared/) (e.g. Firebase client wiring under `shared/notifications/`)
+- Global TS types: [../frontend/src/types/](../frontend/src/types/)
+- Test setup, fixtures, mocks: [../frontend/src/test/](../frontend/src/test/)
+- Socket.IO streaming (chat): [../frontend/src/features/chatroom/hooks/useWebSocketStream.ts](../frontend/src/features/chatroom/hooks/useWebSocketStream.ts)
+- FCM service worker (Vite-generated): [../frontend/vite-plugin-firebase-messaging-sw.ts](../frontend/vite-plugin-firebase-messaging-sw.ts)

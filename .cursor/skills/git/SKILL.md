@@ -107,6 +107,10 @@ Git Task Checklist
 
 - <problem or goal>
 
+## Related in-flight
+
+- <optional: run `gh pr list --state open --json number,title,headRefName --limit 30` and note overlapping branches or PRs that touch the same areas>
+
 ## Test plan
 
 - [ ] backend: `npm run lint`

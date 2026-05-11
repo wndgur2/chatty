@@ -45,6 +45,7 @@ Use this checklist while implementing API work:
 ```markdown
 API Task Checklist
 
+- [ ] Before creating new symbols, search the canonical index paths for existing implementations (hooks, services, repositories, utilities). Prefer reuse or extension over duplication.
 - [ ] Confirm intended contract in /documents/API_DOCUMENTATION.md
 - [ ] Identify affected routes, DTOs, services, and auth guards
 - [ ] Implement or update endpoint behavior and validation
@@ -52,6 +53,7 @@ API Task Checklist
 - [ ] Update API documentation for any contract change
 - [ ] Add or update tests (controller/service/integration as appropriate)
 - [ ] Run lint/tests and resolve issues before finalizing
+- [ ] Before declaring done, run lint, typecheck (where defined), test, and build for each changed app.
 ```
 
 ## Review rubric

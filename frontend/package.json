@@ -4,6 +4,7 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
+    "prepare": "cd .. && git config core.hooksPath .githooks || true",
     "dev": "vite --host",
     "dev:https": "VITE_HTTPS=true vite --host",
     "build": "tsc -b && vite build",
