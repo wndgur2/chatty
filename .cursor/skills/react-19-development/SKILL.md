@@ -11,9 +11,10 @@ Apply this skill when working on React components, hooks, context, forms, async 
 
 ## Source of truth
 
-- Use `/documents/PROJECT_STATUS.md` for the canonical frontend module index (API hooks, features, streaming, FCM), common pitfalls, and stack constraints.
-- Use `/documents/API_DOCUMENTATION.md` for REST + Socket.IO contracts the UI must honor.
+- Use `/documents/development/PROJECT_STATUS.md` for the canonical frontend module index (API hooks, features, streaming, FCM), common pitfalls, and stack constraints.
+- Use `/documents/development/API_DOCUMENTATION.md` for REST + Socket.IO contracts the UI must honor.
 - Use `/documents/PROJECT_PROPOSAL.md` for product intent and scope.
+- Confirm a task file exists in `agents/tasks/active/` for the work (see `.cursor/skills/task-intake/`); if none, ask the user before coding.
 
 ## Operating mode
 
@@ -63,6 +64,7 @@ Use this checklist while implementing:
 ```markdown
 React 19 Task Checklist
 
+- [ ] Confirm an active task file in `agents/tasks/active/` or explicit user approval to proceed without one
 - [ ] Before creating new symbols, search the canonical index paths for existing implementations (hooks, services, repositories, utilities). Prefer reuse or extension over duplication.
 - [ ] Clarify component responsibility and public API
 - [ ] Model minimal state and derived state

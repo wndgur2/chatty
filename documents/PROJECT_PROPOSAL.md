@@ -89,7 +89,7 @@ The system allows AI to send messages to users without waiting for user input, b
 - Vector store for retrieved memory snippets.
 - Notification Service: Sends push notifications via Firebase Cloud Messaging (FCM).
 
-Authoritative technical contracts: `documents/API_DOCUMENTATION.md`, `documents/SCHEMA.md`.
+Authoritative technical contracts: `documents/development/API_DOCUMENTATION.md`, `documents/development/SCHEMA.md`.
 
 ---
 

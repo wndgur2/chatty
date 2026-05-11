@@ -2,7 +2,7 @@
 
 NestJS API, Socket.IO streaming gateway, Prisma/MySQL persistence, Ollama integration, Qdrant-backed long-term memory retrieval (RAG), optional FCM, and scheduled evaluation for proactive AI messages.
 
-Monorepo context: [`../README.md`](../README.md). REST and Socket.IO contracts: [`../documents/API_DOCUMENTATION.md`](../documents/API_DOCUMENTATION.md). Database model: [`../documents/SCHEMA.md`](../documents/SCHEMA.md).
+Monorepo context: [`../README.md`](../README.md). REST and Socket.IO contracts: [`../documents/development/API_DOCUMENTATION.md`](../documents/development/API_DOCUMENTATION.md). Database model: [`../documents/development/SCHEMA.md`](../documents/development/SCHEMA.md).
 
 ## Tech stack
 
@@ -89,7 +89,7 @@ Shared branching, commits, and PR conventions: [`.cursor/skills/git/SKILL.md`](.
 
 ## WebSocket streaming
 
-Implementation: `src/messages/gateways/messages.gateway.ts`. Event names and payload shapes (including cumulative `ai_message_chunk` semantics and JWT behavior at the gateway) are documented in [`../documents/API_DOCUMENTATION.md`](../documents/API_DOCUMENTATION.md).
+Implementation: `src/messages/gateways/messages.gateway.ts`. Event names and payload shapes (including cumulative `ai_message_chunk` semantics and JWT behavior at the gateway) are documented in [`../documents/development/API_DOCUMENTATION.md`](../documents/development/API_DOCUMENTATION.md).
 
 ## Features (high level)
 

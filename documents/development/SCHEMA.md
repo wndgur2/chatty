@@ -1,6 +1,6 @@
 # Database Schema: Chatty
 
-**Source of truth:** [`backend/prisma/schema.prisma`](../backend/prisma/schema.prisma) and SQL migrations under [`backend/prisma/migrations/`](../backend/prisma/migrations/).
+**Source of truth:** [`backend/prisma/schema.prisma`](../../backend/prisma/schema.prisma) and SQL migrations under [`backend/prisma/migrations/`](../../backend/prisma/migrations/).
 
 This document summarizes the MySQL layout for agents and readers. Prisma maps JavaScript `Date`/`BigInt` to MySQL `DATETIME(3)` and `BIGINT` as generated in migrations.
 
@@ -187,7 +187,7 @@ CREATE TABLE `ai_message_metadata` (
 ## 3. Implementation notes
 
 - **Primary keys:** Auto-increment `BIGINT`, matching Prisma `BigInt` and JSON string serialization for IDs in API responses.
-- **Proactive scheduling:** `chatrooms.current_delay_seconds` defaults to **60** in the database; application flow resets toward **4 seconds** after user activity and applies doubling on evaluator “no send” (see `documents/PROJECT_PROPOSAL.md` and `backend/src/tasks/`).
+- **Proactive scheduling:** `chatrooms.current_delay_seconds` defaults to **60** in the database; application flow resets toward **4 seconds** after user activity and applies doubling on evaluator “no send” (see [`../PROJECT_PROPOSAL.md`](../PROJECT_PROPOSAL.md) and `backend/src/tasks/`).
 - **AI metadata invariant:** `ai_message_metadata` rows should exist only for `messages.sender = 'ai'`; Prisma models this as an optional 1:1 from `Message` to `AiMessageMetadata`.
 - **Memories:** One row per `(chatroom_id, kind, key)` (unique constraint). `MemoryKind` in Prisma maps to the MySQL `kind` enum. `confidence` defaults to **0.8**. `source_message_id` is optional and indexed but has **no** Prisma relation to `messages` (application-level linkage only). `user_id` is required on the row and indexed with `chatroom_id`, but there is **no** foreign key to `users`—use it for ownership scoping in app logic. `superseded_at` marks soft-invalidated rows without deleting history.
 - **Profile images:** `profile_image_url` stores the public URL after upload handling in the backend (see storage/infrastructure modules).

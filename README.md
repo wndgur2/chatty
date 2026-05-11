@@ -41,18 +41,19 @@ Use a local MySQL (or publish the default host port `3336` from Compose if the D
 
 MySQL + backend + nginx serving the production build of the frontend: configure `deploy/.env` from `deploy/.env.docker.example`, pull Ollama models as needed, then `docker compose -f deploy/docker-compose.dev.yml up -d --build`. Full prerequisites, env variables, smoke checks, and troubleshooting are in [`deploy/README.md`](deploy/README.md).
 
-Production CD (ARM64 images, serialized deploys) is summarized in [`documents/ci-cd.md`](documents/ci-cd.md).
+Production CD (ARM64 images, serialized deploys) is summarized in [`documents/development/ci-cd.md`](documents/development/ci-cd.md).
 
 ## API and contracts
 
-REST, Socket.IO payloads, and auth behavior are documented in [`documents/API_DOCUMENTATION.md`](documents/API_DOCUMENTATION.md). The database model is in [`documents/SCHEMA.md`](documents/SCHEMA.md) (generated schema and migrations live under `backend/prisma/`).
+REST, Socket.IO payloads, and auth behavior are documented in [`documents/development/API_DOCUMENTATION.md`](documents/development/API_DOCUMENTATION.md). The database model is in [`documents/development/SCHEMA.md`](documents/development/SCHEMA.md) (generated schema and migrations live under `backend/prisma/`).
 
 ## Documentation index
 
 - Product proposal: [`documents/PROJECT_PROPOSAL.md`](documents/PROJECT_PROPOSAL.md)
-- API contract: [`documents/API_DOCUMENTATION.md`](documents/API_DOCUMENTATION.md)
-- Data model: [`documents/SCHEMA.md`](documents/SCHEMA.md)
+- Business / strategy: [`documents/business/`](documents/business/)
+- API contract: [`documents/development/API_DOCUMENTATION.md`](documents/development/API_DOCUMENTATION.md)
+- Data model: [`documents/development/SCHEMA.md`](documents/development/SCHEMA.md)
 - Backend: [`backend/README.md`](backend/README.md)
 - Frontend: [`frontend/README.md`](frontend/README.md)
 - Docker / deploy: [`deploy/README.md`](deploy/README.md)
-- CI/CD operations: [`documents/ci-cd.md`](documents/ci-cd.md)
+- CI/CD operations: [`documents/development/ci-cd.md`](documents/development/ci-cd.md)

@@ -10,7 +10,7 @@ This guide runs the **development-oriented** full stack from the repository root
 
 Compose file path matters: there is no default `compose.yml` in the repo root, so always pass `-f deploy/docker-compose.dev.yml`.
 
-API and WebSocket contracts: [`../documents/API_DOCUMENTATION.md`](../documents/API_DOCUMENTATION.md).
+API and WebSocket contracts: [`../documents/development/API_DOCUMENTATION.md`](../documents/development/API_DOCUMENTATION.md).
 
 ## Prerequisites
 
@@ -89,7 +89,7 @@ Symptoms: API or WebSocket failures, wrong host in image URLs. Align **`PUBLIC_O
 
 - GitHub **CD** builds and pushes images (see `.github/workflows/cd.yml`); images use commit-SHA tags in GHCR.
 - Server deploy uses **`deploy/docker-compose.prod.yml`** and **`deploy/scripts/deploy-prod.sh`** (copied or referenced per your ops runbook).
-- Required secrets, host layout, and health checks are documented in **`documents/ci-cd.md`**.
+- Required secrets, host layout, and health checks are documented in **`documents/development/ci-cd.md`**.
 
 ### CD reliability model
 

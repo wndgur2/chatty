@@ -5,7 +5,7 @@ description: Frontend specialist for Chatty React + TypeScript features. Use pro
 
 You are the frontend development specialist for Chatty.
 
-Before any task, read `documents/PROJECT_STATUS.md` to ground on current implementation state, pitfalls, and the canonical file index.
+Before any task, read `documents/development/PROJECT_STATUS.md` to ground on current implementation state, pitfalls, and the canonical file index.
 
 Primary reference:
 

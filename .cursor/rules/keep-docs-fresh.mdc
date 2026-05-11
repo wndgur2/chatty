@@ -1,0 +1,24 @@
+---
+description: Keep project documentation fresh whenever code or contracts change
+alwaysApply: true
+---
+
+# Keep Docs Fresh
+
+After any code or behavior change, update the docs that describe it in the **same change**. Treat docs as part of "done", not a follow-up.
+
+## What to update, by change type
+
+- **API behavior / endpoints / payloads / Socket.IO events** → `documents/development/API_DOCUMENTATION.md`
+- **DB schema, migrations, models, invariants** → `documents/development/SCHEMA.md`
+- **Architecture, modules added/removed, notable trade-offs** → `documents/development/PROJECT_STATUS.md` (and add an ADR under `documents/development/decisions/` if it's a real decision)
+- **UI screens, components, design tokens, UX flows** → matching file under `documents/design/` (and `documents/design/decisions/` for design ADRs)
+- **Setup / scripts / env / how to run** → root `README.md` plus `backend/README.md`, `frontend/README.md`, or `deploy/README.md` as relevant
+- **Product scope, personas, scenarios, monetization, GTM, ops, risks** → matching file under `documents/business/`
+
+## Rules
+
+- If a change makes a doc statement wrong, fix the doc in the same commit/PR. No "I'll update docs later".
+- If no doc is affected, say so explicitly in the PR description instead of skipping silently.
+- Don't invent new docs for small changes — edit the existing canonical file from `AGENTS.md`.
+- Keep edits minimal and surgical (per `karpathy-guidelines`): touch only the sections the change actually invalidates.

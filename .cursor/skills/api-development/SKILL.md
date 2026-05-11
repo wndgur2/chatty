@@ -11,8 +11,9 @@ Apply this skill when building, changing, reviewing, or documenting backend API 
 
 ## Source of truth
 
-- Use `/documents/API_DOCUMENTATION.md` as the default contract for endpoint behavior.
+- Use `/documents/development/API_DOCUMENTATION.md` as the default contract for endpoint behavior.
 - Keep route shape, auth requirements, and response status codes aligned with that file unless the user explicitly asks to change the contract.
+- Confirm a task file exists in `agents/tasks/active/` for the work (see `.cursor/skills/task-intake/`); if none, ask the user before coding.
 
 ## Contract defaults
 
@@ -45,8 +46,9 @@ Use this checklist while implementing API work:
 ```markdown
 API Task Checklist
 
+- [ ] Confirm an active task file in `agents/tasks/active/` or explicit user approval to proceed without one
 - [ ] Before creating new symbols, search the canonical index paths for existing implementations (hooks, services, repositories, utilities). Prefer reuse or extension over duplication.
-- [ ] Confirm intended contract in /documents/API_DOCUMENTATION.md
+- [ ] Confirm intended contract in /documents/development/API_DOCUMENTATION.md
 - [ ] Identify affected routes, DTOs, services, and auth guards
 - [ ] Implement or update endpoint behavior and validation
 - [ ] Keep status codes and response shape contract-consistent
