@@ -2,7 +2,7 @@ import { Controller, Post, Body } from '@nestjs/common';
 import { NotificationsService } from '../services/notifications.service';
 import { RegisterDeviceDto } from '../dto/register-device.dto';
 import { CurrentUser } from '../../auth/decorators/current-user.decorator';
-import type { AuthUser } from '../../auth/types/auth-user.type';
+import type { AuthPrincipal } from '../../auth/types/auth-principal.type';
 import { TestNotificationDto } from '../dto/test-notification.dto';
 
 @Controller('api/notifications')
@@ -11,11 +11,11 @@ export class NotificationsController {
 
   @Post('register')
   async registerDevice(
-    @CurrentUser() user: AuthUser,
+    @CurrentUser() principal: AuthPrincipal,
     @Body() registerDeviceDto: RegisterDeviceDto,
   ) {
     return this.notificationsService.registerDevice(
-      user.userId,
+      principal,
       registerDeviceDto,
     );
   }

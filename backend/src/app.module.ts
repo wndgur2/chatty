@@ -5,7 +5,7 @@ import { ServeStaticModule } from '@nestjs/serve-static';
 import { ScheduleModule } from '@nestjs/schedule';
 import { ChatroomsModule } from './chatrooms/chatrooms.module';
 import { MessagesModule } from './messages/messages.module';
-import { NotificationsModule } from './notifications/notifications.module';
+import { NotificationsModule } from './notifications/services/notifications.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { TasksModule } from './tasks/tasks.module';
 import { AuthModule } from './auth/auth.module';

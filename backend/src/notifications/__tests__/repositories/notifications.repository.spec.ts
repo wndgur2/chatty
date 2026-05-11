@@ -46,23 +46,39 @@ describe('NotificationsRepository', () => {
       select: {
         id: true,
         name: true,
+        guestSessionId: true,
         user: { select: { id: true, username: true } },
       },
     });
   });
 
-  it('createDevice creates row', async () => {
-    await repository.createDevice(1n, 'd1');
+  it('createMemberDevice creates row', async () => {
+    await repository.createMemberDevice(1n, 'd1');
     expect(mockPrisma.userDevice.create).toHaveBeenCalledWith({
-      data: { userId: 1n, deviceToken: 'd1' },
+      data: { userId: 1n, guestSessionId: null, deviceToken: 'd1' },
     });
   });
 
-  it('updateDeviceOwner updates by token', async () => {
-    await repository.updateDeviceOwner('t', 9n);
+  it('createGuestDevice creates row', async () => {
+    await repository.createGuestDevice('guest-uuid', 'd1');
+    expect(mockPrisma.userDevice.create).toHaveBeenCalledWith({
+      data: { userId: null, guestSessionId: 'guest-uuid', deviceToken: 'd1' },
+    });
+  });
+
+  it('updateDeviceToMember updates by token', async () => {
+    await repository.updateDeviceToMember('t', 9n);
     expect(mockPrisma.userDevice.update).toHaveBeenCalledWith({
       where: { deviceToken: 't' },
-      data: { userId: 9n },
+      data: { userId: 9n, guestSessionId: null },
+    });
+  });
+
+  it('updateDeviceToGuest updates by token', async () => {
+    await repository.updateDeviceToGuest('t', 'g-sess');
+    expect(mockPrisma.userDevice.update).toHaveBeenCalledWith({
+      where: { deviceToken: 't' },
+      data: { userId: null, guestSessionId: 'g-sess' },
     });
   });
 
@@ -70,6 +86,14 @@ describe('NotificationsRepository', () => {
     await repository.findDeviceTokensByUserId(3n);
     expect(mockPrisma.userDevice.findMany).toHaveBeenCalledWith({
       where: { userId: 3n },
+      select: { deviceToken: true },
+    });
+  });
+
+  it('findDeviceTokensByGuestSessionId returns tokens', async () => {
+    await repository.findDeviceTokensByGuestSessionId('gs-1');
+    expect(mockPrisma.userDevice.findMany).toHaveBeenCalledWith({
+      where: { guestSessionId: 'gs-1' },
       select: { deviceToken: true },
     });
   });

@@ -20,14 +20,14 @@ Chatty is an AI chat application with real-time streamed replies and scheduled, 
 | LLM             | Ollama (HTTP API)                                                            |
 | Vector store    | Qdrant                                                                       |
 | Realtime        | Socket.IO                                                                    |
-| Push (optional) | Firebase Admin (backend), Firebase Web + VAPID (frontend)                  |
+| Push (optional) | Firebase Admin (backend), Firebase Web + VAPID (frontend)                    |
 
 ## Repository layout
 
 - `frontend/` — Vite SPA (details: [`frontend/README.md`](frontend/README.md)).
 - `backend/` — REST API, WebSocket gateway, scheduling, file uploads (details: [`backend/README.md`](backend/README.md)).
 - `deploy/` — nginx image, production Compose, deploy scripts (details: [`deploy/README.md`](deploy/README.md)).
-- `docker-compose.dev.yml` — local full stack: MySQL, backend, nginx (built frontend).
+- `deploy/docker-compose.dev.yml` — local full stack: MySQL, backend, nginx (built frontend).
 - `.cursor/skills/` — agent skills and runbooks.
 - `.cursor/rules/` — editor/agent rules for this codebase.
 
@@ -39,9 +39,9 @@ Use a local MySQL (or publish the default host port `3336` from Compose if the D
 
 ### Docker full stack
 
-MySQL + backend + nginx serving the production build of the frontend: configure `.env` from `.env.docker.example`, pull Ollama models as needed, then `docker compose -f docker-compose.dev.yml up -d --build`. Full prerequisites, env variables, smoke checks, and troubleshooting are in [`deploy/README.md`](deploy/README.md).
+MySQL + backend + nginx serving the production build of the frontend: configure `deploy/.env` from `deploy/.env.docker.example`, pull Ollama models as needed, then `docker compose -f deploy/docker-compose.dev.yml up -d --build`. Full prerequisites, env variables, smoke checks, and troubleshooting are in [`deploy/README.md`](deploy/README.md).
 
-Production CD (ARM64 images, serialized deploys) is summarized in [`.github/ci-cd.md`](.github/ci-cd.md).
+Production CD (ARM64 images, serialized deploys) is summarized in [`documents/ci-cd.md`](documents/ci-cd.md).
 
 ## API and contracts
 
@@ -55,4 +55,4 @@ REST, Socket.IO payloads, and auth behavior are documented in [`documents/API_DO
 - Backend: [`backend/README.md`](backend/README.md)
 - Frontend: [`frontend/README.md`](frontend/README.md)
 - Docker / deploy: [`deploy/README.md`](deploy/README.md)
-- CI/CD operations: [`.github/ci-cd.md`](.github/ci-cd.md)
+- CI/CD operations: [`documents/ci-cd.md`](documents/ci-cd.md)

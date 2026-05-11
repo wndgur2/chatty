@@ -30,7 +30,7 @@ Use this at the start of Cloud-agent tasks to avoid rediscovering setup details.
    - `OLLAMA_CHAT_MODEL="qwen2.5:1.5b"`
    - `OLLAMA_EVAL_MODEL="qwen2.5:1.5b"`
 2. Start MySQL quickly (if not already running):
-   - `cd /workspace && docker compose -f docker-compose.dev.yml up -d mysql`
+   - `cd /workspace && docker compose -f deploy/docker-compose.dev.yml up -d mysql`
 3. Apply schema:
    - `cd /workspace/backend && npm run prisma:migrate:dev`
 4. Start backend:
@@ -84,14 +84,14 @@ Use this at the start of Cloud-agent tasks to avoid rediscovering setup details.
   - `cd /workspace/frontend && npm run test:integration`
   - Targeted: `cd /workspace/frontend && npx vitest run tests/integration/chatroom-send.integration.test.tsx`
 
-## 4) Full-stack area (`docker-compose.dev.yml`)
+## 4) Full-stack area (`deploy/docker-compose.dev.yml`)
 
 ### Setup and run
 
 1. Seed root env:
-   - `cd /workspace && cp .env.docker.example .env`
+   - `cd /workspace/deploy && cp .env.docker.example .env`
 2. Start full stack:
-   - `cd /workspace && docker compose up -d --build`
+   - `cd /workspace/deploy && docker compose -f deploy/docker-compose.dev.yml up -d --build`
 3. Open app:
    - `http://localhost:8080`
 

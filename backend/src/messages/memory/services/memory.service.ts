@@ -67,7 +67,7 @@ export class MemoryService {
         content: true,
         createdAt: true,
         chatroom: {
-          select: { userId: true },
+          select: { userId: true, guestSessionId: true },
         },
       },
     });
@@ -112,7 +112,10 @@ export class MemoryService {
         vector: chunk.embedding,
         payload: {
           chatroomId,
-          userId: olderMessage.chatroom.userId.toString(),
+          userId:
+            olderMessage.chatroom.userId?.toString() ??
+            olderMessage.chatroom.guestSessionId ??
+            '',
           messageId: pointId,
           chunkIndex,
           chunkCount,

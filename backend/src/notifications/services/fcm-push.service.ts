@@ -96,6 +96,43 @@ export class FcmPushService implements OnModuleInit {
     await this.sendToUserDevices(userId, { title, body, data });
   }
 
+  /**
+   * Proactive AI push for guest-owned chatrooms (tokens keyed by `guest_session_id`).
+   */
+  async notifyProactiveAiMessageForGuestSession(
+    guestSessionId: string,
+    payload: {
+      chatroomId: string;
+      chatroomName?: string;
+      messagePreview?: string;
+    },
+  ): Promise<void> {
+    const title =
+      payload.chatroomName != null && payload.chatroomName.length > 0
+        ? `New message in ${payload.chatroomName}`
+        : 'New AI message';
+
+    const body =
+      payload.messagePreview != null && payload.messagePreview.length > 0
+        ? payload.messagePreview.slice(0, 200)
+        : 'Open the app to read the message.';
+
+    const data: Record<string, string> = {
+      type: 'proactive_ai_message',
+      chatroomId: payload.chatroomId,
+      title,
+      body,
+    };
+    if (payload.chatroomName != null) {
+      data.chatroomName = payload.chatroomName;
+    }
+    if (payload.messagePreview != null) {
+      data.messagePreview = payload.messagePreview.slice(0, 500);
+    }
+
+    await this.sendToGuestSessionDevices(guestSessionId, { title, body, data });
+  }
+
   async sendTestNotificationToUser(payload: {
     userId: bigint;
     chatroomId: string;
@@ -114,6 +151,29 @@ export class FcmPushService implements OnModuleInit {
     };
 
     await this.sendToUserDevices(payload.userId, { title, body, data });
+  }
+
+  async sendTestNotificationToGuestSession(payload: {
+    guestSessionId: string;
+    chatroomId: string;
+    chatroomName: string;
+  }): Promise<void> {
+    const title = payload.chatroomName;
+    const body = `test notification for guest session, chatroomId ${payload.chatroomName}`;
+    const data: Record<string, string> = {
+      type: 'test_notification',
+      chatroomId: payload.chatroomId,
+      chatroomName: payload.chatroomName,
+      username: 'Guest',
+      title,
+      body,
+    };
+
+    await this.sendToGuestSessionDevices(payload.guestSessionId, {
+      title,
+      body,
+      data,
+    });
   }
 
   private async sendToUserDevices(
@@ -142,6 +202,53 @@ export class FcmPushService implements OnModuleInit {
     };
 
     this.logger.debug(`Sending FCM message to user ${userId}`);
+
+    await this.sendEachForMulticastWithCleanup(tokens, message);
+  }
+
+  private async sendToGuestSessionDevices(
+    guestSessionId: string,
+    payload: {
+      title: string;
+      body: string;
+      data: Record<string, string>;
+    },
+  ): Promise<void> {
+    if (!this.messaging) {
+      return;
+    }
+
+    const rows =
+      await this.notificationsRepository.findDeviceTokensByGuestSessionId(
+        guestSessionId,
+      );
+    const tokens = rows.map((r) => r.deviceToken);
+    if (tokens.length === 0) {
+      return;
+    }
+
+    const message = {
+      tokens,
+      data: payload.data,
+      android: { priority: 'high' as const },
+    };
+
+    this.logger.debug(`Sending FCM message to guest session ${guestSessionId}`);
+
+    await this.sendEachForMulticastWithCleanup(tokens, message);
+  }
+
+  private async sendEachForMulticastWithCleanup(
+    tokens: string[],
+    message: {
+      tokens: string[];
+      data: Record<string, string>;
+      android: { priority: 'high' };
+    },
+  ): Promise<void> {
+    if (!this.messaging) {
+      return;
+    }
 
     try {
       const result = await this.messaging.sendEachForMulticast(message);

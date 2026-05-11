@@ -3,7 +3,7 @@ import { MessagesService } from './services/messages.service';
 import { MessagesController } from './controllers/messages.controller';
 import { MessagesGateway } from './gateways/messages.gateway';
 import { PrismaModule } from '../prisma/prisma.module';
-import { NotificationsModule } from '../notifications/notifications.module';
+import { NotificationsModule } from '../notifications/services/notifications.module';
 import { MessageHistoryService } from './services/message-history.service';
 import { MessageSendService } from './services/message-send.service';
 import { MessageStreamService } from './services/message-stream.service';

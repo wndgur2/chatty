@@ -18,7 +18,7 @@ const SIZE_STYLES = {
   },
 } as const
 
-export default function GithubLink({ size = 'small', className = '' }: GithubLinkProps) {
+export default function GithubLink({ size = 'medium', className = '' }: GithubLinkProps) {
   const style = SIZE_STYLES[size]
 
   return (
@@ -31,7 +31,7 @@ export default function GithubLink({ size = 'small', className = '' }: GithubLin
       title="wndgur2 on GitHub"
     >
       <img src={githubLogo} alt="" className={style.icon} aria-hidden="true" />
-      <span className={size === 'medium' ? 'hidden sm:inline' : ''}>wndgur2</span>
+      <span>wndgur2</span>
     </a>
   )
 }

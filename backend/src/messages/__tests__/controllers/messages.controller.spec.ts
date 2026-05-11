@@ -9,7 +9,8 @@ const mockMessagesService = {
 
 describe('MessagesController', () => {
   let controller: MessagesController;
-  const authUser = { userId: '1' };
+  const authPrincipal = { mode: 'user' as const, userId: '1' };
+  const userScope = { kind: 'user' as const, userId: 1n };
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -33,9 +34,14 @@ describe('MessagesController', () => {
     mockMessagesService.findHistory.mockResolvedValue(result);
 
     expect(
-      await controller.findHistory(authUser, 1, { limit: 10, offset: 0 }),
+      await controller.findHistory(authPrincipal, 1, { limit: 10, offset: 0 }),
     ).toBe(result);
-    expect(mockMessagesService.findHistory).toHaveBeenCalledWith('1', 1, 10, 0);
+    expect(mockMessagesService.findHistory).toHaveBeenCalledWith(
+      userScope,
+      1,
+      10,
+      0,
+    );
   });
 
   it('should trigger AI message processing', async () => {
@@ -53,7 +59,11 @@ describe('MessagesController', () => {
     };
     mockMessagesService.sendToAI.mockResolvedValue(result);
 
-    expect(await controller.sendToAI(authUser, 1, dto)).toBe(result);
-    expect(mockMessagesService.sendToAI).toHaveBeenCalledWith('1', 1, dto);
+    expect(await controller.sendToAI(authPrincipal, 1, dto)).toBe(result);
+    expect(mockMessagesService.sendToAI).toHaveBeenCalledWith(
+      userScope,
+      1,
+      dto,
+    );
   });
 });

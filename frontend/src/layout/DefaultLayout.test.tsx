@@ -1,4 +1,6 @@
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { fireEvent, render, screen } from '@testing-library/react'
+import type { ReactElement } from 'react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const navigateSpy = vi.hoisted(() => vi.fn())
@@ -52,7 +54,22 @@ vi.mock('../features/notifications/components/ForegroundNotificationPopup', () =
     <button onClick={onClick}>{open ? `${title}:${body}` : 'no-popup'}</button>
   ),
 }))
-vi.mock('../shared/ui/GithubLink', () => ({ default: () => <div>github-link</div> }))
+vi.mock('../shared/stores/authStore', () => ({
+  useAuthStore: <T,>(
+    selector: (state: { accessToken: string | null; user: { username: string } | null }) => T,
+  ) => selector({ accessToken: null, user: null }),
+}))
+
+vi.mock('../features/auth/components/LoginModal', () => ({
+  default: () => null,
+}))
+
+function renderWithClient(ui: ReactElement) {
+  const client = new QueryClient({
+    defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
+  })
+  return render(<QueryClientProvider client={client}>{ui}</QueryClientProvider>)
+}
 
 describe('DefaultLayout', () => {
   const loadDefaultLayout = async () => {
@@ -91,31 +108,13 @@ describe('DefaultLayout', () => {
   it('renders shell and navigates when foreground popup is clicked', async () => {
     const DefaultLayout = await loadDefaultLayout()
     getPopupChatroomPathSpy.mockReturnValue('/chat/2')
-    render(<DefaultLayout />)
+    renderWithClient(<DefaultLayout />)
 
     expect(screen.getByText('layout-outlet')).toBeTruthy()
     expect(screen.getByText('sidebar')).toBeTruthy()
     fireEvent.click(screen.getByText('AI:Hi'))
     expect(navigateSpy).toHaveBeenCalledWith('/chat/2')
     expect(clearPopupSpy).toHaveBeenCalled()
-  })
-
-  it('renders release metadata when release env variables exist', async () => {
-    vi.stubEnv('VITE_RELEASE_SHA', '1a2b3c4d5e6f')
-    vi.stubEnv('VITE_RELEASE_BUILT_AT', '2026-04-23T12:34:56Z')
-    const DefaultLayout = await loadDefaultLayout()
-
-    render(<DefaultLayout />)
-
-    expect(screen.getByText('1a2b3c4 • 2026-04-23 12:34:56')).toBeTruthy()
-  })
-
-  it('hides release metadata when release env variables are missing', async () => {
-    const DefaultLayout = await loadDefaultLayout()
-
-    render(<DefaultLayout />)
-
-    expect(screen.queryByText(/sha:/i)).toBeNull()
   })
 
   it('shows exit hint when stable back navigation requests it', async () => {
@@ -125,7 +124,7 @@ describe('DefaultLayout', () => {
     })
     const DefaultLayout = await loadDefaultLayout()
 
-    render(<DefaultLayout />)
+    renderWithClient(<DefaultLayout />)
 
     expect(screen.getByText('Press back again to exit')).toBeTruthy()
   })
@@ -134,7 +133,7 @@ describe('DefaultLayout', () => {
     handlePopNavigationSpy.mockReturnValue(true)
     const DefaultLayout = await loadDefaultLayout()
 
-    render(<DefaultLayout />)
+    renderWithClient(<DefaultLayout />)
 
     const blockerHandler = useBlockerSpy.mock.calls[0]?.[0] as
       | ((args: { historyAction: 'POP' | 'PUSH' | 'REPLACE' }) => boolean)

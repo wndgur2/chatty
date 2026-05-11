@@ -2,13 +2,13 @@
 
 Repository overview and documentation index: [`../README.md`](../README.md).
 
-This guide runs the **development-oriented** full stack from the repository root using **`docker-compose.dev.yml`**:
+This guide runs the **development-oriented** full stack from the repository root using **`deploy/docker-compose.dev.yml`**:
 
 - **mysql** — MySQL 8
 - **backend** — NestJS (API + Socket.IO) on port 8080 inside the network
 - **nginx** — serves the built SPA and proxies `/api`, `/socket.io`, and `/assets` to the backend
 
-Compose file path matters: there is no default `compose.yml` in the repo root, so always pass `-f docker-compose.dev.yml`.
+Compose file path matters: there is no default `compose.yml` in the repo root, so always pass `-f deploy/docker-compose.dev.yml`.
 
 API and WebSocket contracts: [`../documents/API_DOCUMENTATION.md`](../documents/API_DOCUMENTATION.md).
 
@@ -18,11 +18,11 @@ API and WebSocket contracts: [`../documents/API_DOCUMENTATION.md`](../documents/
 - **Ollama** reachable from the backend container:
   - Default `OLLAMA_HOST` is `http://host.docker.internal:11434`.
   - The Compose file sets `extra_hosts: host.docker.internal:host-gateway` so **Linux** hosts resolve `host.docker.internal` like Docker Desktop on macOS/Windows.
-- Models pulled on the machine that runs Ollama, matching `OLLAMA_CHAT_MODEL` and `OLLAMA_EVAL_MODEL` in `.env`.
+- Models pulled on the machine that runs Ollama, matching `OLLAMA_CHAT_MODEL` and `OLLAMA_EVAL_MODEL` in `deploy/.env`.
 
 ## Configure environment
 
-From the **repository root**:
+From `/deploy`:
 
 ```bash
 cp .env.docker.example .env
@@ -38,13 +38,13 @@ Review and adjust:
 **Rebuild when build-time inputs change:** `PUBLIC_ORIGIN`, `CORS_ORIGIN`, any `VITE_*` variable, or nginx/Dockerfile changes require a new image build, for example:
 
 ```bash
-docker compose -f docker-compose.dev.yml up -d --build
+docker compose -f deploy/docker-compose.dev.yml up -d --build
 ```
 
 ## Build and run
 
 ```bash
-docker compose -f docker-compose.dev.yml up -d --build
+docker compose -f deploy/docker-compose.dev.yml up -d --build
 ```
 
 Open **`PUBLIC_ORIGIN`** in the browser (default `http://localhost:8080`).
@@ -58,7 +58,7 @@ Open **`PUBLIC_ORIGIN`** in the browser (default `http://localhost:8080`).
 5. **Ollama from backend container:**
 
    ```bash
-   docker compose -f docker-compose.dev.yml exec backend node -e "const h=(process.env.OLLAMA_HOST||'http://127.0.0.1:11434').replace(/\/$/,'');fetch(h+'/api/tags').then(r=>r.text()).then(console.log).catch(e=>{console.error(e);process.exit(1);})"
+   docker compose -f deploy/docker-compose.dev.yml exec backend node -e "const h=(process.env.OLLAMA_HOST||'http://127.0.0.1:11434').replace(/\/$/,'');fetch(h+'/api/tags').then(r=>r.text()).then(console.log).catch(e=>{console.error(e);process.exit(1);})"
    ```
 
 ## Troubleshooting
@@ -70,15 +70,15 @@ If MySQL records a failed migration and the backend exits on `migrate deploy`:
 **Option A — reset (destructive):**
 
 ```bash
-docker compose -f docker-compose.dev.yml down -v
-docker compose -f docker-compose.dev.yml up -d --build
+docker compose -f deploy/docker-compose.dev.yml down -v
+docker compose -f deploy/docker-compose.dev.yml up -d --build
 ```
 
 **Option B — resolve a specific migration** (example name from this repo; adjust if your error names another migration):
 
 ```bash
-docker compose -f docker-compose.dev.yml exec backend npx prisma migrate resolve --rolled-back 20260408120000_widen_user_device_token
-docker compose -f docker-compose.dev.yml restart backend
+docker compose -f deploy/docker-compose.dev.yml exec backend npx prisma migrate resolve --rolled-back 20260408120000_widen_user_device_token
+docker compose -f deploy/docker-compose.dev.yml restart backend
 ```
 
 ### Origin / port mismatches
@@ -89,7 +89,7 @@ Symptoms: API or WebSocket failures, wrong host in image URLs. Align **`PUBLIC_O
 
 - GitHub **CD** builds and pushes images (see `.github/workflows/cd.yml`); images use commit-SHA tags in GHCR.
 - Server deploy uses **`deploy/docker-compose.prod.yml`** and **`deploy/scripts/deploy-prod.sh`** (copied or referenced per your ops runbook).
-- Required secrets, host layout, and health checks are documented in **`.github/ci-cd.md`**.
+- Required secrets, host layout, and health checks are documented in **`documents/ci-cd.md`**.
 
 ### CD reliability model
 

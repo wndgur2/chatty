@@ -4,8 +4,8 @@ import { ChatroomsRepository } from '../../repositories/chatrooms.repository';
 import { StorageService } from '../../../infrastructure/storage/storage.service';
 
 const mockChatroomsRepository = {
-  findManyByUser: jest.fn(),
-  findByIdAndUser: jest.fn(),
+  findManyByOwner: jest.fn(),
+  findByIdAndOwner: jest.fn(),
   create: jest.fn(),
   update: jest.fn(),
   delete: jest.fn(),
@@ -15,6 +15,8 @@ const mockChatroomsRepository = {
 const mockStorageService = {
   saveProfileImage: jest.fn(),
 };
+
+const userScope = { kind: 'user' as const, userId: 1n };
 
 describe('ChatroomsService', () => {
   let service: ChatroomsService;
@@ -40,11 +42,33 @@ describe('ChatroomsService', () => {
   });
 
   it('should find all chatrooms', async () => {
-    const mockResult = [{ id: 1n, userId: 1n, name: 'Chat' }];
-    mockChatroomsRepository.findManyByUser.mockResolvedValue(mockResult);
+    const mockResult = [
+      {
+        id: 1n,
+        userId: 1n,
+        guestSessionId: null,
+        name: 'Chat',
+        basePrompt: null,
+        profileImageUrl: null,
+        currentDelaySeconds: 60,
+        nextEvaluationTime: null,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      },
+    ];
+    mockChatroomsRepository.findManyByOwner.mockResolvedValue(mockResult);
 
-    const result = await service.findAll('1');
-    expect(result).toEqual([{ id: '1', userId: '1', name: 'Chat' }]);
-    expect(mockChatroomsRepository.findManyByUser).toHaveBeenCalledWith(1n);
+    const result = await service.findAll(userScope);
+    expect(result).toEqual([
+      {
+        ...mockResult[0],
+        id: '1',
+        userId: '1',
+        guestSessionId: null,
+      },
+    ]);
+    expect(mockChatroomsRepository.findManyByOwner).toHaveBeenCalledWith(
+      userScope,
+    );
   });
 });

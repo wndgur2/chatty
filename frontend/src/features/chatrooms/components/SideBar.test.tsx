@@ -2,9 +2,11 @@ import { fireEvent, render, screen } from '@testing-library/react'
 import { MemoryRouter } from 'react-router'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import SideBar from './SideBar'
+import { ROUTES } from '../../../routes/paths'
 
 const navigateSpy = vi.hoisted(() => vi.fn())
 const clearAuthSpy = vi.hoisted(() => vi.fn())
+const clearGuestSessionSpy = vi.hoisted(() => vi.fn())
 const queryClientClearSpy = vi.hoisted(() => vi.fn())
 const useChatroomsSpy = vi.hoisted(() => vi.fn())
 const useCreateChatroomFlowSpy = vi.hoisted(() => vi.fn())
@@ -30,6 +32,14 @@ vi.mock('@tanstack/react-query', async () => {
 
 vi.mock('../../../shared/lib/auth', () => ({
   clearAuth: clearAuthSpy,
+  clearGuestSession: clearGuestSessionSpy,
+}))
+
+const authStoreAccessToken = vi.hoisted(() => ({ value: 'member-session' as string | null }))
+
+vi.mock('../../../shared/stores/authStore', () => ({
+  useAuthStore: <T,>(selector: (state: { accessToken: string | null }) => T) =>
+    selector({ accessToken: authStoreAccessToken.value }),
 }))
 
 vi.mock('../../../shared/stores/uiStore', () => ({
@@ -47,8 +57,10 @@ vi.mock('../hooks/useCreateChatroomFlow', () => ({
 
 describe('SideBar', () => {
   beforeEach(() => {
+    authStoreAccessToken.value = 'member-session'
     navigateSpy.mockReset()
     clearAuthSpy.mockReset()
+    clearGuestSessionSpy.mockReset()
     queryClientClearSpy.mockReset()
     setSidebarOpenSpy.mockReset()
     useChatroomsSpy.mockReturnValue({
@@ -131,7 +143,18 @@ describe('SideBar', () => {
     expect(labels).toEqual(['Newest', 'Older'])
   })
 
-  it('clears auth/cache and navigates to login on logout confirm', () => {
+  it('hides Logout when not logged in (no member access token)', () => {
+    authStoreAccessToken.value = null
+    render(
+      <MemoryRouter>
+        <SideBar />
+      </MemoryRouter>,
+    )
+
+    expect(screen.queryByRole('button', { name: 'Logout' })).toBeNull()
+  })
+
+  it('clears auth/cache and navigates home on logout confirm', () => {
     render(
       <MemoryRouter>
         <SideBar />
@@ -142,8 +165,9 @@ describe('SideBar', () => {
     fireEvent.click(screen.getAllByRole('button', { name: 'Logout' }).at(-1) as HTMLButtonElement)
 
     expect(clearAuthSpy).toHaveBeenCalledTimes(1)
+    expect(clearGuestSessionSpy).toHaveBeenCalledTimes(1)
     expect(setSidebarOpenSpy).toHaveBeenCalledWith(false)
     expect(queryClientClearSpy).toHaveBeenCalledTimes(1)
-    expect(navigateSpy).toHaveBeenCalledWith('/login', { replace: true })
+    expect(navigateSpy).toHaveBeenCalledWith(ROUTES.HOME, { replace: true })
   })
 })

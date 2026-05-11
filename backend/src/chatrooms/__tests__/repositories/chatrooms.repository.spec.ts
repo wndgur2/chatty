@@ -34,18 +34,39 @@ describe('ChatroomsRepository', () => {
     expect(repository).toBeDefined();
   });
 
-  it('findManyByUser queries by userId', async () => {
+  it('findManyByOwner queries by userId for user scope', async () => {
     mockPrisma.chatroom.findMany.mockResolvedValue([]);
-    await repository.findManyByUser(3n);
+    await repository.findManyByOwner({ kind: 'user', userId: 3n });
     expect(mockPrisma.chatroom.findMany).toHaveBeenCalledWith({
       where: { userId: 3n },
     });
   });
 
-  it('findByIdAndUser queries id and userId', async () => {
-    await repository.findByIdAndUser(1n, 2n);
+  it('findManyByOwner queries by guestSessionId for guest scope', async () => {
+    mockPrisma.chatroom.findMany.mockResolvedValue([]);
+    await repository.findManyByOwner({
+      kind: 'guest',
+      guestSessionId: 'g-1',
+    });
+    expect(mockPrisma.chatroom.findMany).toHaveBeenCalledWith({
+      where: { guestSessionId: 'g-1' },
+    });
+  });
+
+  it('findByIdAndOwner queries id and owner for user scope', async () => {
+    await repository.findByIdAndOwner(1n, { kind: 'user', userId: 2n });
     expect(mockPrisma.chatroom.findFirst).toHaveBeenCalledWith({
       where: { id: 1n, userId: 2n },
+    });
+  });
+
+  it('findByIdAndOwner queries id and guestSessionId for guest scope', async () => {
+    await repository.findByIdAndOwner(1n, {
+      kind: 'guest',
+      guestSessionId: 'g-2',
+    });
+    expect(mockPrisma.chatroom.findFirst).toHaveBeenCalledWith({
+      where: { id: 1n, guestSessionId: 'g-2' },
     });
   });
 

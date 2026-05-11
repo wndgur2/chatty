@@ -53,7 +53,7 @@ describe('MemoryExtractorService', () => {
       sender: 'ai',
       content: 'ai note',
       createdAt: new Date(),
-      chatroom: { userId: 1n },
+      chatroom: { userId: 1n, guestSessionId: null },
     });
 
     await service.extractOlderMessage(1);
@@ -68,7 +68,7 @@ describe('MemoryExtractorService', () => {
       sender: 'user',
       content: 'older user message',
       createdAt: new Date(),
-      chatroom: { userId: 7n },
+      chatroom: { userId: 7n, guestSessionId: null },
     });
     mockPrismaService.memory.findFirst.mockResolvedValue({ id: 99n });
 
@@ -84,7 +84,7 @@ describe('MemoryExtractorService', () => {
       sender: 'user',
       content: 'I prefer casual tone in chats.',
       createdAt: new Date(),
-      chatroom: { userId: 7n },
+      chatroom: { userId: 7n, guestSessionId: null },
     });
     mockPrismaService.memory.findFirst.mockResolvedValue(null);
     mockPrismaService.message.findMany.mockResolvedValue([
@@ -111,7 +111,13 @@ describe('MemoryExtractorService', () => {
     const callArg = mockPrismaService.memory.upsert.mock.calls[0][0] as {
       where: unknown;
       update: { value: string; sourceMessageId: bigint };
-      create: { kind: string; key: string; userId: bigint; chatroomId: bigint };
+      create: {
+        kind: string;
+        key: string;
+        userId: bigint;
+        guestSessionId: null;
+        chatroomId: bigint;
+      };
     };
     expect(callArg.where).toEqual({
       chatroomId_kind_key: {
@@ -123,6 +129,7 @@ describe('MemoryExtractorService', () => {
     expect(callArg.update.value).toBe('casual');
     expect(callArg.update.sourceMessageId).toBe(23n);
     expect(callArg.create.userId).toBe(7n);
+    expect(callArg.create.guestSessionId).toBeNull();
     expect(callArg.create.chatroomId).toBe(1n);
   });
 
@@ -132,7 +139,7 @@ describe('MemoryExtractorService', () => {
       sender: 'user',
       content: 'older message',
       createdAt: new Date(),
-      chatroom: { userId: 5n },
+      chatroom: { userId: 5n, guestSessionId: null },
     });
     mockPrismaService.memory.findFirst.mockResolvedValue(null);
     mockPrismaService.message.findMany.mockResolvedValue([
