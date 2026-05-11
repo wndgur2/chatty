@@ -17,10 +17,10 @@ export const useLogin = () => {
       if (guestToken) {
         try {
           await mergeGuestSession(guestToken)
+          clearGuestSession()
         } catch {
           // Merge is best-effort; member session is still valid.
         }
-        clearGuestSession()
       }
     },
   })
