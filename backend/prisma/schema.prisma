@@ -26,22 +26,26 @@ model GuestSession {
   mergedAt         DateTime? @map("merged_at")
   mergedIntoUserId BigInt?   @map("merged_into_user_id")
 
-  mergedIntoUser User?     @relation("GuestSessionMerge", fields: [mergedIntoUserId], references: [id], onDelete: SetNull)
+  mergedIntoUser User?        @relation("GuestSessionMerge", fields: [mergedIntoUserId], references: [id], onDelete: SetNull)
   chatrooms      Chatroom[]
   memories       Memory[]
+  devices        UserDevice[]
 
   @@index([mergedIntoUserId])
   @@map("guest_sessions")
 }
 
 model UserDevice {
-  id           BigInt   @id @default(autoincrement())
-  userId       BigInt   @map("user_id")
-  deviceToken  String   @unique @map("device_token") @db.VarChar(512)
-  registeredAt DateTime @default(now()) @map("registered_at")
+  id             BigInt    @id @default(autoincrement())
+  userId         BigInt?   @map("user_id")
+  guestSessionId String?   @map("guest_session_id") @db.Char(36)
+  deviceToken    String    @unique @map("device_token") @db.VarChar(512)
+  registeredAt   DateTime  @default(now()) @map("registered_at")
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user         User?         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  guestSession GuestSession? @relation(fields: [guestSessionId], references: [id], onDelete: Restrict)
 
+  @@index([guestSessionId])
   @@map("user_devices")
 }
 

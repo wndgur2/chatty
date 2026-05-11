@@ -27,7 +27,9 @@ describe('FcmPushService', () => {
   let repository: jest.Mocked<
     Pick<
       NotificationsRepository,
-      'findDeviceTokensByUserId' | 'deleteByDeviceTokens'
+      | 'findDeviceTokensByUserId'
+      | 'findDeviceTokensByGuestSessionId'
+      | 'deleteByDeviceTokens'
     >
   >;
 
@@ -36,6 +38,7 @@ describe('FcmPushService', () => {
 
     repository = {
       findDeviceTokensByUserId: jest.fn(),
+      findDeviceTokensByGuestSessionId: jest.fn(),
       deleteByDeviceTokens: jest.fn(),
     };
 
@@ -132,6 +135,51 @@ describe('FcmPushService', () => {
     expect(sendEachForMulticast).not.toHaveBeenCalled();
   });
 
+  it('should send proactive multicast for guest session tokens', async () => {
+    repository.findDeviceTokensByGuestSessionId.mockResolvedValue([
+      { deviceToken: 'g1' },
+    ]);
+    sendEachForMulticast.mockResolvedValue({
+      responses: [{ success: true }],
+    });
+
+    await service.notifyProactiveAiMessageForGuestSession('sess-uuid', {
+      chatroomId: '3',
+      chatroomName: 'Guest CR',
+      messagePreview: 'Hi guest',
+    });
+
+    expect(repository.findDeviceTokensByGuestSessionId).toHaveBeenCalledWith(
+      'sess-uuid',
+    );
+    type MulticastArg = {
+      tokens: string[];
+      data: Record<string, string>;
+      android: { priority: 'high' };
+    };
+    const calls = sendEachForMulticast.mock.calls as unknown as [
+      MulticastArg,
+    ][];
+    const payload = calls[0]?.[0];
+    if (!payload) {
+      throw new Error('expected sendEachForMulticast payload');
+    }
+    expect(payload.tokens).toEqual(['g1']);
+    expect(payload.data.type).toBe('proactive_ai_message');
+    expect(payload.data.chatroomId).toBe('3');
+    expect(payload.data.title).toBe('New message in Guest CR');
+  });
+
+  it('should skip guest proactive when no guest tokens', async () => {
+    repository.findDeviceTokensByGuestSessionId.mockResolvedValue([]);
+
+    await service.notifyProactiveAiMessageForGuestSession('sess', {
+      chatroomId: '1',
+    });
+
+    expect(sendEachForMulticast).not.toHaveBeenCalled();
+  });
+
   it('should send formatted test notification payload', async () => {
     repository.findDeviceTokensByUserId.mockResolvedValue([
       { deviceToken: 'device-1' },
@@ -169,5 +217,38 @@ describe('FcmPushService', () => {
     expect(payload.data.chatroomId).toBe('12');
     expect(payload.data.chatroomName).toBe('Focus Room');
     expect(payload.data.username).toBe('june');
+  });
+
+  it('should send formatted test notification for guest session', async () => {
+    repository.findDeviceTokensByGuestSessionId.mockResolvedValue([
+      { deviceToken: 'device-g' },
+    ]);
+    sendEachForMulticast.mockResolvedValue({
+      responses: [{ success: true }],
+    });
+
+    await service.sendTestNotificationToGuestSession({
+      guestSessionId: 'gs-1',
+      chatroomId: '12',
+      chatroomName: 'Guest Room',
+    });
+
+    type MulticastArg = {
+      tokens: string[];
+      data: Record<string, string>;
+      android: { priority: 'high' };
+    };
+    const calls = sendEachForMulticast.mock.calls as unknown as [
+      MulticastArg,
+    ][];
+    const payload = calls[0]?.[0];
+    if (!payload) {
+      throw new Error('expected sendEachForMulticast payload');
+    }
+
+    expect(payload.tokens).toEqual(['device-g']);
+    expect(payload.data.username).toBe('Guest');
+    expect(payload.data.type).toBe('test_notification');
+    expect(payload.data.chatroomId).toBe('12');
   });
 });

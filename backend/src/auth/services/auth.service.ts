@@ -111,6 +111,11 @@ export class AuthService {
         data: { userId: userIdBigInt, guestSessionId: null },
       });
 
+      await tx.userDevice.updateMany({
+        where: { guestSessionId },
+        data: { userId: userIdBigInt, guestSessionId: null },
+      });
+
       await tx.guestSession.update({
         where: { id: guestSessionId },
         data: {

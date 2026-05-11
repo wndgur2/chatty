@@ -39,6 +39,9 @@ const mockChatroomStateRepository = {
 };
 const mockFcmPushService = {
   notifyProactiveAiMessage: jest.fn().mockResolvedValue(undefined),
+  notifyProactiveAiMessageForGuestSession: jest
+    .fn()
+    .mockResolvedValue(undefined),
 };
 const mockMemoryService = {
   indexOlderMessage: jest.fn().mockResolvedValue(undefined),
@@ -95,6 +98,9 @@ describe('MessagesService', () => {
   afterEach(() => {
     jest.clearAllMocks();
     mockFcmPushService.notifyProactiveAiMessage.mockResolvedValue(undefined);
+    mockFcmPushService.notifyProactiveAiMessageForGuestSession.mockResolvedValue(
+      undefined,
+    );
     mockMemoryService.retrieveContext.mockResolvedValue([]);
     mockMemoryService.indexOlderMessage.mockResolvedValue(undefined);
     mockMemoryExtractorService.extractOlderMessage.mockResolvedValue(undefined);
@@ -239,7 +245,7 @@ describe('MessagesService', () => {
     warnSpy.mockRestore();
   });
 
-  it('should skip proactive FCM when chatroom has no registered user (guest)', async () => {
+  it('should notify proactive FCM for guest-owned chatroom', async () => {
     mockChatroomStateRepository.findById.mockResolvedValue({
       id: 1n,
       userId: null,
@@ -263,6 +269,13 @@ describe('MessagesService', () => {
     await service.processBackgroundMessage(1, true);
 
     expect(mockFcmPushService.notifyProactiveAiMessage).not.toHaveBeenCalled();
+    expect(
+      mockFcmPushService.notifyProactiveAiMessageForGuestSession,
+    ).toHaveBeenCalledWith('guest-session-1', {
+      chatroomId: '1',
+      chatroomName: 'Guest Room',
+      messagePreview: 'AI reply text',
+    });
   });
 
   it('should stop typing and reset delay when AI generation throws', async () => {

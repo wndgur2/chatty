@@ -185,6 +185,16 @@ export class MessagesService {
           .catch((err) => {
             this.logger.warn('FCM proactive message notify failed', err);
           });
+      } else if (proactive && room.guestSessionId !== null) {
+        await this.fcmPushService
+          .notifyProactiveAiMessageForGuestSession(room.guestSessionId, {
+            chatroomId: chatroomId.toString(),
+            chatroomName: room.name,
+            messagePreview: fullContent,
+          })
+          .catch((err) => {
+            this.logger.warn('FCM proactive message notify failed', err);
+          });
       }
     } catch (e) {
       this.logger.error(

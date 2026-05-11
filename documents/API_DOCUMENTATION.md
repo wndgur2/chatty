@@ -69,7 +69,7 @@ A guest token is rejected after the underlying session has been merged (see §0.
 
 ### 0.3 Merge Guest Session into Member (Member-only)
 
-Atomically reassigns the chatrooms and memories owned by a guest session to the authenticated member, then marks the guest session as merged. Subsequent guest authentications with that token return `401 Unauthorized`.
+Atomically reassigns the chatrooms, memories, and registered FCM device tokens (`user_devices`) owned by a guest session to the authenticated member, then marks the guest session as merged. Subsequent guest authentications with that token return `401 Unauthorized`.
 
 - **Method:** `POST`
 - **URL:** `/api/auth/merge-guest`
@@ -296,13 +296,13 @@ Send a message from the user to the AI. The assistant reply is **streamed over S
 
 ## 4. Notifications
 
-### 4.1 Register FCM Device Token (Member-only)
+### 4.1 Register FCM Device Token
 
-Push tokens are tied to member accounts so deliveries survive guest-session boundaries. Guest principals receive `403 Forbidden` (`UserOnlyGuard`).
+Registers or updates the caller’s FCM `device_token` (unique per row). **Member** principals bind the token to `user_id`. **Guest** principals bind it to `guest_session_id` until `POST /api/auth/merge-guest`, which moves all tokens for that guest session onto the merging member in the same transaction as chatrooms/memories.
 
 - **Method:** `POST`
 - **URL:** `/api/notifications/register`
-- **Headers:** `Authorization: Bearer <member accessToken>`
+- **Headers:** `Authorization: Bearer <user or guest accessToken>`
 - **Parameters:** None
 - **Request Body:**
   ```json
@@ -318,12 +318,10 @@ Push tokens are tied to member accounts so deliveries survive guest-session boun
     "message": "FCM token registered successfully."
   }
   ```
-- **Errors:**
-  - `403 Forbidden` — caller is a guest principal.
 
 ### 4.2 Send test notification (by chatroom)
 
-Triggers a test push for the **member owner** of the given chatroom (used for integration checks when FCM is configured). Guest-owned chatrooms cannot receive pushes and return `404 Not Found`.
+Triggers a test push for the **owner** of the given chatroom (member or guest), used for integration checks when FCM is configured. The payload includes `data.username`; guest-owned rooms use the placeholder `Guest`.
 
 - **Method:** `POST`
 - **URL:** `/api/notifications/test`
@@ -343,7 +341,7 @@ Triggers a test push for the **member owner** of the given chatroom (used for in
   }
   ```
 - **Errors:**
-  - `404 Not Found` — chatroom does not exist, or has no member owner (e.g. guest-owned).
+  - `404 Not Found` — chatroom does not exist, or has neither a member owner nor a guest session owner.
 
 ---
 

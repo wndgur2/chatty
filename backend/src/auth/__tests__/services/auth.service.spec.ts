@@ -131,6 +131,9 @@ describe('AuthService', () => {
       memory: {
         updateMany: jest.fn().mockResolvedValue({ count: 1 }),
       },
+      userDevice: {
+        updateMany: jest.fn().mockResolvedValue({ count: 1 }),
+      },
     };
     mockPrisma.$transaction.mockImplementation(
       async (fn: (tx: typeof txMocks) => Promise<unknown>) => fn(txMocks),
@@ -151,6 +154,10 @@ describe('AuthService', () => {
       data: { userId: 99n, guestSessionId: null },
     });
     expect(txMocks.memory.updateMany).toHaveBeenCalledWith({
+      where: { guestSessionId: 'g1' },
+      data: { userId: 99n, guestSessionId: null },
+    });
+    expect(txMocks.userDevice.updateMany).toHaveBeenCalledWith({
       where: { guestSessionId: 'g1' },
       data: { userId: 99n, guestSessionId: null },
     });

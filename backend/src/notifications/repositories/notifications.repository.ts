@@ -17,6 +17,7 @@ export class NotificationsRepository {
       select: {
         id: true,
         name: true,
+        guestSessionId: true,
         user: {
           select: {
             id: true,
@@ -27,25 +28,56 @@ export class NotificationsRepository {
     });
   }
 
-  createDevice(userId: bigint, deviceToken: string) {
+  createMemberDevice(userId: bigint, deviceToken: string) {
     return this.prisma.userDevice.create({
       data: {
         userId,
+        guestSessionId: null,
         deviceToken,
       },
     });
   }
 
-  updateDeviceOwner(deviceToken: string, userId: bigint) {
+  createGuestDevice(guestSessionId: string, deviceToken: string) {
+    return this.prisma.userDevice.create({
+      data: {
+        userId: null,
+        guestSessionId,
+        deviceToken,
+      },
+    });
+  }
+
+  updateDeviceToMember(deviceToken: string, userId: bigint) {
     return this.prisma.userDevice.update({
       where: { deviceToken },
-      data: { userId },
+      data: {
+        userId,
+        guestSessionId: null,
+      },
+    });
+  }
+
+  updateDeviceToGuest(deviceToken: string, guestSessionId: string) {
+    return this.prisma.userDevice.update({
+      where: { deviceToken },
+      data: {
+        userId: null,
+        guestSessionId,
+      },
     });
   }
 
   findDeviceTokensByUserId(userId: bigint) {
     return this.prisma.userDevice.findMany({
       where: { userId },
+      select: { deviceToken: true },
+    });
+  }
+
+  findDeviceTokensByGuestSessionId(guestSessionId: string) {
+    return this.prisma.userDevice.findMany({
+      where: { guestSessionId },
       select: { deviceToken: true },
     });
   }
