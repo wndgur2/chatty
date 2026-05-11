@@ -49,7 +49,7 @@ describe('RootLayout', () => {
       reason: 'member' | 'guest',
     ) => void
     callback('member')
-    expect(navigateSpy).toHaveBeenCalledWith(ROUTES.LOGIN, { replace: true })
+    expect(navigateSpy).toHaveBeenCalledWith(ROUTES.HOME, { replace: true })
     navigateSpy.mockClear()
     callback('guest')
     expect(navigateSpy).toHaveBeenCalledWith(ROUTES.HOME, { replace: true })

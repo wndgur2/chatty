@@ -6,18 +6,26 @@ Contracts below match the NestJS backend (`backend/src`). **Numeric identifiers*
 
 ## 0. Authentication
 
-Protected routes use `Authorization: Bearer <accessToken>`.
+Protected routes use `Authorization: Bearer <accessToken>`. The token may be either a **user** token (`typ: "user"`) or a **guest** token (`typ: "guest"`). The Passport strategy resolves the bearer into an `AuthPrincipal`:
+
+- `{ mode: "user", userId }` — member account.
+- `{ mode: "guest", guestSessionId }` — anonymous session backed by a `guest_sessions` row that has not been merged.
+
+Most ownership-scoped routes (chatrooms, messages) accept either principal and scope results by owner. A few routes require a member token explicitly (marked **Member-only** below) and respond `403 Forbidden` for guests.
 
 **Public (no JWT):**
 
-- `GET /`
+- `GET /api/health-check`
 - `POST /api/auth/login`
+- `POST /api/auth/guest-session`
 
 All other `/api/**` routes require a valid JWT unless explicitly marked public elsewhere.
 
 WebSocket `joinRoom` / `leaveRoom` handlers do **not** enforce JWT at the gateway today; treat the socket surface accordingly for your threat model.
 
-### 0.1 Login (Issue JWT)
+### 0.1 Login (Issue User JWT)
+
+Idempotent: creates the user on first use, otherwise returns a token for the existing record.
 
 - **Method:** `POST`
 - **URL:** `/api/auth/login`
@@ -40,10 +48,49 @@ WebSocket `joinRoom` / `leaveRoom` handlers do **not** enforce JWT at the gatewa
   }
   ```
 
-### 0.2 Public Root Endpoint
+### 0.2 Create Guest Session (Issue Guest JWT)
+
+Issues a single-use guest token bound to a fresh `guest_sessions` row. Use the token in `Authorization: Bearer …` to access chatroom/messaging routes anonymously.
+
+- **Method:** `POST`
+- **URL:** `/api/auth/guest-session`
+- **Parameters:** None
+- **Request Body:** None
+- **Response:** `201 Created`
+- **Example:**
+  ```json
+  {
+    "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+    "guestSessionId": "0d7f5b1c-3f4c-4ad8-9c34-5d3e8b3e1234"
+  }
+  ```
+
+A guest token is rejected after the underlying session has been merged (see §0.3).
+
+### 0.3 Merge Guest Session into Member (Member-only)
+
+Atomically reassigns the chatrooms and memories owned by a guest session to the authenticated member, then marks the guest session as merged. Subsequent guest authentications with that token return `401 Unauthorized`.
+
+- **Method:** `POST`
+- **URL:** `/api/auth/merge-guest`
+- **Headers:**
+  - `Authorization: Bearer <member accessToken>`
+  - `X-Guest-Token: <guest accessToken>`
+- **Parameters:** None
+- **Request Body:** None
+- **Response:** `201 Created`
+- **Example:**
+  ```json
+  { "success": true }
+  ```
+- **Errors:**
+  - `400 Bad Request` — `X-Guest-Token` missing, malformed, not of `typ: "guest"`, or the referenced session is unknown / already merged.
+  - `403 Forbidden` — the caller is a guest principal.
+
+### 0.4 Health Check
 
 - **Method:** `GET`
-- **URL:** `/`
+- **URL:** `/api/health-check`
 - **Response:** `200 OK`
 - **Example:** `"Hello World!"`
 
@@ -53,11 +100,13 @@ WebSocket `joinRoom` / `leaveRoom` handlers do **not** enforce JWT at the gatewa
 
 Chatroom JSON includes scheduling fields used by proactive AI (`currentDelaySeconds`, `nextEvaluationTime`). Shapes are produced by `serializeChatroom` from Prisma rows.
 
+**Ownership:** exactly one of `userId` (member-owned) or `guestSessionId` (guest-owned) is non-null on every chatroom; the other is `null`. List/CRUD endpoints scope results to the calling principal — guest principals only see guest-owned rows, members only see their own.
+
 ### 1.1 Retrieve All Chatrooms
 
 - **Method:** `GET`
 - **URL:** `/api/chatrooms`
-- **Headers:** `Authorization: Bearer <accessToken>`
+- **Headers:** `Authorization: Bearer <accessToken>` (user or guest)
 - **Parameters:** None
 - **Request Body:** None
 - **Response:** `200 OK`
@@ -67,6 +116,7 @@ Chatroom JSON includes scheduling fields used by proactive AI (`currentDelaySeco
     {
       "id": "1",
       "userId": "1",
+      "guestSessionId": null,
       "name": "General Chat",
       "basePrompt": "You are a helpful assistant.",
       "profileImageUrl": "https://example.com/ai-1.png",
@@ -82,18 +132,19 @@ Chatroom JSON includes scheduling fields used by proactive AI (`currentDelaySeco
 
 - **Method:** `POST`
 - **URL:** `/api/chatrooms`
-- **Headers:** `Authorization: Bearer <accessToken>`
+- **Headers:** `Authorization: Bearer <accessToken>` (user or guest)
 - **Parameters:** None
 - **Request Body:** `multipart/form-data`
-  - `name` (string): The name of the chatroom.
-  - `basePrompt` (string, optional): The base prompt for the AI.
+  - `name` (string, **required**): The name of the chatroom.
+  - `basePrompt` (string, **required**): The base prompt for the AI (`@IsNotEmpty()` on `CreateChatroomDto`).
   - `profileImage` (file/blob, optional): The profile image file for the AI.
 - **Response:** `201 Created`
-- **Example:**
+- **Example (guest-owned):**
   ```json
   {
     "id": "2",
-    "userId": "1",
+    "userId": null,
+    "guestSessionId": "0d7f5b1c-3f4c-4ad8-9c34-5d3e8b3e1234",
     "name": "Project Discussion",
     "basePrompt": "You are a strict project manager AI.",
     "profileImageUrl": "https://example.com/manager.png",
@@ -245,11 +296,13 @@ Send a message from the user to the AI. The assistant reply is **streamed over S
 
 ## 4. Notifications
 
-### 4.1 Register FCM Device Token
+### 4.1 Register FCM Device Token (Member-only)
+
+Push tokens are tied to member accounts so deliveries survive guest-session boundaries. Guest principals receive `403 Forbidden` (`UserOnlyGuard`).
 
 - **Method:** `POST`
 - **URL:** `/api/notifications/register`
-- **Headers:** `Authorization: Bearer <accessToken>`
+- **Headers:** `Authorization: Bearer <member accessToken>`
 - **Parameters:** None
 - **Request Body:**
   ```json
@@ -265,10 +318,12 @@ Send a message from the user to the AI. The assistant reply is **streamed over S
     "message": "FCM token registered successfully."
   }
   ```
+- **Errors:**
+  - `403 Forbidden` — caller is a guest principal.
 
 ### 4.2 Send test notification (by chatroom)
 
-Triggers a test push for the **owner** of the given chatroom (used for integration checks when FCM is configured).
+Triggers a test push for the **member owner** of the given chatroom (used for integration checks when FCM is configured). Guest-owned chatrooms cannot receive pushes and return `404 Not Found`.
 
 - **Method:** `POST`
 - **URL:** `/api/notifications/test`
@@ -287,6 +342,8 @@ Triggers a test push for the **owner** of the given chatroom (used for integrati
     "message": "Test notification sent."
   }
   ```
+- **Errors:**
+  - `404 Not Found` — chatroom does not exist, or has no member owner (e.g. guest-owned).
 
 ---
 

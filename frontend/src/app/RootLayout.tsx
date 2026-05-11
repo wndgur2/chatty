@@ -11,12 +11,8 @@ export default function RootLayout() {
   const navigate = useNavigate()
 
   useEffect(() => {
-    registerSessionExpiredHandler((reason) => {
-      if (reason === 'guest') {
-        navigate(ROUTES.HOME, { replace: true })
-      } else {
-        navigate(ROUTES.LOGIN, { replace: true })
-      }
+    registerSessionExpiredHandler(() => {
+      navigate(ROUTES.HOME, { replace: true })
     })
     return () => registerSessionExpiredHandler(null)
   }, [navigate])
