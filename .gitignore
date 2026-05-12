@@ -2,8 +2,10 @@
 .idea
 .vscode
 .env
-.env.test
+.env.dev
+.env.docker
+.env.docker.dev
 assigned
-temp
 coverage
 **/*.log
+**/node_modules
